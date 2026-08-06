@@ -97,6 +97,40 @@ export class AttendanceController {
       return res.status(500).json(sendError(error.message));
     }
   }
+  async applyRegularization(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      const data = await attendanceService.applyRegularization({
+        ...req.body,
+        employee_id: user?.id || req.body.employee_id,
+      });
+      return res.status(201).json(sendSuccess(data, 'Attendance regularization request submitted successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getRegularizations(req: Request, res: Response) {
+    try {
+      const empId = req.query.employeeId ? parseInt(req.query.employeeId as string, 10) : undefined;
+      const data = await attendanceService.getRegularizations(empId);
+      return res.json(sendSuccess(data, 'Attendance regularizations retrieved successfully'));
+    } catch (error: any) {
+      return res.status(500).json(sendError(error.message));
+    }
+  }
+
+  async processRegularization(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const approverId = (req as any).user?.id || 1;
+      const { status } = req.body;
+      const data = await attendanceService.processRegularization(id, status, approverId);
+      return res.json(sendSuccess(data, `Attendance regularization ${status.toLowerCase()}`));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const attendanceController = new AttendanceController();

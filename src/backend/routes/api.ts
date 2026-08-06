@@ -48,12 +48,14 @@ router.post('/employees/:id/restore', authenticateToken, authorizeRoles('ADMIN',
 router.post('/attendance/punch-in', authenticateToken, (req, res) => attendanceController.punchIn(req, res));
 router.post('/attendance/punch-out', authenticateToken, (req, res) => attendanceController.punchOut(req, res));
 router.post('/attendance/break', authenticateToken, (req, res) => attendanceController.updateBreak(req, res));
-router.get('/attendance/status', authenticateToken, (req, res) => attendanceController.getMyStatus(req, res));
+router.get('/attendance/my-status', authenticateToken, (req, res) => attendanceController.getMyStatus(req, res));
 router.get('/attendance/history', authenticateToken, (req, res) => attendanceController.getHistory(req, res));
-router.get('/attendance/monthly', authenticateToken, (req, res) => attendanceController.getMonthlySummary(req, res));
-router.get('/attendance/live', authenticateToken, (req, res) => attendanceController.getLiveManagerDashboard(req, res));
-router.get('/attendance/analytics', authenticateToken, (req, res) => attendanceController.getAnalytics(req, res));
-router.get('/attendance/today', authenticateToken, (req, res) => attendanceController.getTodayAll(req, res));
+router.get('/attendance/summary', authenticateToken, (req, res) => attendanceController.getMonthlySummary(req, res));
+router.get('/attendance/live', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.getLiveManagerDashboard(req, res));
+router.get('/attendance/analytics', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.getAnalytics(req, res));
+router.post('/attendance/regularize', authenticateToken, (req, res) => attendanceController.applyRegularization(req, res));
+router.get('/attendance/regularizations', authenticateToken, (req, res) => attendanceController.getRegularizations(req, res));
+router.put('/attendance/regularizations/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.processRegularization(req, res));
 
 // 5. Leave Module Routes
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));

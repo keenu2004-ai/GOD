@@ -251,12 +251,25 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS attendance_regularizations (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      attendance_date DATE NOT NULL,
+      requested_punch_in TIMESTAMP,
+      requested_punch_out TIMESTAMP,
+      reason TEXT NOT NULL,
+      status VARCHAR(20) DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS documents (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
       title VARCHAR(255) NOT NULL,
       category VARCHAR(100) NOT NULL,
       file_url TEXT NOT NULL,
+      expiry_date DATE,
       uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 

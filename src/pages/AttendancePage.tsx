@@ -21,11 +21,18 @@ export const AttendancePage: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [liveManager, setLiveManager] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'my_attendance' | 'manager_live'>('my_attendance');
+  const [activeTab, setActiveTab] = useState<'my_attendance' | 'manager_live' | 'regularization'>('my_attendance');
   const [shiftCode, setShiftCode] = useState<string>('GENERAL');
   const [loading, setLoading] = useState<boolean>(true);
   const [punching, setPunching] = useState<boolean>(false);
   const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({ lat: 12.9716, lng: 77.5946 });
+
+  // Regularization State
+  const [regularizations, setRegularizations] = useState<any[]>([]);
+  const [showRegModal, setShowRegModal] = useState<boolean>(false);
+  const [regDate, setRegDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [regReason, setRegReason] = useState<string>('');
+  const [regSubmitting, setRegSubmitting] = useState<boolean>(false);
 
   // Live seconds counter
   const [seconds, setSeconds] = useState<number>(0);
@@ -78,9 +85,43 @@ export const AttendancePage: React.FC = () => {
     }
   }, []);
 
+  const fetchRegularizations = async () => {
+    try {
+      const res = await attendanceService.getRegularizations();
+      if (res?.success) {
+        setRegularizations(res.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching regularizations:', err);
+    }
+  };
+
+  const handleCreateRegularization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regReason) return alert('Please enter a reason for regularization');
+    try {
+      setRegSubmitting(true);
+      const res = await attendanceService.applyRegularization({
+        attendance_date: regDate,
+        reason: regReason,
+      });
+      if (res?.success) {
+        setShowRegModal(false);
+        setRegReason('');
+        fetchRegularizations();
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to submit regularization');
+    } finally {
+      setRegSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'manager_live') {
       fetchManagerLive();
+    } else if (activeTab === 'regularization') {
+      fetchRegularizations();
     }
   }, [activeTab]);
 

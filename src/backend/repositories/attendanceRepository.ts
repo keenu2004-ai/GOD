@@ -200,6 +200,74 @@ export class AttendanceRepository {
     };
   }
 
+  async createRegularizationRequest(data: {
+    employee_id: number;
+    attendance_date: string;
+    requested_punch_in?: string;
+    requested_punch_out?: string;
+    reason: string;
+  }) {
+    const res = await dbService.query(
+      `INSERT INTO attendance_regularizations 
+       (employee_id, attendance_date, requested_punch_in, requested_punch_out, reason, status)
+       VALUES ($1, $2, $3, $4, $5, 'PENDING') RETURNING *`,
+      [data.employee_id, data.attendance_date, data.requested_punch_in || null, data.requested_punch_out || null, data.reason]
+    );
+    return res.rows[0];
+  }
+
+  async getRegularizations(employeeId?: number) {
+    let sql = `
+      SELECT ar.*, e.first_name, e.last_name, e.employee_code, d.name as department_name
+      FROM attendance_regularizations ar
+      JOIN employees e ON ar.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+    `;
+    const params: any[] = [];
+    if (employeeId) {
+      sql += ` WHERE ar.employee_id = $1`;
+      params.push(employeeId);
+    }
+    sql += ` ORDER BY ar.created_at DESC`;
+    const res = await dbService.query(sql, params);
+    return res.rows;
+  }
+
+  async approveRegularization(id: number, status: string, approverId: number) {
+    return await dbService.transaction(async (client) => {
+      const regRes = await client.query(
+        `UPDATE attendance_regularizations 
+         SET status = $1, approved_by = $2 WHERE id = $3 RETURNING *`,
+        [status, approverId, id]
+      );
+      const reg = regRes.rows[0];
+
+      if (reg && status === 'APPROVED') {
+        // Upsert attendance record for approved regularization
+        await client.query(
+          `INSERT INTO attendance (employee_id, date, punch_in, punch_out, work_hours, status)
+           VALUES ($1, $2, $3, $4, 8.0, 'PRESENT')
+           ON CONFLICT DO NOTHING`,
+          [reg.employee_id, reg.attendance_date, reg.requested_punch_in, reg.requested_punch_out]
+        );
+      }
+      return reg;
+    });
+  }
+
+  async recordAudit(employeeId: number, action: string, details: string) {
+    try {
+      await dbService.query(
+        `INSERT INTO audit_logs (employee_id, action, module, details)
+         VALUES ($1, $2, 'ATTENDANCE', $3)`,
+        [employeeId, action, details]
+      );
+    } catch (e) {
+      // Audit log fallback if table is omitted
+      console.log(`[AuditLog] ${action}: ${details}`);
+    }
+  }
+
   async createAuditLog(employeeId: number, action: string, details: string) {
     try {
       await dbService.query(

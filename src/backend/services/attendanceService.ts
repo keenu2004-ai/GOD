@@ -240,6 +240,23 @@ export class AttendanceService {
     const end = endDate || new Date().toISOString().split('T')[0];
     return await attendanceRepository.getAnalytics(start, end);
   }
+  async applyRegularization(data: {
+    employee_id: number;
+    attendance_date: string;
+    requested_punch_in?: string;
+    requested_punch_out?: string;
+    reason: string;
+  }) {
+    return await attendanceRepository.createRegularizationRequest(data);
+  }
+
+  async getRegularizations(employeeId?: number) {
+    return await attendanceRepository.getRegularizations(employeeId);
+  }
+
+  async processRegularization(id: number, status: string, approverId: number) {
+    return await attendanceRepository.approveRegularization(id, status, approverId);
+  }
 }
 
 export const attendanceService = new AttendanceService();

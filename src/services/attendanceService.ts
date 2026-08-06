@@ -40,6 +40,22 @@ export const attendanceService = {
     const response = await apiClient.get('/attendance/analytics', { params: { startDate, endDate } });
     return response.data;
   },
+
+  async applyRegularization(data: { attendance_date: string; requested_punch_in?: string; requested_punch_out?: string; reason: string }) {
+    const response = await apiClient.post('/attendance/regularize', data);
+    return response.data;
+  },
+
+  async getRegularizations(employeeId?: number) {
+    const response = await apiClient.get('/attendance/regularizations', { params: { employeeId } });
+    return response.data;
+  },
+
+  async processRegularization(id: number, status: string) {
+    const response = await apiClient.put(`/attendance/regularizations/${id}/approve`, { status });
+    return response.data;
+  },
 };
 
 export default attendanceService;
+
