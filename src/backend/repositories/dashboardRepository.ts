@@ -5,7 +5,7 @@ export class DashboardRepository {
     const today = new Date().toISOString().split('T')[0];
     const sql = `
       SELECT 
-        (SELECT COUNT(*) FROM employees WHERE is_deleted = false AND status = 'ACTIVE') as total_employees,
+        (SELECT COUNT(*) FROM employees WHERE (is_deleted = false OR is_deleted IS NULL)) as total_employees,
         (SELECT COUNT(*) FROM departments) as total_departments,
         (SELECT COUNT(*) FROM branches) as total_branches,
         (SELECT COUNT(*) FROM attendance WHERE date = $1 AND status IN ('PRESENT', 'LATE')) as present_today,

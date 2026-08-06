@@ -89,14 +89,7 @@ router.get('/projects/:id', authenticateToken, (req, res) => projectController.g
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
 
-// 9. Recruitment Routes
-router.get('/recruitments', authenticateToken, (req, res) => miscController.getJobOpenings(req, res));
-router.post('/recruitments', authenticateToken, (req, res) => miscController.createJobOpening(req, res));
-router.get('/recruitments/:jobId/candidates', authenticateToken, (req, res) => miscController.getCandidates(req, res));
-router.post('/recruitments/candidates', authenticateToken, (req, res) => miscController.createCandidate(req, res));
-router.put('/recruitments/candidates/:id/status', authenticateToken, (req, res) => miscController.updateCandidateStatus(req, res));
-
-// 10. Assets Routes
+// 9. Assets Routes
 router.get('/assets', authenticateToken, (req, res) => miscController.getAllAssets(req, res));
 router.post('/assets', authenticateToken, (req, res) => miscController.createAsset(req, res));
 

@@ -32,14 +32,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Tasks', icon: FolderGit2 },
-    { id: 'recruitment', label: 'Recruitment (ATS)', icon: UserPlus },
     { id: 'assets', label: 'Asset Management', icon: Laptop },
     { id: 'helpdesk', label: 'IT & HR Helpdesk', icon: HelpCircle },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'orgchart', label: 'Organization Chart', icon: Network },
     { id: 'performance', label: 'Performance Reviews', icon: Award },
     { id: 'planner', label: 'Weekly Planner', icon: Calendar },
-    { id: 'ai-assistant', label: 'AI Intelligence Assistant', icon: Sparkles, highlight: true },
+    { id: 'ai-assistant', label: 'AI HR Assistant', icon: Sparkles, highlight: true },
   ];
 
   return (

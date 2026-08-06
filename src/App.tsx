@@ -10,7 +10,7 @@ import { LeavePage } from './pages/LeavePage.js';
 import { PayrollPage } from './pages/PayrollPage.js';
 import { ExpensesPage } from './pages/ExpensesPage.js';
 import { ProjectsPage } from './pages/ProjectsPage.js';
-import { RecruitmentPage, AssetsPage } from './pages/RecruitmentPage.js';
+import { AssetsPage } from './pages/RecruitmentPage.js';
 import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
 import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
 import { WeeklyPlannerPage, AIAssistantPage } from './pages/WeeklyPlannerPage.js';
@@ -49,8 +49,6 @@ const AppContent: React.FC = () => {
             return <ExpensesPage />;
           case 'projects':
             return <ProjectsPage />;
-          case 'recruitment':
-            return <RecruitmentPage />;
           case 'assets':
             return <AssetsPage />;
           case 'helpdesk':
