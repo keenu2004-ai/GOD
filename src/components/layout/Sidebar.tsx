@@ -38,7 +38,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     { id: 'orgchart', label: 'Organization Chart', icon: Network },
     { id: 'performance', label: 'Performance Reviews', icon: Award },
     { id: 'planner', label: 'Weekly Planner', icon: Calendar },
-    { id: 'ai-assistant', label: 'AI HR Assistant', icon: Sparkles, highlight: true },
   ];
 
   return (
@@ -66,12 +65,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 font-semibold'
-                  : item.highlight
-                  ? 'bg-indigo-950/60 text-indigo-300 hover:bg-indigo-900/60 border border-indigo-500/20 font-bold'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : item.highlight ? 'text-indigo-400' : 'text-slate-400'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
               <span className="truncate">{item.label}</span>
             </button>
           );

@@ -56,25 +56,6 @@ export class DashboardController {
       return res.status(500).json(sendError(error.message));
     }
   }
-
-  async getMorningBrief(req: Request, res: Response) {
-    try {
-      const data = await dashboardService.getMorningBrief();
-      return res.json(sendSuccess(data, 'Morning executive brief generated'));
-    } catch (error: any) {
-      return res.status(500).json(sendError(error.message));
-    }
-  }
-
-  async getAIInsights(req: Request, res: Response) {
-    try {
-      const query = req.body.query || (req.query.query as string);
-      const data = await dashboardService.getAIInsights(query);
-      return res.json(sendSuccess(data, 'AI insights generated'));
-    } catch (error: any) {
-      return res.status(500).json(sendError(error.message));
-    }
-  }
 }
 
 export const dashboardController = new DashboardController();

@@ -15,7 +15,6 @@ import {
   performanceRepository,
   plannerRepository,
 } from '../repositories/miscRepository.js';
-import { aiService } from './aiService.js';
 
 import { payrollRepository } from '../repositories/payrollRepository.js';
 
@@ -100,27 +99,6 @@ export class DashboardService {
 
   async getCelebrations() {
     return await dashboardRepository.getCelebrations();
-  }
-
-  async getMorningBrief() {
-    const metrics = await dashboardRepository.getMetrics();
-    const announcements = await dashboardRepository.getAnnouncements();
-    const briefText = await aiService.generateMorningBrief(metrics, announcements);
-    return {
-      brief: briefText,
-      metrics,
-    };
-  }
-
-  async getAIInsights(query?: string) {
-    const metrics = await dashboardRepository.getMetrics();
-    const insightsText = await aiService.generateHRInsights(
-      `Active employees: ${metrics.totalEmployees}, Present: ${metrics.presentToday}, Pending leaves: ${metrics.pendingLeaves}, Pending claims: ${metrics.pendingExpenses}`,
-      query
-    );
-    return {
-      insights: insightsText,
-    };
   }
 }
 

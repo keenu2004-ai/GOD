@@ -13,7 +13,7 @@ import { ProjectsPage } from './pages/ProjectsPage.js';
 import { AssetsPage } from './pages/RecruitmentPage.js';
 import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
 import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
-import { WeeklyPlannerPage, AIAssistantPage } from './pages/WeeklyPlannerPage.js';
+import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -61,8 +61,6 @@ const AppContent: React.FC = () => {
             return <PerformancePage />;
           case 'planner':
             return <WeeklyPlannerPage />;
-          case 'ai-assistant':
-            return <AIAssistantPage />;
           default:
             return <DashboardPage onNavigate={setActiveTab} />;
         }

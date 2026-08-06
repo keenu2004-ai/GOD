@@ -33,8 +33,6 @@ router.get('/dashboard/departments', authenticateToken, (req, res) => dashboardC
 router.get('/dashboard/payroll', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => dashboardController.getPayrollSummary(req, res));
 router.get('/dashboard/announcements', authenticateToken, (req, res) => dashboardController.getAnnouncements(req, res));
 router.get('/dashboard/celebrations', authenticateToken, (req, res) => dashboardController.getCelebrations(req, res));
-router.get('/dashboard/morning-brief', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => dashboardController.getMorningBrief(req, res));
-router.post('/dashboard/ai-insights', authenticateToken, (req, res) => dashboardController.getAIInsights(req, res));
 
 // 3. Employee Module Routes
 router.get('/employees', authenticateToken, (req, res) => employeeController.getAll(req, res));

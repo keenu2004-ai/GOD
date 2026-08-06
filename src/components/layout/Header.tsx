@@ -14,7 +14,7 @@ import { useAuth } from '../../contexts/AuthContext.js';
 import apiClient from '../../services/apiClient.js';
 import { NotificationItem } from '../../types/index.js';
 
-export const Header: React.FC<{ onOpenAiAssistant?: () => void }> = ({ onOpenAiAssistant }) => {
+export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const [time, setTime] = useState<string>('');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -81,15 +81,6 @@ export const Header: React.FC<{ onOpenAiAssistant?: () => void }> = ({ onOpenAiA
             className="w-full bg-slate-100 border-none rounded-md pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none"
           />
         </div>
-
-        {/* AI Assistant Quick Trigger */}
-        <button
-          onClick={onOpenAiAssistant}
-          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition-all"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-          <span>AI Insights</span>
-        </button>
 
         {/* Notifications Bell */}
         <div className="relative">

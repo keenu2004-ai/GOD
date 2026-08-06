@@ -39,8 +39,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
   const [payrollSummary, setPayrollSummary] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [celebrations, setCelebrations] = useState<any[]>([]);
-  const [morningBrief, setMorningBrief] = useState<string>('Loading executive brief...');
-  const [aiInsights, setAiInsights] = useState<string>('Loading AI analytics...');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -54,8 +52,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
           pRes,
           annRes,
           cRes,
-          bRes,
-          aiRes,
         ] = await Promise.all([
           apiClient.get('/dashboard/metrics'),
           apiClient.get('/dashboard/activity'),
@@ -63,8 +59,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
           apiClient.get('/dashboard/payroll'),
           apiClient.get('/dashboard/announcements'),
           apiClient.get('/dashboard/celebrations'),
-          apiClient.get('/dashboard/morning-brief'),
-          apiClient.post('/dashboard/ai-insights', {}),
         ]);
 
         if (mRes.data?.success) setMetrics(mRes.data.data);
@@ -73,8 +67,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
         if (pRes.data?.success) setPayrollSummary(pRes.data.data);
         if (annRes.data?.success) setAnnouncements(annRes.data.data);
         if (cRes.data?.success) setCelebrations(cRes.data.data);
-        if (bRes.data?.success) setMorningBrief(bRes.data.data.brief);
-        if (aiRes.data?.success) setAiInsights(aiRes.data.data.insights);
       } catch (err) {
         console.error('Failed to load database dashboard data:', err);
       } finally {
@@ -95,29 +87,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner: Executive Morning Brief AI Widget */}
-      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-xl p-6 shadow-lg relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-amber-300">
-            <Sparkles className="w-6 h-6 animate-pulse" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest font-mono">
-                AI EXECUTIVE MORNING BRIEF
-              </span>
-              <span className="text-[10px] text-emerald-300 font-mono bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">
-                POSTGRESQL LIVE DATA
-              </span>
-            </div>
-            <p className="text-sm text-slate-200 mt-2 leading-relaxed font-normal">
-              {morningBrief}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Metrics Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Employees */}
