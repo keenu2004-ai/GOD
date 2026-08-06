@@ -142,6 +142,7 @@ export const AttendancePage: React.FC = () => {
       const res = await attendanceService.punchIn(coords.lat, coords.lng, shiftCode);
       if (res?.success) {
         fetchStatusAndHistory();
+        window.dispatchEvent(new Event('attendance-updated'));
       } else {
         alert(res?.message || 'Failed to punch in');
       }
@@ -158,6 +159,7 @@ export const AttendancePage: React.FC = () => {
       const res = await attendanceService.punchOut(coords.lat, coords.lng);
       if (res?.success) {
         fetchStatusAndHistory();
+        window.dispatchEvent(new Event('attendance-updated'));
       } else {
         alert(res?.message || 'Failed to punch out');
       }

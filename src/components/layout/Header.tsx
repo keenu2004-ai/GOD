@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.js';
 import apiClient from '../../services/apiClient.js';
+import { attendanceService } from '../../services/attendanceService.js';
 import { NotificationItem } from '../../types/index.js';
 
 export const Header: React.FC = () => {
@@ -50,7 +51,93 @@ export const Header: React.FC = () => {
     fetchNotifs();
   }, []);
 
+  const [attendanceStatus, setAttendanceStatus] = useState<any>(null);
+  const [punching, setPunching] = useState<boolean>(false);
+  const [seconds, setSeconds] = useState<number>(0);
+  const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({ lat: 12.9716, lng: 77.5946 });
+
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const fetchAttendanceStatus = async () => {
+    try {
+      const res = await attendanceService.getMyStatus();
+      if (res?.success) {
+        setAttendanceStatus(res.data);
+        setSeconds(res.data?.currentWorkSeconds || 0);
+      }
+    } catch (e) {
+      console.error('Error fetching header attendance status:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendanceStatus();
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => console.log('Using default HQ coordinates')
+      );
+    }
+
+    const handleSync = () => fetchAttendanceStatus();
+    window.addEventListener('attendance-updated', handleSync);
+    return () => window.removeEventListener('attendance-updated', handleSync);
+  }, []);
+
+  // Live timer for active punch session
+  useEffect(() => {
+    let interval: any = null;
+    if (attendanceStatus?.record?.punch_in && !attendanceStatus?.record?.punch_out) {
+      interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [attendanceStatus]);
+
+  const handlePunchIn = async () => {
+    try {
+      setPunching(true);
+      const res = await attendanceService.punchIn(coords.lat, coords.lng, 'GENERAL');
+      if (res?.success) {
+        fetchAttendanceStatus();
+        window.dispatchEvent(new Event('attendance-updated'));
+      } else {
+        alert(res?.message || 'Failed to punch in');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to punch in');
+    } finally {
+      setPunching(false);
+    }
+  };
+
+  const handlePunchOut = async () => {
+    try {
+      setPunching(true);
+      const res = await attendanceService.punchOut(coords.lat, coords.lng);
+      if (res?.success) {
+        fetchAttendanceStatus();
+        window.dispatchEvent(new Event('attendance-updated'));
+      } else {
+        alert(res?.message || 'Failed to punch out');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to punch out');
+    } finally {
+      setPunching(false);
+    }
+  };
+
+  const formatTimer = (sec: number) => {
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const isCheckedIn = !!attendanceStatus?.record?.punch_in && !attendanceStatus?.record?.punch_out;
+  const isCheckedOut = !!attendanceStatus?.record?.punch_out;
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm text-slate-800">
@@ -70,16 +157,43 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Right: Search, AI Brief trigger, Notifications, User Menu */}
+      {/* Center/Right: Global Attendance Punch Widget */}
       <div className="flex items-center gap-3">
-        {/* Search Input */}
-        <div className="relative hidden lg:block w-72">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search employees, tasks, documents..."
-            className="w-full bg-slate-100 border-none rounded-md pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
+        <div className="hidden sm:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium">
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
+            <span className="font-bold text-slate-800 uppercase text-[11px]">
+              {isCheckedIn ? 'Checked In' : isCheckedOut ? 'Checked Out' : 'Not Checked In'}
+            </span>
+          </div>
+
+          {isCheckedIn && (
+            <span className="font-mono text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[11px] border border-emerald-200">
+              {formatTimer(seconds)}
+            </span>
+          )}
+
+          {!isCheckedIn && !isCheckedOut && (
+            <button
+              onClick={handlePunchIn}
+              disabled={punching}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{punching ? 'PUNCHING...' : 'PUNCH IN'}</span>
+            </button>
+          )}
+
+          {isCheckedIn && (
+            <button
+              onClick={handlePunchOut}
+              disabled={punching}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{punching ? 'PUNCHING...' : 'PUNCH OUT'}</span>
+            </button>
+          )}
         </div>
 
         {/* Notifications Bell */}
