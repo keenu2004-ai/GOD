@@ -1,0 +1,37 @@
+services:
+  # 1. Express Backend Web Service
+  - type: web
+    name: theiakshi-hrms-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://theiakshi-hrms-frontend.onrender.com
+      - key: CORS_ORIGIN
+        value: https://theiakshi-hrms-frontend.onrender.com
+
+  # 2. Vite Frontend Static Site (Served via Render Global CDN)
+  - type: web
+    name: theiakshi-hrms-frontend
+    env: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://theiakshi-hrms-backend.onrender.com/api/v1

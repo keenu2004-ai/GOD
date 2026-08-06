@@ -1,0 +1,87 @@
+import React from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { MainLayout } from './components/layout/MainLayout.js';
+import { LoginPage } from './pages/LoginPage.js';
+import { DashboardPage } from './pages/DashboardPage.js';
+import { EmployeesPage } from './pages/EmployeesPage.js';
+import { AttendancePage } from './pages/AttendancePage.js';
+import { LeavePage } from './pages/LeavePage.js';
+import { PayrollPage } from './pages/PayrollPage.js';
+import { ExpensesPage } from './pages/ExpensesPage.js';
+import { ProjectsPage } from './pages/ProjectsPage.js';
+import { RecruitmentPage, AssetsPage } from './pages/RecruitmentPage.js';
+import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
+import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
+import { WeeklyPlannerPage, AIAssistantPage } from './pages/WeeklyPlannerPage.js';
+
+const AppContent: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs text-slate-400 font-mono">Initializing THEIAKSHI ONE Enterprise Engine...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return (
+    <MainLayout>
+      {(activeTab, setActiveTab) => {
+        switch (activeTab) {
+          case 'dashboard':
+            return <DashboardPage onNavigate={setActiveTab} />;
+          case 'employees':
+            return <EmployeesPage />;
+          case 'attendance':
+            return <AttendancePage />;
+          case 'leave':
+            return <LeavePage />;
+          case 'payroll':
+            return <PayrollPage />;
+          case 'expenses':
+            return <ExpensesPage />;
+          case 'projects':
+            return <ProjectsPage />;
+          case 'recruitment':
+            return <RecruitmentPage />;
+          case 'assets':
+            return <AssetsPage />;
+          case 'helpdesk':
+            return <HelpdeskPage />;
+          case 'announcements':
+            return <AnnouncementsPage />;
+          case 'orgchart':
+            return <OrgChartPage />;
+          case 'performance':
+            return <PerformancePage />;
+          case 'planner':
+            return <WeeklyPlannerPage />;
+          case 'ai-assistant':
+            return <AIAssistantPage />;
+          default:
+            return <DashboardPage onNavigate={setActiveTab} />;
+        }
+      }}
+    </MainLayout>
+  );
+};
+
+export function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
+

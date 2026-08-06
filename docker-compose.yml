@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=theiakshi_hrms
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres_secure_pass_2026
+      - JWT_SECRET=theiakshi_enterprise_hrms_super_secret_jwt_key_2026
+      - REFRESH_SECRET=theiakshi_enterprise_hrms_refresh_secret_key_2026
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: theiakshi_postgres
+    environment:
+      POSTGRES_DB: theiakshi_hrms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secure_pass_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d theiakshi_hrms"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  postgres_data:

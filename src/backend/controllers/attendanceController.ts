@@ -1,0 +1,102 @@
+import { Request, Response } from 'express';
+import { attendanceService } from '../services/attendanceService.js';
+import { sendSuccess, sendError } from '../utils/response.js';
+
+export class AttendanceController {
+  async punchIn(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || req.body.employee_id;
+      const { latitude, longitude, shiftCode } = req.body;
+      const data = await attendanceService.punchIn(userId, latitude, longitude, shiftCode);
+      return res.json(sendSuccess(data, 'Punched in successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async punchOut(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || req.body.employee_id;
+      const { latitude, longitude } = req.body;
+      const data = await attendanceService.punchOut(userId, latitude, longitude);
+      return res.json(sendSuccess(data, 'Punched out successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async updateBreak(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || req.body.employee_id;
+      const { breakMinutes } = req.body;
+      const mins = parseInt(breakMinutes, 10) || 15;
+      const data = await attendanceService.updateBreak(userId, mins);
+      return res.json(sendSuccess(data, `Break recorded (+${mins} mins)`));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getMyStatus(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const data = await attendanceService.getMyStatus(userId);
+      return res.json(sendSuccess(data, 'Today attendance status retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getHistory(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const data = await attendanceService.getHistory(userId);
+      return res.json(sendSuccess(data, 'Attendance history retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getMonthlySummary(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const month = req.query.month ? parseInt(req.query.month as string, 10) : new Date().getMonth() + 1;
+      const year = req.query.year ? parseInt(req.query.year as string, 10) : new Date().getFullYear();
+      const data = await attendanceService.getMonthlySummary(userId, year, month);
+      return res.json(sendSuccess(data, 'Monthly attendance summary retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getLiveManagerDashboard(req: Request, res: Response) {
+    try {
+      const data = await attendanceService.getLiveManagerDashboard();
+      return res.json(sendSuccess(data, 'Live manager attendance dashboard retrieved'));
+    } catch (error: any) {
+      return res.status(500).json(sendError(error.message));
+    }
+  }
+
+  async getAnalytics(req: Request, res: Response) {
+    try {
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const data = await attendanceService.getAnalytics(startDate, endDate);
+      return res.json(sendSuccess(data, 'Attendance analytics retrieved'));
+    } catch (error: any) {
+      return res.status(500).json(sendError(error.message));
+    }
+  }
+
+  async getTodayAll(req: Request, res: Response) {
+    try {
+      const data = await attendanceService.getLiveManagerDashboard();
+      return res.json(sendSuccess(data.todayRecords, 'Today all employees attendance retrieved'));
+    } catch (error: any) {
+      return res.status(500).json(sendError(error.message));
+    }
+  }
+}
+
+export const attendanceController = new AttendanceController();

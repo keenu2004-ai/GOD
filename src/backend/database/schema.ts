@@ -1,0 +1,346 @@
+import dbService from './db.js';
+
+export async function initializeSchema() {
+  await dbService.query(`
+    CREATE TABLE IF NOT EXISTS branches (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      city VARCHAR(100) NOT NULL,
+      state VARCHAR(100) NOT NULL,
+      country VARCHAR(100) DEFAULT 'India',
+      timezone VARCHAR(50) DEFAULT 'Asia/Kolkata',
+      address TEXT NOT NULL,
+      latitude NUMERIC(10, 6) DEFAULT 12.971598,
+      longitude NUMERIC(10, 6) DEFAULT 77.594566,
+      geofence_radius_meters INTEGER DEFAULT 500,
+      is_headquarters BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS departments (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      head_employee_id INTEGER,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS roles (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(50) NOT NULL UNIQUE,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employees (
+      id SERIAL PRIMARY KEY,
+      employee_code VARCHAR(50) NOT NULL UNIQUE,
+      first_name VARCHAR(100) NOT NULL,
+      last_name VARCHAR(100) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      phone VARCHAR(20) NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      role VARCHAR(50) NOT NULL DEFAULT 'EMPLOYEE',
+      department_id INTEGER REFERENCES departments(id),
+      branch_id INTEGER REFERENCES branches(id),
+      designation VARCHAR(100) NOT NULL,
+      joining_date DATE NOT NULL,
+      salary NUMERIC(12, 2) NOT NULL DEFAULT 50000.00,
+      bank_account VARCHAR(50),
+      ifsc_code VARCHAR(20),
+      pan_number VARCHAR(20),
+      aadhaar_number VARCHAR(20),
+      emergency_contact_name VARCHAR(100),
+      emergency_contact_phone VARCHAR(20),
+      reporting_manager_id INTEGER REFERENCES employees(id),
+      avatar_url TEXT,
+      status VARCHAR(20) DEFAULT 'ACTIVE',
+      is_deleted BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS attendance (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      date DATE NOT NULL,
+      punch_in TIMESTAMP,
+      punch_out TIMESTAMP,
+      punch_in_lat NUMERIC(10, 6),
+      punch_in_lng NUMERIC(10, 6),
+      punch_out_lat NUMERIC(10, 6),
+      punch_out_lng NUMERIC(10, 6),
+      work_hours NUMERIC(4, 2) DEFAULT 0.0,
+      break_duration_mins INTEGER DEFAULT 0,
+      shift_name VARCHAR(50) DEFAULT 'General Shift (9 AM - 6 PM)',
+      is_late BOOLEAN DEFAULT false,
+      is_overtime BOOLEAN DEFAULT false,
+      status VARCHAR(20) DEFAULT 'PRESENT',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_types (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      code VARCHAR(20) NOT NULL UNIQUE,
+      color VARCHAR(20) DEFAULT '#3B82F6',
+      days_allowed INTEGER NOT NULL DEFAULT 12,
+      is_carry_forward BOOLEAN DEFAULT true
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_applications (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      total_days NUMERIC(4, 1) NOT NULL,
+      is_half_day BOOLEAN DEFAULT false,
+      half_day_session VARCHAR(20),
+      reason TEXT NOT NULL,
+      emergency_contact VARCHAR(50),
+      attachment_url TEXT,
+      status VARCHAR(30) DEFAULT 'MANAGER_PENDING',
+      approver_id INTEGER REFERENCES employees(id),
+      rejection_reason TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_balances (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      total_allocated NUMERIC(5, 1) NOT NULL DEFAULT 12,
+      used_days NUMERIC(5, 1) DEFAULT 0,
+      remaining_days NUMERIC(5, 1) NOT NULL DEFAULT 12,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, leave_type_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS holidays (
+      id SERIAL PRIMARY KEY,
+      branch_id INTEGER REFERENCES branches(id),
+      name VARCHAR(255) NOT NULL,
+      date DATE NOT NULL,
+      type VARCHAR(50) DEFAULT 'NATIONAL',
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER REFERENCES employees(id),
+      action VARCHAR(100) NOT NULL,
+      module VARCHAR(50) NOT NULL,
+      details TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payrolls (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      month VARCHAR(20) NOT NULL,
+      year INTEGER NOT NULL,
+      basic_salary NUMERIC(12, 2) NOT NULL,
+      hra NUMERIC(12, 2) NOT NULL,
+      conveyance NUMERIC(12, 2) NOT NULL,
+      allowances NUMERIC(12, 2) NOT NULL,
+      gross_salary NUMERIC(12, 2) NOT NULL,
+      pf_deduction NUMERIC(12, 2) NOT NULL,
+      esi_deduction NUMERIC(12, 2) NOT NULL,
+      tds_deduction NUMERIC(12, 2) NOT NULL,
+      net_salary NUMERIC(12, 2) NOT NULL,
+      payment_status VARCHAR(20) DEFAULT 'PAID',
+      payment_date DATE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS expenses (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      title VARCHAR(255) NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      amount NUMERIC(12, 2) NOT NULL,
+      date DATE NOT NULL,
+      description TEXT,
+      receipt_url TEXT,
+      status VARCHAR(20) DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS projects (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      description TEXT,
+      client_name VARCHAR(255) NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      budget NUMERIC(14, 2) NOT NULL,
+      status VARCHAR(20) DEFAULT 'IN_PROGRESS',
+      progress INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_members (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      role VARCHAR(50) DEFAULT 'DEVELOPER',
+      UNIQUE(project_id, employee_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS tasks (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      assigned_to INTEGER REFERENCES employees(id),
+      due_date DATE NOT NULL,
+      priority VARCHAR(20) DEFAULT 'MEDIUM',
+      status VARCHAR(20) DEFAULT 'TODO',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS recruitments (
+      id SERIAL PRIMARY KEY,
+      job_title VARCHAR(255) NOT NULL,
+      department_id INTEGER REFERENCES departments(id),
+      openings INTEGER NOT NULL DEFAULT 1,
+      experience_required VARCHAR(50) NOT NULL,
+      salary_range VARCHAR(100) NOT NULL,
+      status VARCHAR(20) DEFAULT 'OPEN',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS candidates (
+      id SERIAL PRIMARY KEY,
+      recruitment_id INTEGER NOT NULL REFERENCES recruitments(id) ON DELETE CASCADE,
+      candidate_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      phone VARCHAR(50) NOT NULL,
+      resume_url TEXT,
+      status VARCHAR(50) DEFAULT 'APPLIED',
+      interview_date TIMESTAMP,
+      feedback TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS assets (
+      id SERIAL PRIMARY KEY,
+      asset_name VARCHAR(255) NOT NULL,
+      asset_code VARCHAR(50) NOT NULL UNIQUE,
+      category VARCHAR(100) NOT NULL,
+      serial_number VARCHAR(100) NOT NULL,
+      assigned_to_employee_id INTEGER REFERENCES employees(id),
+      purchase_date DATE NOT NULL,
+      value NUMERIC(12, 2) NOT NULL,
+      status VARCHAR(20) DEFAULT 'ALLOCATED',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      title VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      type VARCHAR(20) DEFAULT 'INFO',
+      is_read BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS documents (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      title VARCHAR(255) NOT NULL,
+      category VARCHAR(100) NOT NULL,
+      file_url TEXT NOT NULL,
+      uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS timesheets (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      task_id INTEGER REFERENCES tasks(id),
+      date DATE NOT NULL,
+      hours_spent NUMERIC(4, 2) NOT NULL,
+      description TEXT NOT NULL,
+      status VARCHAR(20) DEFAULT 'APPROVED',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS helpdesk_tickets (
+      id SERIAL PRIMARY KEY,
+      ticket_code VARCHAR(50) NOT NULL UNIQUE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      category VARCHAR(50) NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      description TEXT NOT NULL,
+      priority VARCHAR(20) DEFAULT 'MEDIUM',
+      status VARCHAR(20) DEFAULT 'OPEN',
+      assigned_to INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS celebrations (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      type VARCHAR(20) NOT NULL,
+      event_date DATE NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      message TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS announcements (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      category VARCHAR(50) DEFAULT 'GENERAL',
+      is_pinned BOOLEAN DEFAULT false,
+      posted_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS performance_reviews (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      reviewer_id INTEGER NOT NULL REFERENCES employees(id),
+      review_period VARCHAR(50) NOT NULL,
+      rating NUMERIC(3, 1) NOT NULL,
+      feedback TEXT NOT NULL,
+      goals TEXT,
+      status VARCHAR(20) DEFAULT 'COMPLETED',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS weekly_planners (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      week_start_date DATE NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      priority VARCHAR(20) DEFAULT 'MEDIUM',
+      status VARCHAR(20) DEFAULT 'PENDING',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Create View for backward compatibility with 'leaves'
+    CREATE OR REPLACE VIEW leaves AS SELECT * FROM leave_applications;
+
+    -- Create Indexes for performance
+    CREATE INDEX IF NOT EXISTS idx_emp_code ON employees(employee_code);
+    CREATE INDEX IF NOT EXISTS idx_emp_email ON employees(email);
+    CREATE INDEX IF NOT EXISTS idx_emp_dept ON employees(department_id);
+    CREATE INDEX IF NOT EXISTS idx_emp_branch ON employees(branch_id);
+    CREATE INDEX IF NOT EXISTS idx_att_emp_date ON attendance(employee_id, date);
+    CREATE INDEX IF NOT EXISTS idx_leave_emp ON leave_applications(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_leave_status ON leave_applications(status);
+    CREATE INDEX IF NOT EXISTS idx_payroll_emp_year_month ON payrolls(employee_id, year, month);
+    CREATE INDEX IF NOT EXISTS idx_tasks_proj ON tasks(project_id);
+    CREATE INDEX IF NOT EXISTS idx_notif_emp ON notifications(employee_id);
+  `);
+}
+
