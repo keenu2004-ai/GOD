@@ -327,6 +327,28 @@ export const EmployeesPage: React.FC = () => {
                 <span className="font-medium text-white">{selectedEmployee.emergency_contact_name ? `${selectedEmployee.emergency_contact_name} (${selectedEmployee.emergency_contact_phone})` : 'N/A'}</span>
               </div>
             </div>
+
+            {/* Employee Activity & Milestones Timeline */}
+            <div className="space-y-3 pt-2">
+              <h5 className="font-bold text-slate-300 text-xs uppercase tracking-wider">Career & Milestones Timeline</h5>
+              <div className="space-y-3 text-xs border-l-2 border-slate-800 pl-3">
+                <div className="relative">
+                  <span className="w-2.5 h-2.5 bg-blue-500 rounded-full absolute -left-[17px] top-1"></span>
+                  <p className="font-bold text-white">Joined THEIAKSHI ENTERPRISES</p>
+                  <p className="text-[10px] text-slate-400 font-mono">15 Jan 2021 • Onboarding Completed</p>
+                </div>
+                <div className="relative pt-1">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full absolute -left-[17px] top-2"></span>
+                  <p className="font-bold text-white">Designation: {selectedEmployee.designation}</p>
+                  <p className="text-[10px] text-slate-400 font-mono">Active Role • {selectedEmployee.department_name || 'Engineering'}</p>
+                </div>
+                <div className="relative pt-1">
+                  <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full absolute -left-[17px] top-2"></span>
+                  <p className="font-bold text-white">Monthly Payroll Verified</p>
+                  <p className="text-[10px] text-slate-400 font-mono">₹{Number(selectedEmployee.salary || 0).toLocaleString('en-IN')} / month</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

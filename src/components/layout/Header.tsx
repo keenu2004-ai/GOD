@@ -210,24 +210,36 @@ export const Header: React.FC = () => {
             )}
           </button>
 
-          {/* Notifications Dropdown */}
+          {/* Smart Notifications Dropdown */}
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl p-3 z-50 text-slate-800">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Enterprise Notifications</span>
-                <span className="text-[10px] text-blue-600 font-bold">{unreadCount} unread</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Notifications</span>
+                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                </div>
+                <button
+                  onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))}
+                  className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold uppercase tracking-tight"
+                >
+                  Mark All Read
+                </button>
               </div>
               <div className="max-h-64 overflow-y-auto mt-2 space-y-2">
                 {notifications.length === 0 ? (
-                  <p className="text-xs text-slate-500 text-center py-4">No notifications</p>
+                  <p className="text-xs text-slate-500 text-center py-4">No new notifications</p>
                 ) : (
                   notifications.map((n) => (
-                    <div key={n.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-                      <div className="flex items-center justify-between text-slate-900 font-semibold">
-                        <span>{n.title}</span>
-                        <span className="text-[10px] text-slate-400">Just now</span>
+                    <div
+                      key={n.id}
+                      onClick={() => setNotifications((prev) => prev.map((item) => item.id === n.id ? { ...item, is_read: true } : item))}
+                      className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${n.is_read ? 'bg-slate-50 border-slate-200 opacity-75' : 'bg-blue-50/50 border-blue-200 font-semibold'}`}
+                    >
+                      <div className="flex items-center justify-between text-slate-900">
+                        <span className="font-bold">{n.title}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Just now</span>
                       </div>
-                      <p className="text-slate-600 text-[11px] mt-1">{n.message}</p>
+                      <p className="text-slate-600 text-[11px] mt-1 font-normal">{n.message}</p>
                     </div>
                   ))
                 )}
