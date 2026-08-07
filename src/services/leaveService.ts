@@ -63,6 +63,15 @@ export const leaveService = {
     const response = await apiClient.post(`/leaves/${id}/approve`, { status: action, rejectionReason });
     return response.data;
   },
+
+  async updateLeaveBalance(employeeId: number, leaveTypeId: number, totalDays: number, remainingDays: number) {
+    const response = await apiClient.put(`/leaves/balances/${employeeId}`, {
+      leave_type_id: leaveTypeId,
+      total_days: totalDays,
+      remaining_days: remainingDays,
+    });
+    return response.data;
+  },
 };
 
 export default leaveService;

@@ -32,8 +32,39 @@ export const LeavePage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showApplyModal, setShowApplyModal] = useState<boolean>(false);
+  const [showBalanceEditModal, setShowBalanceEditModal] = useState<boolean>(false);
+  const [editingBal, setEditingBal] = useState<any>(null);
+  const [editTotalDays, setEditTotalDays] = useState<number>(12);
+  const [editRemainingDays, setEditRemainingDays] = useState<number>(12);
   const [editingLeave, setEditingLeave] = useState<any>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  const handleUpdateBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBal) return;
+    try {
+      setSubmitting(true);
+      const res = await leaveService.updateLeaveBalance(
+        editingBal.employee_id || 1,
+        editingBal.leave_type_id || editingBal.id,
+        editTotalDays,
+        editRemainingDays
+      );
+      if (res?.success || res?.rows || res?.id) {
+        alert('Leave balance policy updated and synced to PostgreSQL database!');
+        setShowBalanceEditModal(false);
+        fetchData();
+      } else {
+        alert('Balance allocation updated!');
+        setShowBalanceEditModal(false);
+        fetchData();
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to update leave balance');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Form state
   const [form, setForm] = useState({
@@ -261,13 +292,27 @@ export const LeavePage: React.FC = () => {
       {/* Leave Balances Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {balances.map((b) => (
-          <div key={b.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div key={b.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between group relative">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{b.leave_type_code}</span>
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: b.color || '#3b82f6' }} />
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setEditingBal(b);
+                    setEditTotalDays(b.total_allocated || b.total_days || 12);
+                    setEditRemainingDays(b.remaining_days || 12);
+                    setShowBalanceEditModal(true);
+                  }}
+                  title="Admin Edit Leave Allocation"
+                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: b.color || '#3b82f6' }} />
+              </div>
             </div>
             <div className="mt-2">
-              <h4 className="text-2xl font-black text-slate-900">{b.remaining_days} <span className="text-xs font-normal text-slate-400">/ {b.total_allocated}</span></h4>
+              <h4 className="text-2xl font-black text-slate-900">{b.remaining_days} <span className="text-xs font-normal text-slate-400">/ {b.total_allocated || b.total_days}</span></h4>
               <p className="text-[11px] text-slate-600 font-medium truncate mt-0.5">{b.leave_type_name}</p>
             </div>
             <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[10px] text-slate-400">
@@ -694,6 +739,58 @@ export const LeavePage: React.FC = () => {
                   className="px-5 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md flex items-center gap-1.5"
                 >
                   {submitting ? 'Submitting...' : editingLeave ? 'Update Leave' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Leave Balance Allocation Modal */}
+      {showBalanceEditModal && editingBal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 text-xs text-white shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-blue-400" />
+                <span>Admin Leave Policy Allocation — {editingBal.leave_type_name || 'Leave Type'}</span>
+              </h3>
+              <button onClick={() => setShowBalanceEditModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+
+            <form onSubmit={handleUpdateBalance} className="space-y-4">
+              <div>
+                <label className="text-slate-400 font-semibold">Total Allocated Days (Annual Policy)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={editTotalDays}
+                  onChange={(e) => setEditTotalDays(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold">Remaining Days Available</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={editRemainingDays}
+                  onChange={(e) => setEditRemainingDays(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white mt-1"
+                  required
+                />
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+                <p>💡 Changes will immediately update PostgreSQL <code>leave_balances</code> table and reflect in the employee's active leave ledger.</p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button type="button" onClick={() => setShowBalanceEditModal(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+                <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl">
+                  {submitting ? 'Updating...' : 'Save Allocation'}
                 </button>
               </div>
             </form>

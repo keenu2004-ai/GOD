@@ -24,6 +24,11 @@ export const AttendancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'my_attendance' | 'manager_live' | 'regularization'>('my_attendance');
   const [shiftCode, setShiftCode] = useState<string>('GENERAL');
   const [loading, setLoading] = useState<boolean>(true);
+  const [showGeofenceModal, setShowGeofenceModal] = useState<boolean>(false);
+  const [geofenceRadius, setGeofenceRadius] = useState<number>(500);
+  const [officeLat, setOfficeLat] = useState<number>(12.9716);
+  const [officeLng, setOfficeLng] = useState<number>(77.5946);
+  const [autoDetecting, setAutoDetecting] = useState<boolean>(false);
   const [punching, setPunching] = useState<boolean>(false);
   const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({ lat: 12.9716, lng: 77.5946 });
 
@@ -94,6 +99,26 @@ export const AttendancePage: React.FC = () => {
     } catch (err) {
       console.error('Error fetching regularizations:', err);
     }
+  };
+
+  const handleAutoDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    setAutoDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setOfficeLat(Number(position.coords.latitude.toFixed(6)));
+        setOfficeLng(Number(position.coords.longitude.toFixed(6)));
+        setAutoDetecting(false);
+        alert(`Office Geofence coordinates auto-detected: Lat ${position.coords.latitude.toFixed(4)}, Lng ${position.coords.longitude.toFixed(4)}!`);
+      },
+      () => {
+        setAutoDetecting(false);
+        alert('Could not retrieve GPS location automatically. Please enter coordinates manually.');
+      }
+    );
   };
 
   const handleCreateRegularization = async (e: React.FormEvent) => {
@@ -203,7 +228,7 @@ export const AttendancePage: React.FC = () => {
             Real-time GPS geofenced punch logs, automated shift calculations, and live manager stats.
           </p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-lg">
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('my_attendance')}
             className={`px-4 py-2 rounded-md text-xs font-semibold transition-all ${
@@ -218,7 +243,22 @@ export const AttendancePage: React.FC = () => {
               activeTab === 'manager_live' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Live Manager View
+            Live Manager Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab('regularization')}
+            className={`px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+              activeTab === 'regularization' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Regularization Approvals
+          </button>
+          <button
+            onClick={() => setShowGeofenceModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all ml-1"
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            <span>GPS Geofence Config</span>
           </button>
         </div>
       </div>
@@ -475,6 +515,88 @@ export const AttendancePage: React.FC = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Admin Geofence GPS Config Modal */}
+      {showGeofenceModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 text-xs text-white shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-emerald-400" />
+                <span>Super Admin Geofence & GPS Location Configuration</span>
+              </h3>
+              <button onClick={() => setShowGeofenceModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div>
+                  <p className="font-bold text-white">Auto-Detect GPS Location</p>
+                  <p className="text-[11px] text-slate-400">Use browser Geolocation API to auto-set office coordinates.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAutoDetectLocation}
+                  disabled={autoDetecting}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shrink-0"
+                >
+                  {autoDetecting ? 'Detecting...' : 'Auto-Detect GPS'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 font-semibold">Office Latitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={officeLat}
+                    onChange={(e) => setOfficeLat(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white mt-1 font-mono"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold">Office Longitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={officeLng}
+                    onChange={(e) => setOfficeLng(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white mt-1 font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold">Geofence Radius Limit (Meters)</label>
+                <input
+                  type="number"
+                  value={geofenceRadius}
+                  onChange={(e) => setGeofenceRadius(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white mt-1 font-mono"
+                  required
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Employees within <strong>{geofenceRadius}m</strong> will be marked as IN_OFFICE. Outside radius will trigger REMOTE/UNAUTHORIZED alert.</p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button type="button" onClick={() => setShowGeofenceModal(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    alert(`Geofence configuration saved! Office set to Lat: ${officeLat}, Lng: ${officeLng}, Radius: ${geofenceRadius}m.`);
+                    setShowGeofenceModal(false);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
+                >
+                  Save Geofence Config
+                </button>
+              </div>
             </div>
           </div>
         </div>

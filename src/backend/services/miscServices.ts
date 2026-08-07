@@ -117,8 +117,8 @@ export class MiscService {
   }
 
   // Assets
-  async getAllAssets() { return await assetRepository.getAllAssets(); }
-  async createAsset(data: any) { return await assetRepository.createAsset(data); }
+  async getAllAssets(empId?: number) { return await assetRepository.getAll(empId); }
+  async createAsset(data: any) { return await assetRepository.create(data); }
 
   // Notifications
   async getNotifications(empId: number) { return await notificationRepository.getByEmployee(empId); }

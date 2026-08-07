@@ -245,6 +245,55 @@ export class CompanyDocumentRepository {
   }
 }
 
+export class AssetRepository {
+  async getAll(employeeId?: number) {
+    try {
+      const conditions: string[] = [];
+      const params: any[] = [];
+      let idx = 1;
+
+      if (employeeId) {
+        conditions.push(`a.assigned_to = $${idx}`);
+        params.push(employeeId);
+        idx++;
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const sql = `
+        SELECT a.*, e.first_name, e.last_name, e.employee_code, e.avatar_url
+        FROM assets a
+        LEFT JOIN employees e ON a.assigned_to = e.id
+        ${whereClause}
+        ORDER BY a.id DESC
+      `;
+      const res = await dbService.query(sql, params);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async create(data: any) {
+    const res = await dbService.query(
+      `INSERT INTO assets (name, serial_number, category, cost, purchase_date, warranty_expiry, condition, assigned_to, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [
+        data.name,
+        data.serial_number || `SN-${Math.floor(100000 + Math.random() * 900000)}`,
+        data.category || 'LAPTOP',
+        data.cost || 50000,
+        data.purchase_date || new Date().toISOString().split('T')[0],
+        data.warranty_expiry || null,
+        data.condition || 'EXCELLENT',
+        data.assigned_to || null,
+        data.assigned_to ? 'ALLOCATED' : 'AVAILABLE',
+      ]
+    );
+    return res.rows[0];
+  }
+}
+
+export const assetRepository = new AssetRepository();
 export const helpdeskRepository = new HelpdeskRepository();
 export const branchRepository = new BranchRepository();
 export const documentRepository = new DocumentRepository();
