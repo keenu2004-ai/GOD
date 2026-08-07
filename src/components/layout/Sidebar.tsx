@@ -38,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'attendance-analytics', label: 'Attendance Analytics', icon: BarChart2 },
     { id: 'leave', label: 'Leave Management', icon: CalendarCheck2 },
     { id: 'holidays', label: 'Holidays & Calendar', icon: Calendar },
+    { id: 'leave-analytics', label: 'Leave Analytics', icon: BarChart2 },
     { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Tasks', icon: FolderGit2 },

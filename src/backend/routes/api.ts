@@ -16,6 +16,7 @@ import { leavePolicyController } from '../controllers/leavePolicyController.js';
 import { leaveWorkflowController } from '../controllers/leaveWorkflowController.js';
 import { leaveBalanceEngineController } from '../controllers/leaveBalanceEngineController.js';
 import { holidayEngineController } from '../controllers/holidayEngineController.js';
+import { leaveAnalyticsController } from '../controllers/leaveAnalyticsController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -164,6 +165,15 @@ router.get('/holidays/optional/my', authenticateToken, (req, res) => holidayEngi
 router.get('/company-events', authenticateToken, (req, res) => holidayEngineController.getCompanyEvents(req, res));
 router.post('/company-events', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => holidayEngineController.createCompanyEvent(req, res));
 router.get('/calendar/unified-feed', authenticateToken, (req, res) => holidayEngineController.getUnifiedCalendarFeed(req, res));
+
+// 5e. Leave Analytics & Business Intelligence Routes
+router.get('/analytics/leave/kpis', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getKPIs(req, res));
+router.get('/analytics/leave/trend', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getTrend(req, res));
+router.get('/analytics/leave/departments', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getDepartments(req, res));
+router.get('/analytics/leave/branches', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getBranches(req, res));
+router.get('/analytics/leave/heatmap', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getHeatmap(req, res));
+router.get('/analytics/leave/forecast', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getForecast(req, res));
+router.post('/analytics/leave/log-export', authenticateToken, (req, res) => leaveAnalyticsController.logExport(req, res));
 
 // Legacy compat leave applications
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));
