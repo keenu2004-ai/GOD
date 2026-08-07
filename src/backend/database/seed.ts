@@ -236,7 +236,26 @@ export async function seedDatabase() {
     (4, '2026-08-03', 'Ship Geofence Punch & Leave APIs', 'Test end-to-end REST endpoints with unit validation', 'CRITICAL', 'DONE');
   `);
 
-  // 21. Reset PostgreSQL Serial Sequences
+  // 21. System Config & Geofence Settings
+  await safeQuery('System Config', `
+    INSERT INTO system_config (id, company_name, shift_start_time, shift_end_time, grace_minutes, half_day_threshold_time, auto_deduct_leave_for_two_half_days, currency) VALUES
+    ('MAIN', 'THEIAKSHI ENTERPRISES', '09:00', '18:00', 15, '11:30', true, 'INR')
+    ON CONFLICT (id) DO NOTHING;
+  `);
+
+  await safeQuery('Geofence Settings', `
+    INSERT INTO geofence_settings (id, office_name, latitude, longitude, radius_meters, enforce_strict_geofence) VALUES
+    ('HQ', 'THEIAKSHI HQ - Bengaluru', 12.9716, 77.5946, 500, true)
+    ON CONFLICT (id) DO NOTHING;
+  `);
+
+  await safeQuery('Audit Logs', `
+    INSERT INTO audit_logs (employee_id, action, module, details, ip_address) VALUES
+    (1, 'SYSTEM_INIT', 'SYSTEM', 'System configuration and database schema initialized', '127.0.0.1'),
+    (2, 'LEAVE_APPROVAL', 'LEAVE', 'Approved 1 day casual leave for Sneha Gupta', '192.168.1.105');
+  `);
+
+  // 22. Reset PostgreSQL Serial Sequences
   await safeQuery('Reset Sequences', `
     SELECT setval(pg_get_serial_sequence('branches', 'id'), COALESCE((SELECT MAX(id) FROM branches), 1));
     SELECT setval(pg_get_serial_sequence('departments', 'id'), COALESCE((SELECT MAX(id) FROM departments), 1));

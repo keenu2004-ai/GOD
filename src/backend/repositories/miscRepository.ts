@@ -145,9 +145,84 @@ export class PlannerRepository {
   }
 }
 
+export class SystemConfigRepository {
+  async getConfig() {
+    const sql = `SELECT * FROM system_config WHERE id = 'MAIN'`;
+    const res = await dbService.query(sql);
+    if (res.rows.length === 0) {
+      return {
+        id: 'MAIN',
+        company_name: 'THEIAKSHI ENTERPRISES',
+        shift_start_time: '09:00',
+        shift_end_time: '18:00',
+        grace_minutes: 15,
+        half_day_threshold_time: '11:30',
+        auto_deduct_leave_for_two_half_days: true,
+        currency: 'INR',
+      };
+    }
+    return res.rows[0];
+  }
+
+  async updateConfig(data: any) {
+    const res = await dbService.query(
+      `INSERT INTO system_config (id, company_name, shift_start_time, shift_end_time, grace_minutes, half_day_threshold_time, auto_deduct_leave_for_two_half_days, currency)
+       VALUES ('MAIN', $1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (id) DO UPDATE SET
+         company_name = EXCLUDED.company_name,
+         shift_start_time = EXCLUDED.shift_start_time,
+         shift_end_time = EXCLUDED.shift_end_time,
+         grace_minutes = EXCLUDED.grace_minutes,
+         half_day_threshold_time = EXCLUDED.half_day_threshold_time,
+         auto_deduct_leave_for_two_half_days = EXCLUDED.auto_deduct_leave_for_two_half_days,
+         currency = EXCLUDED.currency,
+         updated_at = NOW()
+       RETURNING *`,
+      [
+        data.company_name || 'THEIAKSHI ENTERPRISES',
+        data.shift_start_time || '09:00',
+        data.shift_end_time || '18:00',
+        data.grace_minutes || 15,
+        data.half_day_threshold_time || '11:30',
+        data.auto_deduct_leave_for_two_half_days ?? true,
+        data.currency || 'INR',
+      ]
+    );
+    return res.rows[0];
+  }
+}
+
+export class AuditLogRepository {
+  async getAuditLogs(limit: number = 50) {
+    const sql = `
+      SELECT a.*, e.first_name, e.last_name, e.email, e.role
+      FROM audit_logs a
+      LEFT JOIN employees e ON a.employee_id = e.id
+      ORDER BY a.id DESC LIMIT $1
+    `;
+    const res = await dbService.query(sql, [limit]);
+    return res.rows;
+  }
+
+  async logAction(employeeId: number | null, action: string, module: string, details: string, ipAddress?: string) {
+    try {
+      const res = await dbService.query(
+        `INSERT INTO audit_logs (employee_id, action, module, details, ip_address)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [employeeId || null, action, module, details, ipAddress || '127.0.0.1']
+      );
+      return res.rows[0];
+    } catch (e) {
+      console.log(`[AuditLog Fallback] ${action}: ${details}`);
+    }
+  }
+}
+
 export const helpdeskRepository = new HelpdeskRepository();
 export const branchRepository = new BranchRepository();
 export const documentRepository = new DocumentRepository();
 export const timesheetRepository = new TimesheetRepository();
 export const performanceRepository = new PerformanceRepository();
 export const plannerRepository = new PlannerRepository();
+export const systemConfigRepository = new SystemConfigRepository();
+export const auditLogRepository = new AuditLogRepository();

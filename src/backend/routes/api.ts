@@ -124,4 +124,11 @@ router.get('/planner', authenticateToken, (req, res) => miscController.getWeekly
 router.post('/planner', authenticateToken, (req, res) => miscController.createWeeklyPlannerTask(req, res));
 router.put('/planner/:id/status', authenticateToken, (req, res) => miscController.updatePlannerStatus(req, res));
 
+// 19. System Config & Settings
+router.get('/config', authenticateToken, (req, res) => miscController.getConfig(req, res));
+router.put('/config', authenticateToken, authorizeRoles('ADMIN'), (req, res) => miscController.updateConfig(req, res));
+
+// 20. Audit Logs
+router.get('/audit-logs', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => miscController.getAuditLogs(req, res));
+
 export default router;

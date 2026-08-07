@@ -14,6 +14,8 @@ import {
   timesheetRepository,
   performanceRepository,
   plannerRepository,
+  systemConfigRepository,
+  auditLogRepository,
 } from '../repositories/miscRepository.js';
 
 import { payrollRepository } from '../repositories/payrollRepository.js';
@@ -160,6 +162,15 @@ export class MiscService {
     return await plannerRepository.create(data.employee_id, data.week_start_date, data.title, data.description, data.priority);
   }
   async updatePlannerStatus(id: number, status: string) { return await plannerRepository.updateStatus(id, status); }
+  // System Config
+  async getConfig() { return await systemConfigRepository.getConfig(); }
+  async updateConfig(data: any) { return await systemConfigRepository.updateConfig(data); }
+
+  // Audit Logs
+  async getAuditLogs(limit?: number) { return await auditLogRepository.getAuditLogs(limit); }
+  async logAction(empId: number | null, action: string, module: string, details: string, ip?: string) {
+    return await auditLogRepository.logAction(empId, action, module, details, ip);
+  }
 }
 
 export const payrollService = new PayrollService();

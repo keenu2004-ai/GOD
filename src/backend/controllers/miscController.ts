@@ -199,6 +199,32 @@ export class MiscController {
       return res.json(sendSuccess(data, 'Planner status updated'));
     } catch (e: any) { return res.status(400).json(sendError(e.message)); }
   }
+
+  // System Config
+  async getConfig(req: Request, res: Response) {
+    try {
+      const data = await miscService.getConfig();
+      return res.json(sendSuccess(data, 'System configuration retrieved'));
+    } catch (e: any) { return res.status(500).json(sendError(e.message)); }
+  }
+
+  async updateConfig(req: Request, res: Response) {
+    try {
+      const data = await miscService.updateConfig(req.body);
+      const user = (req as any).user;
+      await miscService.logAction(user?.id || 1, 'UPDATE_CONFIG', 'SETTINGS', 'Updated shift rules and grace period', req.ip);
+      return res.json(sendSuccess(data, 'System configuration updated'));
+    } catch (e: any) { return res.status(400).json(sendError(e.message)); }
+  }
+
+  // Audit Logs
+  async getAuditLogs(req: Request, res: Response) {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+      const data = await miscService.getAuditLogs(limit);
+      return res.json(sendSuccess(data, 'Audit logs retrieved'));
+    } catch (e: any) { return res.status(500).json(sendError(e.message)); }
+  }
 }
 
 export const miscController = new MiscController();

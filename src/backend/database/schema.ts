@@ -251,6 +251,39 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS system_config (
+      id VARCHAR(50) PRIMARY KEY DEFAULT 'MAIN',
+      company_name VARCHAR(255) DEFAULT 'THEIAKSHI ENTERPRISES',
+      shift_start_time VARCHAR(10) DEFAULT '09:00',
+      shift_end_time VARCHAR(10) DEFAULT '18:00',
+      grace_minutes INT DEFAULT 15,
+      half_day_threshold_time VARCHAR(10) DEFAULT '11:30',
+      auto_deduct_leave_for_two_half_days BOOLEAN DEFAULT TRUE,
+      require_gps_clock_in BOOLEAN DEFAULT TRUE,
+      currency VARCHAR(10) DEFAULT 'INR',
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS geofence_settings (
+      id VARCHAR(50) PRIMARY KEY DEFAULT 'HQ',
+      office_name VARCHAR(255) DEFAULT 'THEIAKSHI HQ - Bengaluru',
+      latitude DECIMAL(10, 6) DEFAULT 12.9716,
+      longitude DECIMAL(10, 6) DEFAULT 77.5946,
+      radius_meters INT DEFAULT 500,
+      enforce_strict_geofence BOOLEAN DEFAULT TRUE,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER REFERENCES employees(id),
+      action VARCHAR(100) NOT NULL,
+      module VARCHAR(100) NOT NULL,
+      details TEXT,
+      ip_address VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS attendance_regularizations (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
