@@ -25,6 +25,7 @@ import { payslipPortalController } from '../controllers/payslipPortalController.
 import { compensationManagementController } from '../controllers/compensationManagementController.js';
 import { payrollAnalyticsController } from '../controllers/payrollAnalyticsController.js';
 import { exitManagementController } from '../controllers/exitManagementController.js';
+import { payrollAutomationController } from '../controllers/payrollAutomationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -281,6 +282,11 @@ router.get('/exit/clearances/:resignationId', authenticateToken, (req, res) => e
 router.post('/exit/fnf/calculate', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => exitManagementController.calculateFnF(req, res));
 router.patch('/exit/fnf/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => exitManagementController.approveFnF(req, res));
 router.get('/exit/fnf/:resignationId', authenticateToken, (req, res) => exitManagementController.getFnF(req, res));
+
+// 6h. Enterprise Payroll Automation, Pre-flight Auto-Validation & NEFT Bank Transfer Routes
+router.get('/payroll/validate', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAutomationController.validatePayroll(req, res));
+router.get('/payroll/bank-file', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'PAYROLL_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollAutomationController.downloadBankFile(req, res));
+router.post('/payroll/cron/maintenance', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => payrollAutomationController.runCron(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

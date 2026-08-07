@@ -139,6 +139,20 @@ export const PayrollProcessingPage: React.FC = () => {
     } catch (e: any) { alert(e.response?.data?.message || 'Adjustment failed'); }
   };
 
+  const handleDownloadBankFile = async () => {
+    try {
+      const response = await apiClient.get(`/payroll/bank-file?month=${selectedMonth}&year=${selectedYear}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `SALARY_NEFT_DISBURSAL_${selectedMonth}_${selectedYear}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      alert('✅ Bank Disbursal NEFT file downloaded!');
+    } catch (e: any) { alert('Download failed: Ensure payroll is generated'); }
+  };
+
   const run = runDetails?.run;
   const items = runDetails?.items || [];
   const approvals = runDetails?.approvals || [];
@@ -165,6 +179,12 @@ export const PayrollProcessingPage: React.FC = () => {
               <option value={2026} className="text-slate-900">2026</option>
               <option value={2025} className="text-slate-900">2025</option>
             </select>
+            {isPayrollAdmin && (
+              <button onClick={handleDownloadBankFile} disabled={!run}
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-3 py-2.5 rounded-xl border border-white/20 disabled:opacity-50">
+                <Download className="w-4 h-4 text-emerald-300" /> Bank NEFT File
+              </button>
+            )}
             {isPayrollAdmin && (
               <button onClick={handleGeneratePayroll} disabled={processing || run?.status === 'LOCKED'}
                 className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl shadow-lg disabled:opacity-50">
