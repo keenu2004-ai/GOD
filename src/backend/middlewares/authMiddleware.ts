@@ -25,8 +25,9 @@ export function authorizeRoles(...roles: string[]) {
     if (!user) {
       return res.status(403).json(sendError('Insufficient permission for this HRMS resource'));
     }
-    // Super Admin / ADMIN override: Super Boss has complete power over all tabs & endpoints
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || roles.includes(user.role)) {
+    const userRole = (user.role || '').toUpperCase();
+    const superRoles = ['ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'SUPER_BOSS'];
+    if (superRoles.includes(userRole) || roles.map(r => r.toUpperCase()).includes(userRole)) {
       return next();
     }
     return res.status(403).json(sendError('Insufficient permission for this HRMS resource'));

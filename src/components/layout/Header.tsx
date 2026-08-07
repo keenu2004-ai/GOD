@@ -162,22 +162,22 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const isCheckedOut = !!attendanceStatus?.record?.punch_out;
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm text-slate-800">
+    <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm text-slate-800">
       {/* Left: Organization & Branch info */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Mobile Sidebar Hamburger Toggle */}
         <button
           onClick={onToggleMobileMenu}
-          className="md:hidden p-1.5 bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
-          title="Open Menu"
+          className="md:hidden p-2 bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors shrink-0"
+          title="Open Navigation Menu"
         >
           <Menu className="w-5 h-5 text-slate-700" />
         </button>
 
-        <div className="flex items-center gap-2 text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium">
-          <Building2 className="w-4 h-4 text-emerald-600" />
-          <span className="text-slate-900 font-semibold">{user?.branch_name || 'THEIAKSHI HQ - Bengaluru'}</span>
-          <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold">
+        <div className="hidden sm:flex items-center gap-2 text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium">
+          <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span className="text-slate-900 font-semibold truncate max-w-[140px] md:max-w-none">{user?.branch_name || 'THEIAKSHI HQ'}</span>
+          <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold hidden lg:inline-block">
             HQ GEOFENCE
           </span>
         </div>
