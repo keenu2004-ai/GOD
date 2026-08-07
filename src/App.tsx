@@ -29,6 +29,7 @@ import { PayrollAnalyticsPage } from './pages/PayrollAnalyticsPage.js';
 import { ExitManagementPage } from './pages/ExitManagementPage.js';
 import { EnterpriseProjectWorkspacePage } from './pages/EnterpriseProjectWorkspacePage.js';
 import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
+import { TaskCollaborationFeedPage } from './pages/TaskCollaborationFeedPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -84,6 +85,8 @@ const AppContent: React.FC = () => {
             return <EnterpriseProjectWorkspacePage />;
           case 'tasks-kanban':
             return <EnterpriseTaskBoardPage />;
+          case 'task-collaboration':
+            return <TaskCollaborationFeedPage />;
           case 'assets':
             return <AssetsPage />;
           case 'helpdesk':

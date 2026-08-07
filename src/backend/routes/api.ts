@@ -28,6 +28,7 @@ import { exitManagementController } from '../controllers/exitManagementControlle
 import { payrollAutomationController } from '../controllers/payrollAutomationController.js';
 import { enterpriseProjectController } from '../controllers/enterpriseProjectController.js';
 import { enterpriseTaskController } from '../controllers/enterpriseTaskController.js';
+import { taskCollaborationController } from '../controllers/taskCollaborationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -318,6 +319,14 @@ router.patch('/tasks/:id/status', authenticateToken, (req, res) => enterpriseTas
 router.get('/tasks', authenticateToken, (req, res) => enterpriseTaskController.getTasks(req, res));
 router.post('/tasks/:id/checklist', authenticateToken, (req, res) => enterpriseTaskController.addChecklistItem(req, res));
 router.patch('/tasks/checklist/:itemId/toggle', authenticateToken, (req, res) => enterpriseTaskController.toggleChecklistItem(req, res));
+
+// 8c. Enterprise Task Collaboration, Comments & Daily Standup Work Reporting Routes
+router.post('/tasks/daily-reports', authenticateToken, (req, res) => taskCollaborationController.submitReport(req, res));
+router.patch('/tasks/daily-reports/:id/review', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => taskCollaborationController.reviewReport(req, res));
+router.get('/tasks/daily-reports', authenticateToken, (req, res) => taskCollaborationController.getReports(req, res));
+router.post('/tasks/:id/comments', authenticateToken, (req, res) => taskCollaborationController.addComment(req, res));
+router.get('/tasks/:id/comments', authenticateToken, (req, res) => taskCollaborationController.getComments(req, res));
+router.get('/tasks/:id/activity', authenticateToken, (req, res) => taskCollaborationController.getActivity(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));

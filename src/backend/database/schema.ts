@@ -759,6 +759,39 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS task_daily_reports (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      report_date DATE NOT NULL,
+      completed_work TEXT NOT NULL,
+      upcoming_plan TEXT,
+      blockers TEXT,
+      hours_worked NUMERIC(4, 2) DEFAULT 8.0,
+      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'APPROVED' | 'REJECTED'
+      manager_feedback TEXT,
+      reviewed_by INTEGER REFERENCES employees(id),
+      reviewed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS task_comments (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES project_tasks(id) ON DELETE CASCADE,
+      author_id INTEGER NOT NULL REFERENCES employees(id),
+      comment_text TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS task_activity_feed (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES project_tasks(id) ON DELETE CASCADE,
+      actor_id INTEGER REFERENCES employees(id),
+      action_type VARCHAR(50) NOT NULL,
+      details TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS payroll_settings (
       id SERIAL PRIMARY KEY,
       payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',
