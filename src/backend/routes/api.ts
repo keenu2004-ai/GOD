@@ -23,6 +23,7 @@ import { salaryComponentEngineController } from '../controllers/salaryComponentE
 import { payrollProcessingController } from '../controllers/payrollProcessingController.js';
 import { payslipPortalController } from '../controllers/payslipPortalController.js';
 import { compensationManagementController } from '../controllers/compensationManagementController.js';
+import { payrollAnalyticsController } from '../controllers/payrollAnalyticsController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -260,6 +261,15 @@ router.post('/reimbursement', authenticateToken, (req, res) => compensationManag
 router.patch('/reimbursement/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => compensationManagementController.approveClaim(req, res));
 router.get('/reimbursements', authenticateToken, (req, res) => compensationManagementController.getClaims(req, res));
 router.get('/compensation/analytics', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.getAnalytics(req, res));
+
+// 6f. Enterprise Payroll Analytics, BI, Forecasting & Budget Routes
+router.get('/payroll/analytics/kpis', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getExecutiveKPIs(req, res));
+router.get('/payroll/analytics/departments', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getDepartmentBreakup(req, res));
+router.get('/payroll/analytics/branches', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getBranchBreakup(req, res));
+router.get('/payroll/analytics/trend', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getTrend(req, res));
+router.get('/payroll/analytics/forecast', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getForecast(req, res));
+router.post('/payroll/analytics/budget', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollAnalyticsController.setBudget(req, res));
+router.get('/payroll/analytics/budget', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getBudgets(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

@@ -638,18 +638,22 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS reimbursement_requests (
+    CREATE TABLE IF NOT EXISTS payroll_budgets (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      claim_category VARCHAR(50) NOT NULL, -- 'TRAVEL' | 'FUEL' | 'FOOD' | 'HOTEL' | 'MEDICAL' | 'OFFICE_SUPPLIES' | 'MOBILE' | 'INTERNET' | 'CLIENT_VISIT'
-      claim_amount NUMERIC(10, 2) NOT NULL,
-      receipt_url TEXT,
-      description TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'MANAGER_APPROVED' | 'FINANCE_APPROVED' | 'REJECTED' | 'PAID'
-      manager_approved BOOLEAN DEFAULT false,
-      finance_approved BOOLEAN DEFAULT false,
-      approved_by INTEGER REFERENCES employees(id),
+      department_id INTEGER NOT NULL REFERENCES departments(id) UNIQUE,
+      year INTEGER NOT NULL,
+      annual_budget NUMERIC(14, 2) NOT NULL,
+      spent_amount NUMERIC(14, 2) DEFAULT 0,
+      created_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_analytics_cache (
+      id SERIAL PRIMARY KEY,
+      period VARCHAR(20) NOT NULL,
+      metric_key VARCHAR(100) UNIQUE NOT NULL,
+      metric_data JSONB NOT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
