@@ -26,6 +26,7 @@ import { compensationManagementController } from '../controllers/compensationMan
 import { payrollAnalyticsController } from '../controllers/payrollAnalyticsController.js';
 import { exitManagementController } from '../controllers/exitManagementController.js';
 import { payrollAutomationController } from '../controllers/payrollAutomationController.js';
+import { enterpriseProjectController } from '../controllers/enterpriseProjectController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -298,8 +299,15 @@ router.post('/expenses', authenticateToken, (req, res) => expenseController.subm
 router.put('/expenses/:id/status', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => expenseController.approve(req, res));
 
 // 8. Projects & Tasks Routes
-router.get('/projects', authenticateToken, (req, res) => projectController.getAll(req, res));
-router.post('/projects', authenticateToken, (req, res) => projectController.createProject(req, res));
+router.post('/projects/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => enterpriseProjectController.seedCategories(req, res));
+router.get('/projects', authenticateToken, (req, res) => enterpriseProjectController.getProjects(req, res));
+router.post('/projects', authenticateToken, (req, res) => enterpriseProjectController.createProject(req, res));
+router.get('/projects/:id/workspace', authenticateToken, (req, res) => enterpriseProjectController.getProjectWorkspace(req, res));
+router.post('/projects/members', authenticateToken, (req, res) => enterpriseProjectController.addMember(req, res));
+router.delete('/projects/:id/members/:employeeId', authenticateToken, (req, res) => enterpriseProjectController.removeMember(req, res));
+router.post('/projects/documents', authenticateToken, (req, res) => enterpriseProjectController.addDocument(req, res));
+router.post('/projects/notes', authenticateToken, (req, res) => enterpriseProjectController.createNote(req, res));
+router.get('/projects/analytics/kpis', authenticateToken, (req, res) => enterpriseProjectController.getKPIs(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));

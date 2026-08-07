@@ -51,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'payroll-analytics', label: 'Payroll Analytics & BI', icon: BarChart2 },
     { id: 'exit-management', label: 'Exit & FnF Settlement', icon: LogOut },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
-    { id: 'projects', label: 'Projects & Tasks', icon: FolderGit2 },
+    { id: 'projects', label: 'Projects & Workspaces', icon: FolderGit2 },
     { id: 'assets', label: 'Asset Management', icon: Laptop },
     { id: 'helpdesk', label: 'IT & HR Helpdesk', icon: HelpCircle },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },

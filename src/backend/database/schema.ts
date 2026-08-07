@@ -676,19 +676,52 @@ export async function initializeSchema() {
       UNIQUE(resignation_id, department)
     );
 
-    CREATE TABLE IF NOT EXISTS fnf_settlements (
+    CREATE TABLE IF NOT EXISTS project_categories (
       id SERIAL PRIMARY KEY,
-      resignation_id INTEGER NOT NULL REFERENCES employee_resignations(id) ON DELETE CASCADE,
+      name VARCHAR(100) UNIQUE NOT NULL,
+      code VARCHAR(50) UNIQUE NOT NULL,
+      description TEXT,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_clients (
+      id SERIAL PRIMARY KEY,
+      client_name VARCHAR(150) NOT NULL,
+      company_name VARCHAR(150),
+      email VARCHAR(150),
+      phone VARCHAR(30),
+      address TEXT,
+      status VARCHAR(30) DEFAULT 'ACTIVE',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_members (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
-      pending_salary NUMERIC(12, 2) DEFAULT 0,
-      leave_encashment NUMERIC(12, 2) DEFAULT 0,
-      bonus_payout NUMERIC(12, 2) DEFAULT 0,
-      asset_recovery_deduction NUMERIC(12, 2) DEFAULT 0,
-      loan_balance_deduction NUMERIC(12, 2) DEFAULT 0,
-      notice_shortfall_deduction NUMERIC(12, 2) DEFAULT 0,
-      net_settlement_amount NUMERIC(12, 2) NOT NULL,
-      status VARCHAR(30) DEFAULT 'PREVIEW', -- 'PREVIEW' | 'APPROVED' | 'SETTLED'
-      approved_by INTEGER REFERENCES employees(id),
+      role_in_project VARCHAR(50) DEFAULT 'MEMBER', -- 'PROJECT_MANAGER' | 'TEAM_LEAD' | 'DEVELOPER' | 'QA' | 'MEMBER'
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(project_id, employee_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS project_documents (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      document_name VARCHAR(200) NOT NULL,
+      file_url TEXT NOT NULL,
+      file_type VARCHAR(50),
+      uploaded_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_notes (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      note_content TEXT NOT NULL,
+      author_id INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
