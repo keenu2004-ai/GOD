@@ -57,10 +57,39 @@ export const ExpensesPage: React.FC = () => {
           </h2>
           <p className="text-xs text-slate-500 mt-1">Submit travel, meal, hardware & operational expense receipts.</p>
         </div>
-        <button onClick={() => setShowSubmitModal(true)} className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition-all">
-          <Plus className="w-4 h-4" />
-          <span>New Claim</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const headers = ['ID', 'Employee', 'Title', 'Category', 'Amount', 'Date', 'Status'];
+              const rows = expenses.map((e) => [
+                e.id,
+                `"${e.first_name || ''} ${e.last_name || ''}"`,
+                `"${e.title || ''}"`,
+                e.category,
+                e.amount,
+                e.date,
+                e.status,
+              ]);
+              const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+              const encodedUri = encodeURI(csvContent);
+              const link = document.createElement('a');
+              link.setAttribute('href', encodedUri);
+              link.setAttribute('download', `Expenses_Report_${new Date().toISOString().split('T')[0]}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-2.5 rounded-lg flex items-center gap-1.5 border border-slate-200 transition-all"
+          >
+            <FileText className="w-4 h-4 text-slate-600" />
+            <span>Export CSV</span>
+          </button>
+
+          <button onClick={() => setShowSubmitModal(true)} className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition-all">
+            <Plus className="w-4 h-4" />
+            <span>New Claim</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">

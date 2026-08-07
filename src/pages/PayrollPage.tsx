@@ -35,6 +35,37 @@ export const PayrollPage: React.FC = () => {
           </h2>
           <p className="text-xs text-slate-500 mt-1">Itemized salary breakdown, statutory deductions (PF, ESI, TDS) & bank payouts.</p>
         </div>
+
+        <button
+          onClick={() => {
+            const headers = ['ID', 'Employee', 'Code', 'Month', 'Year', 'Gross', 'PF', 'ESI', 'TDS', 'Net Salary', 'Status'];
+            const rows = payrolls.map((p) => [
+              p.id,
+              `"${p.first_name || ''} ${p.last_name || ''}"`,
+              p.employee_code,
+              p.month,
+              p.year,
+              p.gross_salary,
+              p.pf_deduction,
+              p.esi_deduction,
+              p.tds_deduction,
+              p.net_salary,
+              p.payment_status,
+            ]);
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `Payroll_Disbursement_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-2.5 rounded-lg flex items-center gap-1.5 border border-slate-200 transition-all shadow-sm"
+        >
+          <FileText className="w-4 h-4 text-emerald-600" />
+          <span>Export Payroll CSV</span>
+        </button>
       </div>
 
       {/* Payroll Table */}
