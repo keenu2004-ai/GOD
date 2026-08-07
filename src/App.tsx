@@ -30,6 +30,7 @@ import { ExitManagementPage } from './pages/ExitManagementPage.js';
 import { EnterpriseProjectWorkspacePage } from './pages/EnterpriseProjectWorkspacePage.js';
 import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
 import { TaskCollaborationFeedPage } from './pages/TaskCollaborationFeedPage.js';
+import { EnterpriseTimeTrackingPage } from './pages/EnterpriseTimeTrackingPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -87,6 +88,8 @@ const AppContent: React.FC = () => {
             return <EnterpriseTaskBoardPage />;
           case 'task-collaboration':
             return <TaskCollaborationFeedPage />;
+          case 'time-tracking':
+            return <EnterpriseTimeTrackingPage />;
           case 'assets':
             return <AssetsPage />;
           case 'helpdesk':

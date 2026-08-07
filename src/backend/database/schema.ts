@@ -817,6 +817,46 @@ export async function initializeSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS active_work_timers (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
+      project_id INTEGER REFERENCES projects(id),
+      task_id INTEGER REFERENCES project_tasks(id),
+      start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      is_paused BOOLEAN DEFAULT false,
+      accum_seconds INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS time_entries (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      project_id INTEGER REFERENCES projects(id),
+      task_id INTEGER REFERENCES project_tasks(id),
+      entry_date DATE NOT NULL,
+      hours_worked NUMERIC(4, 2) NOT NULL,
+      is_billable BOOLEAN DEFAULT true,
+      is_overtime BOOLEAN DEFAULT false,
+      description TEXT,
+      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'APPROVED' | 'REJECTED'
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS timesheet_approvals (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      week_number INTEGER NOT NULL,
+      year INTEGER NOT NULL,
+      total_hours NUMERIC(5, 2) NOT NULL,
+      billable_hours NUMERIC(5, 2) DEFAULT 0,
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED'
+      approved_by INTEGER REFERENCES employees(id),
+      approved_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, week_number, year)
+    );
+
     CREATE TABLE IF NOT EXISTS payroll_settings (
       id SERIAL PRIMARY KEY,
       payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',

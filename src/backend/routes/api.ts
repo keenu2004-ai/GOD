@@ -30,6 +30,7 @@ import { enterpriseProjectController } from '../controllers/enterpriseProjectCon
 import { enterpriseTaskController } from '../controllers/enterpriseTaskController.js';
 import { taskCollaborationController } from '../controllers/taskCollaborationController.js';
 import { weeklyPlannerController } from '../controllers/weeklyPlannerController.js';
+import { timeTrackingController } from '../controllers/timeTrackingController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -335,6 +336,17 @@ router.patch('/planner/items/:id/status', authenticateToken, (req, res) => weekl
 router.get('/planner/details', authenticateToken, (req, res) => weeklyPlannerController.getPlanDetails(req, res));
 router.get('/planner/capacity', authenticateToken, (req, res) => weeklyPlannerController.getTeamCapacity(req, res));
 router.get('/planner/export/csv', authenticateToken, (req, res) => weeklyPlannerController.exportCSV(req, res));
+
+// 8e. Enterprise Time Tracking, Live Work Session Timer & Timesheets Routes
+router.post('/timetracking/timer/start', authenticateToken, (req, res) => timeTrackingController.startTimer(req, res));
+router.post('/timetracking/timer/stop', authenticateToken, (req, res) => timeTrackingController.stopTimer(req, res));
+router.get('/timetracking/timer/active', authenticateToken, (req, res) => timeTrackingController.getActiveTimer(req, res));
+router.post('/timetracking/entry', authenticateToken, (req, res) => timeTrackingController.logTimeEntry(req, res));
+router.get('/timetracking/timesheet', authenticateToken, (req, res) => timeTrackingController.getTimesheet(req, res));
+router.post('/timetracking/timesheet/submit', authenticateToken, (req, res) => timeTrackingController.submitTimesheet(req, res));
+router.patch('/timetracking/timesheet/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => timeTrackingController.approveTimesheet(req, res));
+router.get('/timetracking/timesheets/pending', authenticateToken, (req, res) => timeTrackingController.getPendingTimesheets(req, res));
+router.get('/timetracking/analytics/kpis', authenticateToken, (req, res) => timeTrackingController.getKPIs(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
