@@ -227,6 +227,11 @@ export class EmployeeRepository {
     return true;
   }
 
+  async permanentDelete(id: number): Promise<boolean> {
+    await dbService.query('DELETE FROM employees WHERE id = $1', [id]);
+    return true;
+  }
+
   async updateRole(id: number, role: string): Promise<boolean> {
     await dbService.query('UPDATE employees SET role = $1 WHERE id = $2', [role, id]);
     return true;

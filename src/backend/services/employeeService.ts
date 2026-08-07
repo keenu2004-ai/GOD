@@ -107,6 +107,12 @@ export class EmployeeService {
     if (!existing) throw new Error('Employee not found');
     return await employeeRepository.updateRole(id, role);
   }
+
+  async permanentDeleteEmployee(id: number) {
+    const existing = await employeeRepository.findById(id);
+    if (!existing) throw new Error('Employee not found');
+    return await employeeRepository.permanentDelete(id);
+  }
 }
 
 export const employeeService = new EmployeeService();

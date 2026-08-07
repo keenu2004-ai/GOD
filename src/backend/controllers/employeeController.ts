@@ -98,6 +98,16 @@ export class EmployeeController {
       return res.status(400).json(sendError(error.message));
     }
   }
+
+  async permanentDelete(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      await employeeService.permanentDeleteEmployee(id);
+      return res.json(sendSuccess(null, 'Employee permanently deleted from database'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const employeeController = new EmployeeController();

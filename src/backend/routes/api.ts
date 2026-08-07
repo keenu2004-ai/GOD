@@ -42,6 +42,7 @@ router.put('/employees/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANA
 router.delete('/employees/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.softDelete(req, res));
 router.post('/employees/:id/restore', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.restore(req, res));
 router.put('/employees/:id/role', authenticateToken, authorizeRoles('ADMIN'), (req, res) => employeeController.updateRole(req, res));
+router.delete('/employees/:id/permanent', authenticateToken, authorizeRoles('ADMIN'), (req, res) => employeeController.permanentDelete(req, res));
 
 // 4. Attendance Module Routes
 router.post('/attendance/punch-in', authenticateToken, (req, res) => attendanceController.punchIn(req, res));

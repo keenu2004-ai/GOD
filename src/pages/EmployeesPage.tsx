@@ -143,6 +143,17 @@ export const EmployeesPage: React.FC = () => {
     }
   };
 
+  const handlePermanentDelete = async (id: number) => {
+    if (!confirm('PERMANENT DELETE WARNING: This will permanently purge this employee record from PostgreSQL database. Proceed?')) return;
+    try {
+      await apiClient.delete(`/employees/${id}/permanent`);
+      alert('Employee permanently deleted from database!');
+      fetchEmployees();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to permanently delete employee');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -258,9 +269,14 @@ export const EmployeesPage: React.FC = () => {
                         <Eye className="w-4 h-4" />
                       </button>
                       {emp.is_deleted ? (
-                        <button onClick={() => handleRestore(emp.id)} title="Restore Employee" className="p-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg">
-                          <RotateCcw className="w-4 h-4" />
-                        </button>
+                        <>
+                          <button onClick={() => handleRestore(emp.id)} title="Restore Employee" className="p-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg">
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handlePermanentDelete(emp.id)} title="Permanently Purge from Database" className="p-1.5 bg-red-600 text-white hover:bg-red-700 rounded-lg">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
                       ) : (
                         <button onClick={() => handleSoftDelete(emp.id)} title="Deactivate Employee" className="p-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-lg">
                           <Trash2 className="w-4 h-4" />
