@@ -228,8 +228,24 @@ export class EmployeeRepository {
   }
 
   async permanentDelete(id: number): Promise<boolean> {
-    await dbService.query('DELETE FROM employees WHERE id = $1', [id]);
-    return true;
+    return await dbService.transaction(async (client) => {
+      await client.query('DELETE FROM attendances WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM attendance_regularizations WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM leaves WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM leave_balances WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM payrolls WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM expenses WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM project_members WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM timesheets WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM performance_reviews WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM audit_logs WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM notifications WHERE user_id = $1', [id]);
+      await client.query('DELETE FROM weekly_planner WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM helpdesk_tickets WHERE employee_id = $1', [id]);
+      await client.query('DELETE FROM company_documents WHERE uploaded_by = $1', [id]);
+      await client.query('DELETE FROM employees WHERE id = $1', [id]);
+      return true;
+    });
   }
 
   async updateRole(id: number, role: string): Promise<boolean> {
