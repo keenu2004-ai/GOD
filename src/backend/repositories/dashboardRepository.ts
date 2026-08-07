@@ -5,14 +5,14 @@ export class DashboardRepository {
     const today = new Date().toISOString().split('T')[0];
     const sql = `
       SELECT 
-        (SELECT COUNT(*) FROM employees WHERE (is_deleted = false OR is_deleted IS NULL)) as total_employees,
+        (SELECT COUNT(*) FROM employees WHERE is_deleted = false OR is_deleted IS NULL) as total_employees,
         (SELECT COUNT(*) FROM departments) as total_departments,
         (SELECT COUNT(*) FROM branches) as total_branches,
-        (SELECT COUNT(*) FROM attendance WHERE date = $1 AND status IN ('PRESENT', 'LATE')) as present_today,
-        (SELECT COUNT(*) FROM attendance WHERE date = $1 AND is_late = true) as late_today,
-        (SELECT COUNT(*) FROM leave_applications WHERE status IN ('MANAGER_PENDING', 'HR_PENDING', 'PENDING')) as pending_leaves,
+        (SELECT COUNT(*) FROM attendance WHERE date = $1 OR date = CURRENT_DATE::text) as present_today,
+        (SELECT COUNT(*) FROM attendance WHERE (date = $1 OR date = CURRENT_DATE::text) AND is_late = true) as late_today,
+        (SELECT COUNT(*) FROM leaves WHERE status IN ('MANAGER_PENDING', 'HR_PENDING', 'PENDING')) as pending_leaves,
         (SELECT COUNT(*) FROM expenses WHERE status = 'PENDING') as pending_expenses,
-        (SELECT COUNT(*) FROM projects WHERE status = 'IN_PROGRESS') as active_projects
+        (SELECT COUNT(*) FROM projects WHERE status IN ('IN_PROGRESS', 'ACTIVE')) as active_projects
     `;
 
     const res = await dbService.query(sql, [today]);
