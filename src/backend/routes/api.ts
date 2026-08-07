@@ -14,6 +14,7 @@ import { analyticsController } from '../controllers/analyticsController.js';
 import { attendanceFinalizationController } from '../controllers/attendanceFinalizationController.js';
 import { leavePolicyController } from '../controllers/leavePolicyController.js';
 import { leaveWorkflowController } from '../controllers/leaveWorkflowController.js';
+import { leaveBalanceEngineController } from '../controllers/leaveBalanceEngineController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -141,6 +142,16 @@ router.patch('/leave/requests/:id/reject', authenticateToken, authorizeRoles(...
 router.post('/leave/requests/bulk-approve', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveWorkflowController.bulkApprove(req, res));
 router.post('/leave/requests/:id/override', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leaveWorkflowController.superAdminOverride(req, res));
 router.get('/leave/calendar-events', authenticateToken, (req, res) => leaveWorkflowController.getCalendarEvents(req, res));
+
+// 5c. Leave Balance Engine & Permanent Ledger Routes
+router.post('/leave/adjust', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leaveBalanceEngineController.adjustBalance(req, res));
+router.post('/leave/accrue-monthly', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leaveBalanceEngineController.runMonthlyAccrual(req, res));
+router.post('/leave/comp-off/request', authenticateToken, (req, res) => leaveBalanceEngineController.requestCompOff(req, res));
+router.patch('/leave/comp-off/:id/approve', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveBalanceEngineController.approveCompOff(req, res));
+router.post('/leave/carry-forward/run', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leaveBalanceEngineController.runYearEndCarryForward(req, res));
+router.get('/leave/ledger', authenticateToken, (req, res) => leaveBalanceEngineController.getLedger(req, res));
+router.get('/leave/adjustments', authenticateToken, (req, res) => leaveBalanceEngineController.getAdjustments(req, res));
+router.get('/leave/comp-offs', authenticateToken, (req, res) => leaveBalanceEngineController.getCompOffs(req, res));
 
 // Legacy compat leave applications
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));

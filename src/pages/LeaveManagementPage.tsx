@@ -131,13 +131,15 @@ export const LeaveManagementPage: React.FC = () => {
   const isHRAdmin = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'].includes(userRole);
   const isManager = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'].includes(userRole);
 
-  const [tab, setTab] = useState<'applications' | 'balances' | 'availability' | 'policies' | 'assignments' | 'settings'>('applications');
+  const [tab, setTab] = useState<'applications' | 'balances' | 'availability' | 'ledger' | 'compoff' | 'policies' | 'assignments' | 'settings'>('applications');
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [policies, setPolicies] = useState<LeavePolicy[]>([]);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
   const [applications, setApplications] = useState<LeaveApplication[]>([]);
   const [assignments, setAssignments] = useState<PolicyAssignment[]>([]);
   const [teamAvailability, setTeamAvailability] = useState<any[]>([]);
+  const [ledgerTransactions, setLedgerTransactions] = useState<any[]>([]);
+  const [compOffs, setCompOffs] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -192,16 +194,20 @@ export const LeaveManagementPage: React.FC = () => {
 
   const fetchHRData = useCallback(async () => {
     try {
-      const [polRes, assRes, setRes, availRes] = await Promise.all([
+      const [polRes, assRes, setRes, availRes, ledgRes, compRes] = await Promise.all([
         apiClient.get('/leave/policies').catch(() => ({ data: { data: [] } })),
         apiClient.get('/leave/assignments').catch(() => ({ data: { data: [] } })),
         apiClient.get('/leave/settings').catch(() => ({ data: { data: null } })),
         apiClient.get('/leave/team-availability').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/leave/ledger').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/leave/comp-offs').catch(() => ({ data: { data: [] } })),
       ]);
       setPolicies(polRes.data?.data || []);
       setAssignments(assRes.data?.data || []);
       setSettings(setRes.data?.data || null);
       setTeamAvailability(availRes.data?.data || []);
+      setLedgerTransactions(ledgRes.data?.data || []);
+      setCompOffs(compRes.data?.data || []);
     } catch (e) { console.error(e); }
   }, []);
 
@@ -288,8 +294,10 @@ export const LeaveManagementPage: React.FC = () => {
 
   const TABS = [
     { key: 'applications', label: 'Leave Applications', icon: <Calendar className="w-4 h-4" />, count: applications.length },
-    { key: 'balances', label: 'Leave Balances & Encashment', icon: <Layers className="w-4 h-4" />, count: balances.length },
+    { key: 'balances', label: 'Balances & Encashment', icon: <Layers className="w-4 h-4" />, count: balances.length },
     { key: 'availability', label: 'Team Availability', icon: <Users className="w-4 h-4" />, count: teamAvailability.filter(t => t.active_leave_id).length },
+    { key: 'ledger', label: 'Leave Ledger', icon: <FileText className="w-4 h-4" />, count: ledgerTransactions.length },
+    { key: 'compoff', label: 'Comp-Off Hub', icon: <Award className="w-4 h-4" />, count: compOffs.length },
     ...(isHRAdmin ? [
       { key: 'policies', label: 'Policy Engine', icon: <Shield className="w-4 h-4" />, count: policies.length },
       { key: 'assignments', label: 'Assignments', icon: <UserCheck className="w-4 h-4" />, count: assignments.length },
@@ -549,6 +557,157 @@ export const LeaveManagementPage: React.FC = () => {
               <div className="text-center py-12 text-slate-400">
                 <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
                 <p>Loading team availability...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── PERMANENT LEAVE LEDGER TAB ──────────────────────────────────── */}
+      {tab === 'ledger' && (
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" /> Permanent Leave Ledger & Audit Log
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Immutable transaction log of every allocation, accrual, leave taken, adjustment, and carry-forward</p>
+              </div>
+              <button onClick={() => exportCSV(ledgerTransactions, 'Leave_Ledger.csv')}
+                className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl shadow-sm hover:bg-slate-50">
+                <Download className="w-3.5 h-3.5" /> Export Ledger CSV
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="p-3">Employee</th>
+                    <th className="p-3">Leave Type</th>
+                    <th className="p-3">Transaction</th>
+                    <th className="p-3">Days</th>
+                    <th className="p-3">Opening</th>
+                    <th className="p-3">Closing</th>
+                    <th className="p-3">Description</th>
+                    <th className="p-3">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-mono">
+                  {ledgerTransactions.map(l => (
+                    <tr key={l.id} className="hover:bg-slate-50">
+                      <td className="p-3 font-sans">
+                        <p className="font-bold text-slate-900">{l.first_name} {l.last_name}</p>
+                        <p className="text-[10px] text-slate-500">{l.employee_code}</p>
+                      </td>
+                      <td className="p-3 font-sans">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded"
+                          style={{ backgroundColor: `${l.color || '#3B82F6'}15`, color: l.color || '#3B82F6' }}>
+                          {l.leave_type_name}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="font-bold text-slate-800 text-[10px] px-2 py-0.5 bg-slate-100 rounded">
+                          {l.transaction_type}
+                        </span>
+                      </td>
+                      <td className={`p-3 font-bold ${parseFloat(l.days_changed) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {parseFloat(l.days_changed) >= 0 ? `+${l.days_changed}` : l.days_changed}
+                      </td>
+                      <td className="p-3 text-slate-500">{l.opening_balance}</td>
+                      <td className="p-3 font-bold text-slate-900">{l.closing_balance}</td>
+                      <td className="p-3 font-sans text-slate-600 max-w-xs truncate">{l.description}</td>
+                      <td className="p-3 text-slate-400 font-sans text-[10px]">{fmtDate(l.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {ledgerTransactions.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p>No ledger transactions recorded yet</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── COMP-OFF HUB TAB ────────────────────────────────────────────── */}
+      {tab === 'compoff' && (
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                  <Award className="w-4 h-4 text-blue-600" /> Compensatory Off (Comp-Off) Hub
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Manage comp-off credit requests for holiday or weekend work</p>
+              </div>
+              <button onClick={async () => {
+                const date_worked = prompt('Enter Date Worked (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+                const reason = prompt('Enter Reason / Holiday Worked:');
+                if (date_worked && reason) {
+                  await apiClient.post('/leave/comp-off/request', { date_worked, days: 1.0, reason });
+                  alert('✅ Comp-off request submitted!');
+                  fetchHRData();
+                }
+              }} className="flex items-center gap-2 bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">
+                <Plus className="w-4 h-4" /> Request Comp-Off
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="p-3">Employee</th>
+                    <th className="p-3">Date Worked</th>
+                    <th className="p-3">Days Granted</th>
+                    <th className="p-3">Expiry Date</th>
+                    <th className="p-3">Reason</th>
+                    <th className="p-3">Status</th>
+                    {isManager && <th className="p-3">Actions</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {compOffs.map(c => (
+                    <tr key={c.id} className="hover:bg-slate-50">
+                      <td className="p-3 font-bold text-slate-900">{c.first_name} {c.last_name} <span className="text-[10px] text-slate-400 font-mono">({c.employee_code})</span></td>
+                      <td className="p-3 font-mono">{fmtDate(c.date_worked)}</td>
+                      <td className="p-3 font-bold text-emerald-600">+{c.days_granted} day</td>
+                      <td className="p-3 font-mono text-slate-500">{fmtDate(c.expiry_date)}</td>
+                      <td className="p-3 text-slate-600 max-w-xs truncate">{c.reason}</td>
+                      <td className="p-3">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                          c.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>{c.status}</span>
+                      </td>
+                      {isManager && (
+                        <td className="p-3">
+                          {c.status === 'PENDING' ? (
+                            <button onClick={async () => {
+                              await apiClient.patch(`/leave/comp-off/${c.id}/approve`);
+                              fetchHRData();
+                              fetchData();
+                            }} className="px-2 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded hover:bg-emerald-700">
+                              Approve & Credit
+                            </button>
+                          ) : <span className="text-slate-400 text-[10px]">Credited</span>}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {compOffs.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                <Award className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p>No comp-off requests found</p>
               </div>
             )}
           </div>

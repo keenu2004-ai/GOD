@@ -230,6 +230,64 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS leave_balance_transactions (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      transaction_type VARCHAR(50) NOT NULL,
+      days_changed NUMERIC(5, 1) NOT NULL,
+      opening_balance NUMERIC(5, 1) NOT NULL,
+      closing_balance NUMERIC(5, 1) NOT NULL,
+      reference_type VARCHAR(50),
+      reference_id INTEGER,
+      description TEXT NOT NULL,
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_adjustments (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      adjustment_type VARCHAR(30) NOT NULL,
+      days NUMERIC(5, 1) NOT NULL,
+      reason TEXT NOT NULL,
+      approved_by INTEGER NOT NULL REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_comp_offs (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      date_worked DATE NOT NULL,
+      days_granted NUMERIC(4, 1) NOT NULL DEFAULT 1.0,
+      expiry_date DATE NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING',
+      reason TEXT NOT NULL,
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_accrual_history (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      accrual_period VARCHAR(20) NOT NULL,
+      days_accrued NUMERIC(5, 1) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_carry_forward_history (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      year INTEGER NOT NULL,
+      days_carried NUMERIC(5, 1) NOT NULL,
+      days_expired NUMERIC(5, 1) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS leave_balances (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
