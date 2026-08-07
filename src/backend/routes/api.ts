@@ -10,6 +10,7 @@ import { projectController } from '../controllers/projectController.js';
 import { dashboardController } from '../controllers/dashboardController.js';
 import { miscController } from '../controllers/miscController.js';
 import { shiftController } from '../controllers/shiftController.js';
+import { analyticsController } from '../controllers/analyticsController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -193,5 +194,25 @@ router.get('/permissions', authenticateToken, (req, res) => miscController.getPe
 // 22. Company Documents Center
 router.get('/company-documents', authenticateToken, (req, res) => miscController.getCompanyDocs(req, res));
 router.post('/company-documents', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => miscController.createCompanyDoc(req, res));
+
+// 23. Attendance Analytics & Reports
+const mgr = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'];
+router.get('/analytics/attendance/dashboard', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getDashboard(req, res));
+router.get('/analytics/attendance/trend', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getTrend(req, res));
+router.get('/analytics/attendance/departments', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getDepartments(req, res));
+router.get('/analytics/attendance/branches', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getBranches(req, res));
+router.get('/analytics/attendance/monthly-trend', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getMonthlyTrend(req, res));
+router.get('/analytics/attendance/calendar', authenticateToken, (req, res) => analyticsController.getCalendar(req, res));
+router.get('/analytics/attendance/employee-report', authenticateToken, (req, res) => analyticsController.getEmployeeReport(req, res));
+router.get('/analytics/attendance/late-report', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getLateReport(req, res));
+router.get('/analytics/attendance/overtime-report', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getOvertimeReport(req, res));
+router.get('/analytics/attendance/absent-report', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getAbsentReport(req, res));
+router.get('/analytics/attendance/monthly-summary', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getMonthlySummary(req, res));
+router.get('/analytics/attendance/payroll-sync', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => analyticsController.getPayrollSync(req, res));
+router.get('/analytics/attendance/gps-compliance', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getGPSCompliance(req, res));
+router.get('/analytics/attendance/charts', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getChartsData(req, res));
+router.get('/analytics/attendance/punch-distribution', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getPunchDistribution(req, res));
+router.get('/analytics/attendance/work-hour-distribution', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getWorkHourDistribution(req, res));
+router.post('/analytics/attendance/log-export', authenticateToken, (req, res) => analyticsController.logExport(req, res));
 
 export default router;

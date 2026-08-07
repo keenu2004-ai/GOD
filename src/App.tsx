@@ -17,6 +17,7 @@ import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { ShiftManagementPage } from './pages/ShiftManagementPage.js';
 import { AttendanceRegularizationPage } from './pages/AttendanceRegularizationPage.js';
+import { AttendanceAnalyticsPage } from './pages/AttendanceAnalyticsPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -66,6 +67,8 @@ const AppContent: React.FC = () => {
             return <WeeklyPlannerPage />;
           case 'regularization':
             return <AttendanceRegularizationPage />;
+          case 'attendance-analytics':
+            return <AttendanceAnalyticsPage />;
           case 'shifts':
             return <ShiftManagementPage />;
           case 'settings':

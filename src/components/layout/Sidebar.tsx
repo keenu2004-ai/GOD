@@ -19,6 +19,7 @@ import {
   X,
   AlarmClock,
   FileEdit,
+  BarChart2,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'employees', label: 'Employees Directory', icon: Users },
     { id: 'attendance', label: 'Attendance & GPS', icon: Clock },
     { id: 'regularization', label: 'Attendance Regularization', icon: FileEdit },
+    { id: 'attendance-analytics', label: 'Attendance Analytics', icon: BarChart2 },
     { id: 'leave', label: 'Leave Management', icon: CalendarCheck2 },
     { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
