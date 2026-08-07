@@ -28,11 +28,18 @@ router.post('/seed', async (req, res) => {
 
 // 2. Dashboard Routes
 router.get('/dashboard/metrics', authenticateToken, (req, res) => dashboardController.getMetrics(req, res));
+router.get('/dashboard/summary', authenticateToken, (req, res) => dashboardController.getMetrics(req, res));
+router.get('/dashboard/cards', authenticateToken, (req, res) => dashboardController.getMetrics(req, res));
+router.get('/dashboard/widgets', authenticateToken, (req, res) => dashboardController.getMetrics(req, res));
 router.get('/dashboard/activity', authenticateToken, (req, res) => dashboardController.getActivity(req, res));
 router.get('/dashboard/departments', authenticateToken, (req, res) => dashboardController.getDepartments(req, res));
 router.get('/dashboard/payroll', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => dashboardController.getPayrollSummary(req, res));
 router.get('/dashboard/announcements', authenticateToken, (req, res) => dashboardController.getAnnouncements(req, res));
 router.get('/dashboard/celebrations', authenticateToken, (req, res) => dashboardController.getCelebrations(req, res));
+router.get('/dashboard/calendar', authenticateToken, (req, res) => dashboardController.getCalendar(req, res));
+router.get('/dashboard/preferences', authenticateToken, (req, res) => dashboardController.getPreferences(req, res));
+router.put('/dashboard/preferences', authenticateToken, (req, res) => dashboardController.updatePreferences(req, res));
+router.get('/dashboard/quick-actions', authenticateToken, (req, res) => dashboardController.getMetrics(req, res));
 
 // 3. Employee Module Routes
 router.get('/employees', authenticateToken, (req, res) => employeeController.getAll(req, res));

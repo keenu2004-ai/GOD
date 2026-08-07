@@ -104,6 +104,18 @@ export class DashboardService {
   async getCelebrations() {
     return await dashboardRepository.getCelebrations();
   }
+
+  async getCalendarEvents() {
+    return await dashboardRepository.getCalendarEvents();
+  }
+
+  async getUserPreferences(employeeId: number) {
+    return await dashboardRepository.getUserPreferences(employeeId);
+  }
+
+  async updateUserPreferences(employeeId: number, theme: string, defaultTab: string) {
+    return await dashboardRepository.updateUserPreferences(employeeId, theme, defaultTab);
+  }
 }
 
 export class MiscService {

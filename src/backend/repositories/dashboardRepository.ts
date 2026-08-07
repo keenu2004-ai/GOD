@@ -129,6 +129,45 @@ export class DashboardRepository {
       return [];
     }
   }
+
+  async getCalendarEvents() {
+    try {
+      const sql = `
+        (SELECT name as title, date::text as event_date, 'HOLIDAY' as category, type as badge FROM holidays WHERE is_active = true)
+        UNION ALL
+        (SELECT first_name || ' ' || last_name || ' Birthday' as title, CURRENT_DATE::text as event_date, 'BIRTHDAY' as category, 'CELEBRATION' as badge FROM employees WHERE is_deleted = false LIMIT 5)
+        ORDER BY event_date ASC LIMIT 10
+      `;
+      const res = await dbService.query(sql);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getUserPreferences(employeeId: number) {
+    try {
+      const res = await dbService.query(`SELECT * FROM dashboard_preferences WHERE employee_id = $1`, [employeeId]);
+      return res.rows[0] || { theme: 'light', default_tab: 'dashboard' };
+    } catch (e) {
+      return { theme: 'light', default_tab: 'dashboard' };
+    }
+  }
+
+  async updateUserPreferences(employeeId: number, theme: string, defaultTab: string) {
+    try {
+      const res = await dbService.query(
+        `INSERT INTO dashboard_preferences (employee_id, theme, default_tab)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (employee_id) DO UPDATE SET theme = $2, default_tab = $3, updated_at = CURRENT_TIMESTAMP
+         RETURNING *`,
+        [employeeId, theme, defaultTab]
+      );
+      return res.rows[0];
+    } catch (e) {
+      return { employee_id: employeeId, theme, default_tab: defaultTab };
+    }
+  }
 }
 
 export const dashboardRepository = new DashboardRepository();

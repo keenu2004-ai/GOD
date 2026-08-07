@@ -400,6 +400,35 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS dashboard_preferences (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
+      theme VARCHAR(20) DEFAULT 'light',
+      default_tab VARCHAR(50) DEFAULT 'dashboard',
+      layout_json TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS dashboard_widgets (
+      id SERIAL PRIMARY KEY,
+      widget_key VARCHAR(50) UNIQUE NOT NULL,
+      title VARCHAR(100) NOT NULL,
+      category VARCHAR(50) DEFAULT 'ANALYTICS',
+      role_permissions TEXT DEFAULT 'ALL',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS quick_actions (
+      id SERIAL PRIMARY KEY,
+      action_key VARCHAR(50) UNIQUE NOT NULL,
+      label VARCHAR(100) NOT NULL,
+      icon VARCHAR(50) NOT NULL,
+      path VARCHAR(100) NOT NULL,
+      role_permissions TEXT DEFAULT 'ALL',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Create View for backward compatibility with 'leaves'
     CREATE OR REPLACE VIEW leaves AS SELECT * FROM leave_applications;
 
