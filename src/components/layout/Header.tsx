@@ -172,6 +172,17 @@ export const Header: React.FC = () => {
           <Clock className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
           <span>{time || '09:00:00 AM'} IST</span>
         </div>
+
+        {/* Global Search Input */}
+        <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-64 text-xs">
+          <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search employees, payroll, tasks..."
+            className="bg-transparent border-none outline-none w-full text-slate-800 placeholder-slate-400"
+          />
+          <kbd className="hidden xl:inline-block bg-slate-200 text-slate-600 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold">⌘K</kbd>
+        </div>
       </div>
 
       {/* Center/Right: Global Attendance Punch Widget */}
