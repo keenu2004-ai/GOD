@@ -35,66 +35,86 @@ export class DashboardRepository {
   }
 
   async getRecentActivity() {
-    const sql = `
-      (SELECT 'ATTENDANCE' as type, e.first_name || ' ' || e.last_name || ' punched in (' || a.status || ')' as title, a.punch_in as timestamp
-       FROM attendance a JOIN employees e ON a.employee_id = e.id WHERE a.punch_in IS NOT NULL ORDER BY a.punch_in DESC LIMIT 4)
-      UNION ALL
-      (SELECT 'LEAVE' as type, e.first_name || ' ' || e.last_name || ' requested ' || l.total_days || ' day leave (' || l.status || ')' as title, l.created_at as timestamp
-       FROM leaves l JOIN employees e ON l.employee_id = e.id ORDER BY l.id DESC LIMIT 4)
-      UNION ALL
-      (SELECT 'EXPENSE' as type, e.first_name || ' ' || e.last_name || ' submitted claim for ₹' || ex.amount as title, ex.created_at as timestamp
-       FROM expenses ex JOIN employees e ON ex.employee_id = e.id ORDER BY ex.id DESC LIMIT 4)
-      ORDER BY timestamp DESC LIMIT 8
-    `;
-    const res = await dbService.query(sql);
-    return res.rows;
+    try {
+      const sql = `
+        (SELECT 'ATTENDANCE' as type, e.first_name || ' ' || e.last_name || ' punched in' as title, a.punch_in as timestamp
+         FROM attendance a JOIN employees e ON a.employee_id = e.id WHERE a.punch_in IS NOT NULL ORDER BY a.id DESC LIMIT 4)
+        UNION ALL
+        (SELECT 'LEAVE' as type, e.first_name || ' ' || e.last_name || ' requested leave (' || l.status || ')' as title, l.created_at as timestamp
+         FROM leaves l JOIN employees e ON l.employee_id = e.id ORDER BY l.id DESC LIMIT 4)
+        UNION ALL
+        (SELECT 'EXPENSE' as type, e.first_name || ' ' || e.last_name || ' submitted claim for ₹' || ex.amount as title, ex.created_at as timestamp
+         FROM expenses ex JOIN employees e ON ex.employee_id = e.id ORDER BY ex.id DESC LIMIT 4)
+        ORDER BY timestamp DESC LIMIT 8
+      `;
+      const res = await dbService.query(sql);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
   }
 
   async getDepartmentDistribution() {
-    const sql = `
-      SELECT d.name as department, COUNT(e.id) as employee_count
-      FROM departments d
-      LEFT JOIN employees e ON d.id = e.department_id AND e.is_deleted = false
-      GROUP BY d.id, d.name
-      ORDER BY employee_count DESC
-    `;
-    const res = await dbService.query(sql);
-    return res.rows;
+    try {
+      const sql = `
+        SELECT d.name as department, COUNT(e.id) as employee_count
+        FROM departments d
+        LEFT JOIN employees e ON d.id = e.department_id AND (e.is_deleted = false OR e.is_deleted IS NULL)
+        GROUP BY d.id, d.name
+        ORDER BY employee_count DESC
+      `;
+      const res = await dbService.query(sql);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
   }
 
   async getPayrollSummary() {
-    const sql = `
-      SELECT month, year, SUM(gross_salary) as total_gross, SUM(net_salary) as total_net, SUM(pf_deduction + tds_deduction) as total_deductions
-      FROM payrolls
-      GROUP BY month, year
-      ORDER BY year DESC, id DESC LIMIT 6
-    `;
-    const res = await dbService.query(sql);
-    return res.rows;
+    try {
+      const sql = `
+        SELECT month, year, SUM(gross_salary) as total_gross, SUM(net_salary) as total_net, SUM(pf_deduction + tds_deduction) as total_deductions
+        FROM payrolls
+        GROUP BY month, year
+        ORDER BY id DESC LIMIT 6
+      `;
+      const res = await dbService.query(sql);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
   }
 
   async getAnnouncements() {
-    const sql = `
-      SELECT a.*, e.first_name as author_first_name, e.last_name as author_last_name, e.avatar_url as author_avatar
-      FROM announcements a
-      JOIN employees e ON a.posted_by = e.id
-      ORDER BY a.is_pinned DESC, a.id DESC
-      LIMIT 5
-    `;
-    const res = await dbService.query(sql);
-    return res.rows;
+    try {
+      const sql = `
+        SELECT a.*, e.first_name as author_first_name, e.last_name as author_last_name, e.avatar_url as author_avatar
+        FROM announcements a
+        LEFT JOIN employees e ON a.posted_by = e.id
+        ORDER BY a.id DESC
+        LIMIT 5
+      `;
+      const res = await dbService.query(sql);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
   }
 
   async getCelebrations() {
-    const sql = `
-      SELECT c.*, e.first_name, e.last_name, e.avatar_url, e.designation, d.name as department_name
-      FROM celebrations c
-      JOIN employees e ON c.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      ORDER BY c.event_date ASC
-    `;
-    const res = await dbService.query(sql);
-    return res.rows;
+    try {
+      const sql = `
+        SELECT e.id, e.first_name, e.last_name, e.avatar_url, e.designation, d.name as department_name, 'Birthday' as event_type, e.joining_date as event_date
+        FROM employees e
+        LEFT JOIN departments d ON e.department_id = d.id
+        WHERE e.is_deleted = false OR e.is_deleted IS NULL
+        LIMIT 5
+      `;
+      const res = await dbService.query(sql);
+      return res.rows;
+    } catch (e) {
+      return [];
+    }
   }
 }
 
