@@ -373,6 +373,91 @@ export async function initializeSchema() {
       payment_status VARCHAR(20) DEFAULT 'PAID',
       payment_date DATE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE IF NOT EXISTS salary_components (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(50) UNIQUE NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      type VARCHAR(20) NOT NULL, -- 'EARNING' | 'DEDUCTION'
+      calculation_type VARCHAR(30) DEFAULT 'PERCENTAGE_OF_BASIC', -- 'FLAT' | 'PERCENTAGE_OF_BASIC' | 'PERCENTAGE_OF_CTC'
+      default_value NUMERIC(10, 2) DEFAULT 0,
+      is_taxable BOOLEAN DEFAULT true,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS salary_templates (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(150) NOT NULL,
+      description TEXT,
+      annual_ctc NUMERIC(14, 2) NOT NULL,
+      employment_type VARCHAR(30) DEFAULT 'PERMANENT',
+      branch_id INTEGER REFERENCES branches(id),
+      department_id INTEGER REFERENCES departments(id),
+      is_active BOOLEAN DEFAULT true,
+      created_by INTEGER REFERENCES employees(id),
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS salary_template_components (
+      id SERIAL PRIMARY KEY,
+      template_id INTEGER NOT NULL REFERENCES salary_templates(id) ON DELETE CASCADE,
+      component_id INTEGER NOT NULL REFERENCES salary_components(id),
+      amount NUMERIC(12, 2) DEFAULT 0,
+      percentage NUMERIC(5, 2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_salary_assignments (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
+      template_id INTEGER REFERENCES salary_templates(id),
+      annual_ctc NUMERIC(14, 2) NOT NULL,
+      monthly_gross NUMERIC(12, 2) NOT NULL,
+      monthly_net NUMERIC(12, 2) NOT NULL,
+      basic_salary NUMERIC(12, 2) NOT NULL,
+      hra NUMERIC(12, 2) NOT NULL,
+      special_allowance NUMERIC(12, 2) NOT NULL,
+      pf_deduction NUMERIC(12, 2) DEFAULT 0,
+      esi_deduction NUMERIC(12, 2) DEFAULT 0,
+      pt_deduction NUMERIC(12, 2) DEFAULT 200,
+      tds_deduction NUMERIC(12, 2) DEFAULT 0,
+      effective_date DATE NOT NULL,
+      is_active BOOLEAN DEFAULT true,
+      created_by INTEGER REFERENCES employees(id),
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS salary_revisions (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      old_ctc NUMERIC(14, 2) NOT NULL,
+      new_ctc NUMERIC(14, 2) NOT NULL,
+      revision_type VARCHAR(50) NOT NULL, -- 'ANNUAL_INCREMENT' | 'PROMOTION' | 'MARKET_CORRECTION' | 'TRANSFER' | 'MANUAL'
+      effective_date DATE NOT NULL,
+      reason TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'APPROVED', -- 'PENDING' | 'APPROVED' | 'REJECTED'
+      approved_by INTEGER REFERENCES employees(id),
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_settings (
+      id SERIAL PRIMARY KEY,
+      payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',
+      cutoff_day INTEGER DEFAULT 25,
+      pay_day INTEGER DEFAULT 1,
+      working_days_month INTEGER DEFAULT 22,
+      pf_rate NUMERIC(5, 2) DEFAULT 12.00,
+      esi_rate NUMERIC(5, 2) DEFAULT 0.75,
+      pt_amount NUMERIC(10, 2) DEFAULT 200.00,
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS expenses (

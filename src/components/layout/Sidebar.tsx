@@ -40,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'holidays', label: 'Holidays & Calendar', icon: Calendar },
     { id: 'leave-analytics', label: 'Leave Analytics', icon: BarChart2 },
     { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign },
+    { id: 'payroll-foundation', label: 'Payroll Foundation & CTC', icon: DollarSign },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Tasks', icon: FolderGit2 },
     { id: 'assets', label: 'Asset Management', icon: Laptop },

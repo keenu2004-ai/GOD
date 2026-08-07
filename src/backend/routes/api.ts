@@ -18,6 +18,7 @@ import { leaveBalanceEngineController } from '../controllers/leaveBalanceEngineC
 import { holidayEngineController } from '../controllers/holidayEngineController.js';
 import { leaveAnalyticsController } from '../controllers/leaveAnalyticsController.js';
 import { leaveFinalizationController } from '../controllers/leaveFinalizationController.js';
+import { payrollFoundationController } from '../controllers/payrollFoundationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -199,6 +200,20 @@ router.put('/leaves/:id/status', authenticateToken, (req, res) => leaveControlle
 router.post('/leaves/:id/approve', authenticateToken, (req, res) => leaveController.processApproval(req, res));
 
 // 6. Payroll Module Routes
+const payrollRoles = ['ADMIN', 'HR_MANAGER', 'PAYROLL_MANAGER', 'FINANCE_MANAGER', 'SUPER_ADMIN'];
+router.post('/payroll/seed-defaults', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => payrollFoundationController.seedDefaults(req, res));
+router.post('/payroll/calculate-preview', authenticateToken, (req, res) => payrollFoundationController.calculatePreview(req, res));
+router.post('/payroll/assign', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.assignSalary(req, res));
+router.get('/payroll/assignments', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.getAllAssignments(req, res));
+router.get('/payroll/assignment/:employeeId', authenticateToken, (req, res) => payrollFoundationController.getEmployeeAssignment(req, res));
+router.get('/payroll/templates', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.getTemplates(req, res));
+router.post('/payroll/templates', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.createTemplate(req, res));
+router.post('/payroll/revisions', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.requestRevision(req, res));
+router.get('/payroll/revisions', authenticateToken, (req, res) => payrollFoundationController.getRevisions(req, res));
+router.get('/payroll/settings', authenticateToken, (req, res) => payrollFoundationController.getSettings(req, res));
+router.post('/payroll/settings', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => payrollFoundationController.updateSettings(req, res));
+router.get('/payroll/dashboard/kpis', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.getDashboardKPIs(req, res));
+
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));
 router.post('/payrolls/generate', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => payrollController.generatePayroll(req, res));
