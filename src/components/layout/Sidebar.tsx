@@ -23,6 +23,7 @@ import {
   FileText,
   Gift,
   LogOut,
+  CheckSquare,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -52,6 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'exit-management', label: 'Exit & FnF Settlement', icon: LogOut },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Workspaces', icon: FolderGit2 },
+    { id: 'tasks-kanban', label: 'Sprint Kanban & Tasks', icon: CheckSquare },
     { id: 'assets', label: 'Asset Management', icon: Laptop },
     { id: 'helpdesk', label: 'IT & HR Helpdesk', icon: HelpCircle },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },

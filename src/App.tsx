@@ -28,6 +28,7 @@ import { CompensationManagementPage } from './pages/CompensationManagementPage.j
 import { PayrollAnalyticsPage } from './pages/PayrollAnalyticsPage.js';
 import { ExitManagementPage } from './pages/ExitManagementPage.js';
 import { EnterpriseProjectWorkspacePage } from './pages/EnterpriseProjectWorkspacePage.js';
+import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -81,6 +82,8 @@ const AppContent: React.FC = () => {
             return <ExpensesPage />;
           case 'projects':
             return <EnterpriseProjectWorkspacePage />;
+          case 'tasks-kanban':
+            return <EnterpriseTaskBoardPage />;
           case 'assets':
             return <AssetsPage />;
           case 'helpdesk':

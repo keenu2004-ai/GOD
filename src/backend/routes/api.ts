@@ -27,6 +27,7 @@ import { payrollAnalyticsController } from '../controllers/payrollAnalyticsContr
 import { exitManagementController } from '../controllers/exitManagementController.js';
 import { payrollAutomationController } from '../controllers/payrollAutomationController.js';
 import { enterpriseProjectController } from '../controllers/enterpriseProjectController.js';
+import { enterpriseTaskController } from '../controllers/enterpriseTaskController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -308,6 +309,15 @@ router.delete('/projects/:id/members/:employeeId', authenticateToken, (req, res)
 router.post('/projects/documents', authenticateToken, (req, res) => enterpriseProjectController.addDocument(req, res));
 router.post('/projects/notes', authenticateToken, (req, res) => enterpriseProjectController.createNote(req, res));
 router.get('/projects/analytics/kpis', authenticateToken, (req, res) => enterpriseProjectController.getKPIs(req, res));
+
+// 8b. Enterprise Sprint & Interactive Kanban Task Routes
+router.post('/tasks/sprints', authenticateToken, (req, res) => enterpriseTaskController.createSprint(req, res));
+router.get('/tasks/sprints', authenticateToken, (req, res) => enterpriseTaskController.getSprints(req, res));
+router.post('/tasks', authenticateToken, (req, res) => enterpriseTaskController.createTask(req, res));
+router.patch('/tasks/:id/status', authenticateToken, (req, res) => enterpriseTaskController.updateTaskStatus(req, res));
+router.get('/tasks', authenticateToken, (req, res) => enterpriseTaskController.getTasks(req, res));
+router.post('/tasks/:id/checklist', authenticateToken, (req, res) => enterpriseTaskController.addChecklistItem(req, res));
+router.patch('/tasks/checklist/:itemId/toggle', authenticateToken, (req, res) => enterpriseTaskController.toggleChecklistItem(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));

@@ -716,14 +716,47 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS project_notes (
+    CREATE TABLE IF NOT EXISTS project_sprints (
       id SERIAL PRIMARY KEY,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      title VARCHAR(200) NOT NULL,
-      note_content TEXT NOT NULL,
-      author_id INTEGER REFERENCES employees(id),
+      sprint_name VARCHAR(100) NOT NULL,
+      sprint_goal TEXT,
+      start_date DATE,
+      end_date DATE,
+      status VARCHAR(30) DEFAULT 'ACTIVE', -- 'PLANNING' | 'ACTIVE' | 'CLOSED'
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_tasks (
+      id SERIAL PRIMARY KEY,
+      task_number VARCHAR(50) UNIQUE NOT NULL,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      sprint_id INTEGER REFERENCES project_sprints(id),
+      task_type VARCHAR(50) DEFAULT 'FEATURE', -- 'BUG' | 'FEATURE' | 'ENHANCEMENT' | 'DOCUMENTATION' | 'TASK'
+      priority VARCHAR(30) DEFAULT 'MEDIUM', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+      status VARCHAR(30) DEFAULT 'TO_DO', -- 'TO_DO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED' | 'BLOCKED'
+      assignee_id INTEGER REFERENCES employees(id),
+      reporter_id INTEGER REFERENCES employees(id),
+      estimated_hours INTEGER DEFAULT 0,
+      actual_hours INTEGER DEFAULT 0,
+      story_points INTEGER DEFAULT 3,
+      progress_percentage INTEGER DEFAULT 0,
+      due_date DATE,
+      created_by INTEGER REFERENCES employees(id),
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS task_checklists (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES project_tasks(id) ON DELETE CASCADE,
+      item_text VARCHAR(200) NOT NULL,
+      is_completed BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payroll_settings (
