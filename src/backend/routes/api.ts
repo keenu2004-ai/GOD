@@ -16,6 +16,12 @@ const router = Router();
 router.post('/auth/login', (req, res) => authController.login(req, res));
 router.post('/auth/refresh', (req, res) => authController.refreshToken(req, res));
 router.get('/auth/me', authenticateToken, (req, res) => authController.getProfile(req, res));
+router.post('/auth/change-password', authenticateToken, (req, res) => authController.changePassword(req, res));
+router.post('/auth/reset-password', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => authController.resetPassword(req, res));
+router.get('/auth/login-history', authenticateToken, (req, res) => authController.getLoginHistory(req, res));
+router.get('/auth/roles-permissions', authenticateToken, authorizeRoles('ADMIN'), (req, res) => authController.getRolesAndPermissions(req, res));
+router.put('/auth/roles-permissions', authenticateToken, authorizeRoles('ADMIN'), (req, res) => authController.updateRolePermissions(req, res));
+
 router.post('/seed', async (req, res) => {
   try {
     const { seedDatabase } = await import('../database/seed.js');

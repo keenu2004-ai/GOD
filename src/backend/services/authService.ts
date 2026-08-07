@@ -3,20 +3,24 @@ import { authRepository } from '../repositories/authRepository.js';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt.js';
 
 export class AuthService {
-  async login(email: string, password: string) {
-    const employee = await authRepository.findByEmail(email);
+  async login(identifier: string, password: string, ipAddress = '127.0.0.1', userAgent = 'Browser') {
+    const employee = await authRepository.findByIdentifier(identifier);
     if (!employee) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid email, employee code or password');
     }
 
     const isMatch = await bcrypt.compare(password, employee.password_hash);
     if (!isMatch) {
-      throw new Error('Invalid email or password');
+      await authRepository.logLoginHistory(employee.id, ipAddress, userAgent, 'FAILED', 'Incorrect password');
+      throw new Error('Invalid email, employee code or password');
     }
 
     if (employee.status !== 'ACTIVE') {
+      await authRepository.logLoginHistory(employee.id, ipAddress, userAgent, 'FAILED', 'Inactive account');
       throw new Error('Account is inactive or terminated. Contact HR administrator.');
     }
+
+    await authRepository.logLoginHistory(employee.id, ipAddress, userAgent, 'SUCCESS');
 
     const session = {
       id: employee.id,
@@ -63,11 +67,48 @@ export class AuthService {
     return generateTokens(session);
   }
 
+  async changePassword(employeeId: number, oldPassword: string, newPassword: string) {
+    const employee = await authRepository.findById(employeeId);
+    if (!employee) throw new Error('Employee profile not found');
+
+    const isMatch = await bcrypt.compare(oldPassword, employee.password_hash);
+    if (!isMatch) throw new Error('Current password does not match');
+
+    if (newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters long');
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await authRepository.updatePassword(employeeId, newHash);
+    return { success: true, message: 'Password updated successfully' };
+  }
+
+  async resetPassword(employeeId: number, newPassword: string) {
+    if (newPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters long');
+    }
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await authRepository.updatePassword(employeeId, newHash);
+    return { success: true, message: 'Password reset successfully' };
+  }
+
   async getProfile(employeeId: number) {
     const employee = await authRepository.findById(employeeId);
     if (!employee) throw new Error('Employee profile not found');
     const { password_hash, ...profile } = employee;
     return profile;
+  }
+
+  async getLoginHistory(employeeId: number) {
+    return await authRepository.getLoginHistory(employeeId);
+  }
+
+  async getRolesAndPermissions() {
+    return await authRepository.getAllRolesAndPermissions();
+  }
+
+  async updateRolePermissions(role: string, permissions: string[]) {
+    return await authRepository.updateRolePermissions(role, permissions);
   }
 }
 

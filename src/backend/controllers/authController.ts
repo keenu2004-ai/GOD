@@ -5,11 +5,17 @@ import { sendSuccess, sendError } from '../utils/response.js';
 export class AuthController {
   async login(req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json(sendError('Email and password are required'));
+      const { email, employee_code, identifier, password } = req.body;
+      const targetId = identifier || email || employee_code;
+
+      if (!targetId || !password) {
+        return res.status(400).json(sendError('Corporate email or employee code and password are required'));
       }
-      const result = await authService.login(email, password);
+
+      const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+      const userAgent = req.headers['user-agent'] || 'Browser';
+
+      const result = await authService.login(targetId, password, ip, userAgent);
       return res.json(sendSuccess(result, 'Login successful'));
     } catch (error: any) {
       return res.status(401).json(sendError(error.message || 'Authentication failed'));
@@ -29,12 +35,70 @@ export class AuthController {
     }
   }
 
+  async changePassword(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const { old_password, new_password } = req.body;
+
+      if (!old_password || !new_password) {
+        return res.status(400).json(sendError('Old password and new password are required'));
+      }
+
+      const result = await authService.changePassword(userId, old_password, new_password);
+      return res.json(sendSuccess(result, 'Password updated successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { employee_id, new_password } = req.body;
+      if (!employee_id || !new_password) {
+        return res.status(400).json(sendError('Employee ID and new password are required'));
+      }
+      const result = await authService.resetPassword(Number(employee_id), new_password);
+      return res.json(sendSuccess(result, 'Password reset successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
   async getProfile(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json(sendError('Unauthorized'));
       const profile = await authService.getProfile(userId);
       return res.json(sendSuccess(profile, 'Profile retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getLoginHistory(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const history = await authService.getLoginHistory(userId);
+      return res.json(sendSuccess(history, 'Login history retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async getRolesAndPermissions(req: Request, res: Response) {
+    try {
+      const data = await authService.getRolesAndPermissions();
+      return res.json(sendSuccess(data, 'Roles and permissions matrix retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async updateRolePermissions(req: Request, res: Response) {
+    try {
+      const { role, permissions } = req.body;
+      const result = await authService.updateRolePermissions(role, permissions || []);
+      return res.json(sendSuccess(result, 'Role permissions updated successfully'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
     }
