@@ -21,6 +21,7 @@ import { leaveFinalizationController } from '../controllers/leaveFinalizationCon
 import { payrollFoundationController } from '../controllers/payrollFoundationController.js';
 import { salaryComponentEngineController } from '../controllers/salaryComponentEngineController.js';
 import { payrollProcessingController } from '../controllers/payrollProcessingController.js';
+import { payslipPortalController } from '../controllers/payslipPortalController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -238,6 +239,13 @@ router.get('/payroll/preview', authenticateToken, (req, res) => payrollProcessin
 router.post('/payroll/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.approvePayroll(req, res));
 router.patch('/payroll/unlock', authenticateToken, authorizeRoles('SUPER_ADMIN'), (req, res) => payrollProcessingController.unlockPayroll(req, res));
 router.post('/payroll/adjustment', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.addAdjustment(req, res));
+
+// 6d. Enterprise Employee Self-Service Payslip & Digital Documents Routes
+router.get('/payroll/payslip/view', authenticateToken, (req, res) => payslipPortalController.viewPayslip(req, res));
+router.post('/payroll/payslip/log-download', authenticateToken, (req, res) => payslipPortalController.logDownload(req, res));
+router.post('/payroll/certificates/request', authenticateToken, (req, res) => payslipPortalController.requestCertificate(req, res));
+router.get('/payroll/certificates', authenticateToken, (req, res) => payslipPortalController.getCertificates(req, res));
+router.get('/payroll/self-service/feed', authenticateToken, (req, res) => payslipPortalController.getSelfServiceFeed(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

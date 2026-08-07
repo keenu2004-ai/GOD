@@ -20,6 +20,7 @@ import {
   AlarmClock,
   FileEdit,
   BarChart2,
+  FileText,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'payroll-foundation', label: 'Payroll Foundation & CTC', icon: DollarSign },
     { id: 'salary-components', label: 'Salary Components & Loans', icon: Settings },
     { id: 'payroll-processing', label: 'Payroll Processing Wizard', icon: AlarmClock },
+    { id: 'payslip-portal', label: 'Employee Payroll Portal', icon: FileText },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Tasks', icon: FolderGit2 },
     { id: 'assets', label: 'Asset Management', icon: Laptop },

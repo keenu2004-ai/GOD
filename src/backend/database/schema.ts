@@ -564,18 +564,39 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS payroll_lock_periods (
+    CREATE TABLE IF NOT EXISTS payslip_documents (
       id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
       month VARCHAR(20) NOT NULL,
       year INTEGER NOT NULL,
-      is_locked BOOLEAN DEFAULT true,
-      locked_by INTEGER REFERENCES employees(id),
-      locked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      unlocked_by INTEGER REFERENCES employees(id),
-      unlocked_at TIMESTAMP,
-      reason TEXT,
+      gross_salary NUMERIC(12, 2) NOT NULL,
+      net_salary NUMERIC(12, 2) NOT NULL,
+      total_deductions NUMERIC(12, 2) NOT NULL,
+      qr_verification_code VARCHAR(100) UNIQUE NOT NULL,
+      is_released BOOLEAN DEFAULT true,
+      created_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(month, year)
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, month, year)
+    );
+
+    CREATE TABLE IF NOT EXISTS payslip_download_logs (
+      id SERIAL PRIMARY KEY,
+      payslip_id INTEGER NOT NULL REFERENCES payslip_documents(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      ip_address VARCHAR(50),
+      downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS salary_certificates (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      certificate_type VARCHAR(50) NOT NULL, -- 'SALARY_CERTIFICATE' | 'EMPLOYMENT_LETTER' | 'COMPENSATION_LETTER' | 'INCREMENT_LETTER'
+      issued_date DATE NOT NULL,
+      purpose TEXT NOT NULL,
+      status VARCHAR(20) DEFAULT 'ISSUED',
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payroll_adjustments (
