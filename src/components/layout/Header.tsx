@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ShieldCheck,
   CheckCircle2,
+  Coffee,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.js';
 import apiClient from '../../services/apiClient.js';
@@ -129,6 +130,22 @@ export const Header: React.FC = () => {
     }
   };
 
+  const handleBreak = async () => {
+    try {
+      setPunching(true);
+      const res = await attendanceService.recordBreak(15);
+      if (res?.success) {
+        alert('15-minute break recorded successfully!');
+        fetchAttendanceStatus();
+        window.dispatchEvent(new Event('attendance-updated'));
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to record break');
+    } finally {
+      setPunching(false);
+    }
+  };
+
   const formatTimer = (sec: number) => {
     const hrs = Math.floor(sec / 3600);
     const mins = Math.floor((sec % 3600) / 60);
@@ -172,7 +189,10 @@ export const Header: React.FC = () => {
               {formatTimer(seconds)}
             </span>
           )}
+        </div>
 
+        {/* Global Action Buttons */}
+        <div className="flex items-center gap-2">
           {!isCheckedIn && !isCheckedOut && (
             <button
               onClick={handlePunchIn}
@@ -185,14 +205,25 @@ export const Header: React.FC = () => {
           )}
 
           {isCheckedIn && (
-            <button
-              onClick={handlePunchOut}
-              disabled={punching}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{punching ? 'PUNCHING...' : 'PUNCH OUT'}</span>
-            </button>
+            <>
+              <button
+                onClick={handleBreak}
+                disabled={punching}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
+                title="Record 15 Min Break"
+              >
+                <Coffee className="w-3.5 h-3.5" />
+                <span>BREAK</span>
+              </button>
+              <button
+                onClick={handlePunchOut}
+                disabled={punching}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{punching ? 'PUNCHING...' : 'PUNCH OUT'}</span>
+              </button>
+            </>
           )}
         </div>
 
