@@ -194,6 +194,33 @@ export const EmployeesPage: React.FC = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    if (employees.length === 0) return alert('No employee records available to export.');
+    const headers = ['Employee Code', 'First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Designation', 'Department', 'Branch', 'Salary', 'Status'];
+    const rows = employees.map(e => [
+      e.employee_code,
+      e.first_name,
+      e.last_name,
+      e.email,
+      e.phone || '',
+      e.role,
+      e.designation,
+      e.department_name || 'Engineering',
+      e.branch_name || 'THEIAKSHI HQ',
+      e.salary || 0,
+      e.status || 'ACTIVE'
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(cell => `"${cell}"`).join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `THEIAKSHI_Employees_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -201,19 +228,27 @@ export const EmployeesPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-600" />
-            Employees Directory
+            Enterprise Employee Management Directory
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Manage enterprise headcount, payroll bank accounts, emergency contacts, and status.
+            Complete lifecycle management, automated PK sequence sync, payroll structures & RBAC roles.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Employee</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-lg border border-slate-200 transition-all"
+          >
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Employee</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}
