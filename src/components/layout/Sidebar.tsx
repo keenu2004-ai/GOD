@@ -16,14 +16,17 @@ import {
   Calendar,
   Settings,
   Building,
+  X,
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpenMobile, onCloseMobile }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
     { id: 'employees', label: 'Employees Directory', icon: Users },
@@ -41,18 +44,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     { id: 'settings', label: 'Company Settings & Audits', icon: Settings },
   ];
 
+  const handleItemClick = (id: string) => {
+    setActiveTab(id);
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   return (
-    <aside className="w-64 bg-[#0F172A] border-r border-slate-200/20 flex flex-col h-screen sticky top-0 shrink-0 text-slate-300">
-      {/* Company Branding */}
-      <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm text-sm">
-          T1
+    <>
+      {/* Mobile Overlay Backdrop */}
+      {isOpenMobile && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden"
+        />
+      )}
+
+      <aside className={`w-64 bg-[#0F172A] border-r border-slate-200/20 flex flex-col h-screen fixed md:sticky top-0 left-0 z-50 shrink-0 text-slate-300 transition-transform duration-300 md:translate-x-0 ${
+        isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+      }`}>
+        {/* Company Branding & Mobile Close Button */}
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm text-sm">
+              T1
+            </div>
+            <div className="leading-none">
+              <h1 className="text-white font-bold text-sm tracking-tight font-sans">THEIAKSHI ONE</h1>
+              <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">Enterprise HRMS</p>
+            </div>
+          </div>
+
+          {/* Close Button on Mobile */}
+          <button
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div className="leading-none">
-          <h1 className="text-white font-bold text-sm tracking-tight font-sans">THEIAKSHI ONE</h1>
-          <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">Enterprise HRMS</p>
-        </div>
-      </div>
 
       {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -62,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleItemClick(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 font-semibold'
@@ -87,5 +118,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         </span>
       </div>
     </aside>
+  </>
   );
 };

@@ -10,13 +10,18 @@ import {
   ShieldCheck,
   CheckCircle2,
   Coffee,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.js';
 import apiClient from '../../services/apiClient.js';
 import { attendanceService } from '../../services/attendanceService.js';
 import { NotificationItem } from '../../types/index.js';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onToggleMobileMenu?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const { user, logout } = useAuth();
   const [time, setTime] = useState<string>('');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -159,7 +164,16 @@ export const Header: React.FC = () => {
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm text-slate-800">
       {/* Left: Organization & Branch info */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Mobile Sidebar Hamburger Toggle */}
+        <button
+          onClick={onToggleMobileMenu}
+          className="md:hidden p-1.5 bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+          title="Open Menu"
+        >
+          <Menu className="w-5 h-5 text-slate-700" />
+        </button>
+
         <div className="flex items-center gap-2 text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium">
           <Building2 className="w-4 h-4 text-emerald-600" />
           <span className="text-slate-900 font-semibold">{user?.branch_name || 'THEIAKSHI HQ - Bengaluru'}</span>
