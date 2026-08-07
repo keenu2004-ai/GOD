@@ -24,6 +24,7 @@ import { payrollProcessingController } from '../controllers/payrollProcessingCon
 import { payslipPortalController } from '../controllers/payslipPortalController.js';
 import { compensationManagementController } from '../controllers/compensationManagementController.js';
 import { payrollAnalyticsController } from '../controllers/payrollAnalyticsController.js';
+import { exitManagementController } from '../controllers/exitManagementController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -270,6 +271,16 @@ router.get('/payroll/analytics/trend', authenticateToken, authorizeRoles(...payr
 router.get('/payroll/analytics/forecast', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getForecast(req, res));
 router.post('/payroll/analytics/budget', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollAnalyticsController.setBudget(req, res));
 router.get('/payroll/analytics/budget', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getBudgets(req, res));
+
+// 6g. Enterprise Exit Management & Full & Final (FnF) Settlement Routes
+router.post('/exit/resignation', authenticateToken, (req, res) => exitManagementController.submitResignation(req, res));
+router.patch('/exit/resignation/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => exitManagementController.approveResignation(req, res));
+router.get('/exit/resignations', authenticateToken, (req, res) => exitManagementController.getResignations(req, res));
+router.post('/exit/clearance', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => exitManagementController.clearDepartment(req, res));
+router.get('/exit/clearances/:resignationId', authenticateToken, (req, res) => exitManagementController.getClearances(req, res));
+router.post('/exit/fnf/calculate', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => exitManagementController.calculateFnF(req, res));
+router.patch('/exit/fnf/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => exitManagementController.approveFnF(req, res));
+router.get('/exit/fnf/:resignationId', authenticateToken, (req, res) => exitManagementController.getFnF(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

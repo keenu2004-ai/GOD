@@ -649,11 +649,47 @@ export async function initializeSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS payroll_analytics_cache (
+    CREATE TABLE IF NOT EXISTS employee_resignations (
       id SERIAL PRIMARY KEY,
-      period VARCHAR(20) NOT NULL,
-      metric_key VARCHAR(100) UNIQUE NOT NULL,
-      metric_data JSONB NOT NULL,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      resignation_date DATE NOT NULL,
+      last_working_day DATE NOT NULL,
+      notice_period_days INTEGER DEFAULT 30,
+      reason TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
+      manager_approved BOOLEAN DEFAULT false,
+      hr_approved BOOLEAN DEFAULT false,
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS exit_department_clearances (
+      id SERIAL PRIMARY KEY,
+      resignation_id INTEGER NOT NULL REFERENCES employee_resignations(id) ON DELETE CASCADE,
+      department VARCHAR(30) NOT NULL, -- 'HR' | 'FINANCE' | 'IT' | 'ADMIN' | 'MANAGER'
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'CLEARED' | 'REJECTED'
+      comments TEXT,
+      cleared_by INTEGER REFERENCES employees(id),
+      cleared_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(resignation_id, department)
+    );
+
+    CREATE TABLE IF NOT EXISTS fnf_settlements (
+      id SERIAL PRIMARY KEY,
+      resignation_id INTEGER NOT NULL REFERENCES employee_resignations(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      pending_salary NUMERIC(12, 2) DEFAULT 0,
+      leave_encashment NUMERIC(12, 2) DEFAULT 0,
+      bonus_payout NUMERIC(12, 2) DEFAULT 0,
+      asset_recovery_deduction NUMERIC(12, 2) DEFAULT 0,
+      loan_balance_deduction NUMERIC(12, 2) DEFAULT 0,
+      notice_shortfall_deduction NUMERIC(12, 2) DEFAULT 0,
+      net_settlement_amount NUMERIC(12, 2) NOT NULL,
+      status VARCHAR(30) DEFAULT 'PREVIEW', -- 'PREVIEW' | 'APPROVED' | 'SETTLED'
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
