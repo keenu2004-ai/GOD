@@ -8,6 +8,7 @@ import { expenseController } from '../controllers/expenseController.js';
 import { projectController } from '../controllers/projectController.js';
 import { dashboardController } from '../controllers/dashboardController.js';
 import { miscController } from '../controllers/miscController.js';
+import { shiftController } from '../controllers/shiftController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -70,6 +71,28 @@ router.get('/attendance/analytics', authenticateToken, authorizeRoles('ADMIN', '
 router.post('/attendance/regularize', authenticateToken, (req, res) => attendanceController.applyRegularization(req, res));
 router.get('/attendance/regularizations', authenticateToken, (req, res) => attendanceController.getRegularizations(req, res));
 router.put('/attendance/regularizations/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.processRegularization(req, res));
+
+// 4b. Shift Management Routes
+router.get('/shifts', authenticateToken, (req, res) => shiftController.getAllShifts(req, res));
+router.post('/shifts', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.createShift(req, res));
+router.post('/shifts/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => shiftController.seedDefaultShifts(req, res));
+router.get('/shifts/my-shift', authenticateToken, (req, res) => shiftController.getMyShift(req, res));
+router.get('/shifts/assignments', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => shiftController.getAllAssignments(req, res));
+router.post('/shifts/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.assignShift(req, res));
+router.post('/shifts/bulk-assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.bulkAssignShift(req, res));
+router.get('/shifts/history', authenticateToken, (req, res) => shiftController.getShiftHistory(req, res));
+router.get('/shifts/swap-requests', authenticateToken, (req, res) => shiftController.getSwapRequests(req, res));
+router.post('/shifts/swap-requests', authenticateToken, (req, res) => shiftController.requestSwap(req, res));
+router.put('/shifts/swap-requests/:id/process', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => shiftController.processSwap(req, res));
+router.get('/shifts/overtime-requests', authenticateToken, (req, res) => shiftController.getOvertimeRequests(req, res));
+router.post('/shifts/overtime-requests', authenticateToken, (req, res) => shiftController.requestOvertime(req, res));
+router.put('/shifts/overtime-requests/:id/process', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => shiftController.processOvertime(req, res));
+router.get('/shifts/reports/utilization', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.getShiftUtilizationReport(req, res));
+router.get('/shifts/reports/overtime', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.getOvertimeSummaryReport(req, res));
+router.get('/shifts/employees/:employeeId', authenticateToken, (req, res) => shiftController.getEmployeeShift(req, res));
+router.get('/shifts/:id', authenticateToken, (req, res) => shiftController.getShiftById(req, res));
+router.put('/shifts/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.updateShift(req, res));
+router.delete('/shifts/:id', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => shiftController.deleteShift(req, res));
 
 // 5. Leave Module Routes
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));

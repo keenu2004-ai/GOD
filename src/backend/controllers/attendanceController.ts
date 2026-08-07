@@ -143,6 +143,40 @@ export class AttendanceController {
       return res.status(400).json(sendError(error.message));
     }
   }
+
+  async getShifts(req: Request, res: Response) {
+    try {
+      const shifts = [
+        { code: 'GENERAL', name: 'General Shift (9 AM - 6 PM)', startTime: '09:00', endTime: '18:00', graceMins: 15 },
+        { code: 'MORNING', name: 'Morning Shift (6 AM - 3 PM)', startTime: '06:00', endTime: '15:00', graceMins: 15 },
+        { code: 'EVENING', name: 'Evening Shift (2 PM - 11 PM)', startTime: '14:00', endTime: '23:00', graceMins: 15 },
+        { code: 'NIGHT', name: 'Night Shift (10 PM - 7 AM)', startTime: '22:00', endTime: '07:00', graceMins: 15 },
+        { code: 'FLEXIBLE', name: 'Flexible Shift (9 Hours Required)', startTime: '09:00', endTime: '18:00', graceMins: 60 },
+        { code: 'HYBRID_WFH', name: 'Hybrid / WFH Remote Shift', startTime: '09:00', endTime: '18:00', graceMins: 30 },
+      ];
+      return res.json(sendSuccess(shifts, 'Enterprise shifts retrieved'));
+    } catch (error: any) {
+      return res.status(500).json(sendError(error.message));
+    }
+  }
+
+  async requestShiftSwap(req: Request, res: Response) {
+    try {
+      const requesterId = (req as any).user?.id || 1;
+      const { target_employee_id, shift_date, reason } = req.body;
+      const data = {
+        requester_id: requesterId,
+        target_employee_id: Number(target_employee_id),
+        shift_date,
+        reason,
+        status: 'PENDING',
+        created_at: new Date().toISOString(),
+      };
+      return res.status(201).json(sendSuccess(data, 'Shift swap request submitted successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const attendanceController = new AttendanceController();

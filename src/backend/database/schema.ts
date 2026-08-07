@@ -429,6 +429,88 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Shift Management Tables
+    CREATE TABLE IF NOT EXISTS shifts (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      code VARCHAR(30) NOT NULL UNIQUE,
+      start_time VARCHAR(5) NOT NULL DEFAULT '09:00',
+      end_time VARCHAR(5) NOT NULL DEFAULT '18:00',
+      grace_mins INTEGER NOT NULL DEFAULT 15,
+      late_threshold_mins INTEGER NOT NULL DEFAULT 30,
+      half_day_threshold_hours NUMERIC(4,2) NOT NULL DEFAULT 4.0,
+      early_exit_threshold_mins INTEGER NOT NULL DEFAULT 60,
+      break_duration_mins INTEGER NOT NULL DEFAULT 60,
+      max_work_hours NUMERIC(4,2) NOT NULL DEFAULT 12.0,
+      min_work_hours NUMERIC(4,2) NOT NULL DEFAULT 4.0,
+      overtime_eligible BOOLEAN NOT NULL DEFAULT true,
+      is_night_shift BOOLEAN NOT NULL DEFAULT false,
+      is_wfh BOOLEAN NOT NULL DEFAULT false,
+      auto_clockout_after_hours NUMERIC(4,2) NOT NULL DEFAULT 14.0,
+      shift_type VARCHAR(30) NOT NULL DEFAULT 'GENERAL',
+      color VARCHAR(20) NOT NULL DEFAULT '#3B82F6',
+      is_deleted BOOLEAN NOT NULL DEFAULT false,
+      deleted_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_shift_assignments (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      shift_id INTEGER NOT NULL REFERENCES shifts(id),
+      effective_date DATE NOT NULL,
+      expiry_date DATE,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS shift_swap_requests (
+      id SERIAL PRIMARY KEY,
+      requester_id INTEGER NOT NULL REFERENCES employees(id),
+      target_employee_id INTEGER NOT NULL REFERENCES employees(id),
+      requester_shift_id INTEGER REFERENCES shifts(id),
+      target_shift_id INTEGER REFERENCES shifts(id),
+      shift_date DATE NOT NULL,
+      reason TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      approved_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS overtime_requests (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      date DATE NOT NULL,
+      expected_overtime_hours NUMERIC(4,2) NOT NULL DEFAULT 1.0,
+      approved_hours NUMERIC(4,2),
+      reason TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      approved_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Shift indexes
+    CREATE INDEX IF NOT EXISTS idx_shifts_code ON shifts(code);
+    CREATE INDEX IF NOT EXISTS idx_shift_assign_emp ON employee_shift_assignments(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_shift_assign_active ON employee_shift_assignments(is_active);
+    CREATE INDEX IF NOT EXISTS idx_swap_req_status ON shift_swap_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_overtime_req_emp ON overtime_requests(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_overtime_req_status ON overtime_requests(status);
+
     -- Create View for backward compatibility with 'leaves'
     CREATE OR REPLACE VIEW leaves AS SELECT * FROM leave_applications;
 
@@ -445,4 +527,3 @@ export async function initializeSchema() {
     CREATE INDEX IF NOT EXISTS idx_notif_emp ON notifications(employee_id);
   `);
 }
-

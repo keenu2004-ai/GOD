@@ -17,6 +17,7 @@ import {
   Settings,
   Building,
   X,
+  AlarmClock,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'orgchart', label: 'Organization Chart', icon: Network },
     { id: 'performance', label: 'Performance Reviews', icon: Award },
     { id: 'planner', label: 'Weekly Planner', icon: Calendar },
+    { id: 'shifts', label: 'Shift Management', icon: AlarmClock },
     { id: 'settings', label: 'Company Settings & Audits', icon: Settings },
   ];
 

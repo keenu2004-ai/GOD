@@ -15,6 +15,7 @@ import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
 import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
+import { ShiftManagementPage } from './pages/ShiftManagementPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -62,6 +63,8 @@ const AppContent: React.FC = () => {
             return <PerformancePage />;
           case 'planner':
             return <WeeklyPlannerPage />;
+          case 'shifts':
+            return <ShiftManagementPage />;
           case 'settings':
             return <SettingsPage />;
           default:
