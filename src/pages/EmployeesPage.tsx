@@ -16,6 +16,7 @@ import {
   CheckCircle,
   Shield,
   UserCheck,
+  Edit3,
 } from 'lucide-react';
 import { employeeService } from '../services/employeeService.js';
 import apiClient from '../services/apiClient.js';
@@ -31,6 +32,8 @@ export const EmployeesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedEmployee, setSelectedEmployee] = useState<UserProfile | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editingEmployee, setEditingEmployee] = useState<UserProfile | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Form state for employee creation
@@ -51,6 +54,22 @@ export const EmployeesPage: React.FC = () => {
     emergency_contact_name: '',
     emergency_contact_phone: '',
     employee_code: '',
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    role: 'EMPLOYEE',
+    designation: '',
+    salary: 50000,
+    bank_account: '',
+    ifsc_code: '',
+    pan_number: '',
+    aadhaar_number: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
   });
 
   const fetchEmployees = async () => {
@@ -111,6 +130,27 @@ export const EmployeesPage: React.FC = () => {
       }
     } catch (err: any) {
       alert(err.response?.data?.message || err.message || 'Failed to create employee');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmployee) return;
+    try {
+      setSubmitting(true);
+      const res = await apiClient.put(`/employees/${editingEmployee.id}`, editFormData);
+      if (res.data?.success) {
+        alert('Employee updated successfully!');
+        setShowEditModal(false);
+        setEditingEmployee(null);
+        fetchEmployees();
+      } else {
+        alert(res.data?.message || 'Failed to update employee');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to update employee');
     } finally {
       setSubmitting(false);
     }
@@ -267,6 +307,31 @@ export const EmployeesPage: React.FC = () => {
                     <td className="p-4 text-right space-x-2">
                       <button onClick={() => setSelectedEmployee(emp)} title="View Profile" className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg">
                         <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingEmployee(emp);
+                          setEditFormData({
+                            first_name: emp.first_name || '',
+                            last_name: emp.last_name || '',
+                            email: emp.email || '',
+                            phone: emp.phone || '',
+                            role: emp.role || 'EMPLOYEE',
+                            designation: emp.designation || '',
+                            salary: emp.salary ? Number(emp.salary) : 50000,
+                            bank_account: emp.bank_account || '',
+                            ifsc_code: emp.ifsc_code || '',
+                            pan_number: emp.pan_number || '',
+                            aadhaar_number: emp.aadhaar_number || '',
+                            emergency_contact_name: emp.emergency_contact_name || '',
+                            emergency_contact_phone: emp.emergency_contact_phone || '',
+                          });
+                          setShowEditModal(true);
+                        }}
+                        title="Edit Employee"
+                        className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg"
+                      >
+                        <Edit3 className="w-4 h-4" />
                       </button>
                       {emp.is_deleted ? (
                         <>
@@ -470,6 +535,92 @@ export const EmployeesPage: React.FC = () => {
                 <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
                 <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg">
                   {submitting ? 'Saving...' : 'Save Employee'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditModal && editingEmployee && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 text-xs shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-blue-500" />
+                <span>Edit Employee — {editingEmployee.first_name} {editingEmployee.last_name} ({editingEmployee.employee_code})</span>
+              </h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEmployee} className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 font-semibold">First Name</label>
+                  <input type="text" value={editFormData.first_name} onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" required />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold">Last Name</label>
+                  <input type="text" value={editFormData.last_name} onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" required />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold">Corporate Email</label>
+                <input type="email" value={editFormData.email} onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" required />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 font-semibold">Phone</label>
+                  <input type="text" value={editFormData.phone} onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold">Designation</label>
+                  <input type="text" value={editFormData.designation} onChange={(e) => setEditFormData({ ...editFormData, designation: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 font-semibold">Monthly Salary (₹)</label>
+                  <input type="number" value={editFormData.salary} onChange={(e) => setEditFormData({ ...editFormData, salary: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" required />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold">Bank Account</label>
+                  <input type="text" value={editFormData.bank_account} onChange={(e) => setEditFormData({ ...editFormData, bank_account: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 font-semibold">IFSC Code</label>
+                  <input type="text" value={editFormData.ifsc_code} onChange={(e) => setEditFormData({ ...editFormData, ifsc_code: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold">PAN Number</label>
+                  <input type="text" value={editFormData.pan_number} onChange={(e) => setEditFormData({ ...editFormData, pan_number: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-slate-400 font-semibold">Emergency Contact Name</label>
+                  <input type="text" value={editFormData.emergency_contact_name} onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_name: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold">Emergency Contact Phone</label>
+                  <input type="text" value={editFormData.emergency_contact_phone} onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_phone: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white mt-1" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+                <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg">
+                  {submitting ? 'Updating...' : 'Update Employee Details'}
                 </button>
               </div>
             </form>
