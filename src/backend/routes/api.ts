@@ -22,6 +22,7 @@ import { payrollFoundationController } from '../controllers/payrollFoundationCon
 import { salaryComponentEngineController } from '../controllers/salaryComponentEngineController.js';
 import { payrollProcessingController } from '../controllers/payrollProcessingController.js';
 import { payslipPortalController } from '../controllers/payslipPortalController.js';
+import { compensationManagementController } from '../controllers/compensationManagementController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -246,6 +247,19 @@ router.post('/payroll/payslip/log-download', authenticateToken, (req, res) => pa
 router.post('/payroll/certificates/request', authenticateToken, (req, res) => payslipPortalController.requestCertificate(req, res));
 router.get('/payroll/certificates', authenticateToken, (req, res) => payslipPortalController.getCertificates(req, res));
 router.get('/payroll/self-service/feed', authenticateToken, (req, res) => payslipPortalController.getSelfServiceFeed(req, res));
+
+// 6e. Enterprise Compensation & Benefits Management Routes
+router.post('/compensation/bonus/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => compensationManagementController.seedBonus(req, res));
+router.get('/compensation/bonus/types', authenticateToken, (req, res) => compensationManagementController.getBonusMaster(req, res));
+router.post('/bonus', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.assignBonus(req, res));
+router.patch('/bonus/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.approveBonus(req, res));
+router.get('/bonus', authenticateToken, (req, res) => compensationManagementController.getBonuses(req, res));
+router.post('/incentive', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.awardIncentive(req, res));
+router.get('/incentives', authenticateToken, (req, res) => compensationManagementController.getIncentives(req, res));
+router.post('/reimbursement', authenticateToken, (req, res) => compensationManagementController.submitClaim(req, res));
+router.patch('/reimbursement/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => compensationManagementController.approveClaim(req, res));
+router.get('/reimbursements', authenticateToken, (req, res) => compensationManagementController.getClaims(req, res));
+router.get('/compensation/analytics', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.getAnalytics(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

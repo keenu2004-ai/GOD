@@ -599,15 +599,58 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS payroll_adjustments (
+    CREATE TABLE IF NOT EXISTS bonus_master (
       id SERIAL PRIMARY KEY,
-      run_id INTEGER REFERENCES payroll_runs(id),
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      adjustment_type VARCHAR(50) NOT NULL, -- 'BONUS' | 'ARREARS' | 'DEDUCTION_CORRECTION' | 'MANUAL'
-      amount NUMERIC(12, 2) NOT NULL,
-      reason TEXT NOT NULL,
+      bonus_name VARCHAR(150) NOT NULL,
+      bonus_type VARCHAR(50) NOT NULL, -- 'PERFORMANCE' | 'FESTIVAL' | 'ANNUAL' | 'RETENTION' | 'REFERRAL' | 'JOINING' | 'PROJECT_COMPLETION' | 'SALES' | 'SPOT_AWARD'
+      calculation_mode VARCHAR(30) DEFAULT 'FIXED', -- 'FIXED' | 'PERCENTAGE'
+      formula_expression TEXT,
+      is_active BOOLEAN DEFAULT true,
       created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_bonuses (
+      id SERIAL PRIMARY KEY,
+      bonus_id INTEGER REFERENCES bonus_master(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      bonus_amount NUMERIC(12, 2) NOT NULL,
+      payout_month VARCHAR(20) NOT NULL,
+      payout_year INTEGER NOT NULL,
+      reason TEXT,
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID'
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_incentives (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      incentive_type VARCHAR(50) NOT NULL, -- 'SALES' | 'PROJECT' | 'PERFORMANCE' | 'ATTENDANCE' | 'TARGET_ACHIEVEMENT'
+      amount NUMERIC(12, 2) NOT NULL,
+      payout_month VARCHAR(20) NOT NULL,
+      payout_year INTEGER NOT NULL,
+      reason TEXT,
+      status VARCHAR(30) DEFAULT 'APPROVED',
+      approved_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS reimbursement_requests (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      claim_category VARCHAR(50) NOT NULL, -- 'TRAVEL' | 'FUEL' | 'FOOD' | 'HOTEL' | 'MEDICAL' | 'OFFICE_SUPPLIES' | 'MOBILE' | 'INTERNET' | 'CLIENT_VISIT'
+      claim_amount NUMERIC(10, 2) NOT NULL,
+      receipt_url TEXT,
+      description TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'MANAGER_APPROVED' | 'FINANCE_APPROVED' | 'REJECTED' | 'PAID'
+      manager_approved BOOLEAN DEFAULT false,
+      finance_approved BOOLEAN DEFAULT false,
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payroll_settings (
