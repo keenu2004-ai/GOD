@@ -17,6 +17,7 @@ import { leaveWorkflowController } from '../controllers/leaveWorkflowController.
 import { leaveBalanceEngineController } from '../controllers/leaveBalanceEngineController.js';
 import { holidayEngineController } from '../controllers/holidayEngineController.js';
 import { leaveAnalyticsController } from '../controllers/leaveAnalyticsController.js';
+import { leaveFinalizationController } from '../controllers/leaveFinalizationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -174,6 +175,12 @@ router.get('/analytics/leave/branches', authenticateToken, authorizeRoles(...lea
 router.get('/analytics/leave/heatmap', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getHeatmap(req, res));
 router.get('/analytics/leave/forecast', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getForecast(req, res));
 router.post('/analytics/leave/log-export', authenticateToken, (req, res) => leaveAnalyticsController.logExport(req, res));
+
+// 5f. Enterprise Leave Finalization & Bulk Operations Routes
+router.post('/leave/bulk/assign-policy', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leaveFinalizationController.bulkAssignPolicy(req, res));
+router.post('/leave/bulk/adjust-balances', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leaveFinalizationController.bulkAdjustBalances(req, res));
+router.post('/leave/cron/run-maintenance', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leaveFinalizationController.runMaintenance(req, res));
+router.get('/leave/import/template', authenticateToken, (req, res) => leaveFinalizationController.getTemplate(req, res));
 
 // Legacy compat leave applications
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));

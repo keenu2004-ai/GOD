@@ -321,6 +321,17 @@ export const LeaveManagementPage: React.FC = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isHRAdmin && (
+              <button onClick={async () => {
+                try {
+                  const res = await apiClient.post('/leave/cron/run-maintenance');
+                  alert(`✅ Leave Maintenance Cron executed!\n${res.data?.message}`);
+                  fetchData(); fetchHRData();
+                } catch (e: any) { alert(e.response?.data?.message || 'Cron execution failed'); }
+              }} className="flex items-center gap-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 text-xs font-bold px-3 py-2 rounded-xl border border-emerald-500/30">
+                <RefreshCw className="w-3.5 h-3.5" /> Run Maintenance Cron
+              </button>
+            )}
+            {isHRAdmin && (
               <button onClick={handleSeedDefaults} className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/20">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Seed 19 Leave Types
               </button>
