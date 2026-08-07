@@ -64,6 +64,7 @@ router.post('/attendance/break', authenticateToken, (req, res) => attendanceCont
 router.get('/attendance/my-status', authenticateToken, (req, res) => attendanceController.getMyStatus(req, res));
 router.get('/attendance/history', authenticateToken, (req, res) => attendanceController.getHistory(req, res));
 router.get('/attendance/summary', authenticateToken, (req, res) => attendanceController.getMonthlySummary(req, res));
+router.get('/attendance/calendar', authenticateToken, (req, res) => attendanceController.getCalendar(req, res));
 router.get('/attendance/live', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.getLiveManagerDashboard(req, res));
 router.get('/attendance/analytics', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.getAnalytics(req, res));
 router.post('/attendance/regularize', authenticateToken, (req, res) => attendanceController.applyRegularization(req, res));

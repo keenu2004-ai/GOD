@@ -257,6 +257,12 @@ export class AttendanceService {
   async processRegularization(id: number, status: string, approverId: number) {
     return await attendanceRepository.approveRegularization(id, status, approverId);
   }
+
+  async getCalendar(employeeId: number, year?: number, month?: number) {
+    const yr = year || new Date().getFullYear();
+    const mth = month || new Date().getMonth() + 1;
+    return await attendanceRepository.getCalendarView(employeeId, yr, mth);
+  }
 }
 
 export const attendanceService = new AttendanceService();

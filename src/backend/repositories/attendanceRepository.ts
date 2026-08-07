@@ -255,6 +255,20 @@ export class AttendanceRepository {
     });
   }
 
+  async getCalendarView(employeeId: number, year: number, month: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+
+    const res = await dbService.query(
+      `SELECT date::text as date_str, punch_in, punch_out, work_hours, is_late, is_overtime, status
+       FROM attendance
+       WHERE employee_id = $1 AND date >= $2 AND date <= $3
+       ORDER BY date ASC`,
+      [employeeId, startDate, endDate]
+    );
+    return res.rows;
+  }
+
   async recordAudit(employeeId: number, action: string, details: string) {
     try {
       await dbService.query(
@@ -263,7 +277,6 @@ export class AttendanceRepository {
         [employeeId, action, details]
       );
     } catch (e) {
-      // Audit log fallback if table is omitted
       console.log(`[AuditLog] ${action}: ${details}`);
     }
   }
@@ -276,7 +289,6 @@ export class AttendanceRepository {
         [employeeId, action, details]
       );
     } catch (e) {
-      // Audit log fallback if table is omitted
       console.log(`[AuditLog] ${action}: ${details}`);
     }
   }

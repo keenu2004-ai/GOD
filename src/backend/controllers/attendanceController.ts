@@ -131,6 +131,18 @@ export class AttendanceController {
       return res.status(400).json(sendError(error.message));
     }
   }
+
+  async getCalendar(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || 1;
+      const month = req.query.month ? parseInt(req.query.month as string, 10) : undefined;
+      const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
+      const data = await attendanceService.getCalendar(userId, year, month);
+      return res.json(sendSuccess(data, 'Calendar attendance data retrieved'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const attendanceController = new AttendanceController();
