@@ -229,20 +229,35 @@ export class EmployeeRepository {
 
   async permanentDelete(id: number): Promise<boolean> {
     return await dbService.transaction(async (client) => {
-      await client.query('DELETE FROM attendances WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM attendance_regularizations WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM leaves WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM leave_balances WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM payrolls WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM expenses WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM project_members WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM timesheets WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM performance_reviews WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM audit_logs WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM notifications WHERE user_id = $1', [id]);
-      await client.query('DELETE FROM weekly_planner WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM helpdesk_tickets WHERE employee_id = $1', [id]);
-      await client.query('DELETE FROM company_documents WHERE uploaded_by = $1', [id]);
+      // 1. Unset manager references to prevent self-referencing FK error
+      await client.query('UPDATE employees SET reporting_manager_id = NULL WHERE reporting_manager_id = $1', [id]);
+      await client.query('UPDATE expenses SET approved_by = NULL WHERE approved_by = $1', [id]);
+      await client.query('UPDATE leaves SET approver_id = NULL WHERE approver_id = $1', [id]);
+
+      // 2. Delete child records safely (handling both singular and plural table names)
+      const safeDelete = async (sql: string, params: any[]) => {
+        try { await client.query(sql, params); } catch (e) {}
+      };
+
+      await safeDelete('DELETE FROM attendance WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM attendances WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM attendance_regularizations WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM leaves WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM leave_balances WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM payrolls WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM expenses WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM project_members WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM timesheets WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM performance_reviews WHERE employee_id = $1 or reviewer_id = $1', [id]);
+      await safeDelete('DELETE FROM audit_logs WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM notifications WHERE user_id = $1', [id]);
+      await safeDelete('DELETE FROM weekly_planner WHERE employee_id = $1', [id]);
+      await safeDelete('DELETE FROM helpdesk_tickets WHERE employee_id = $1 OR assigned_to = $1', [id]);
+      await safeDelete('DELETE FROM company_documents WHERE uploaded_by = $1', [id]);
+      await safeDelete('DELETE FROM documents WHERE uploaded_by = $1 OR employee_id = $1', [id]);
+      await safeDelete('UPDATE assets SET assigned_to = NULL, assigned_to_employee_id = NULL WHERE assigned_to = $1 OR assigned_to_employee_id = $1', [id]);
+
+      // 3. Delete employee row
       await client.query('DELETE FROM employees WHERE id = $1', [id]);
       return true;
     });
