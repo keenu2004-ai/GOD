@@ -272,7 +272,7 @@ export const AttendancePage: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 text-xs text-blue-400 font-mono font-bold tracking-wider">
-                    <ShieldCheck className="w-4 h-4" />
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     <span>GPS GEOFENCE ACTIVE • THEIAKSHI HQ</span>
                   </div>
                   <h3 className="text-2xl font-black mt-2">
@@ -287,6 +287,20 @@ export const AttendancePage: React.FC = () => {
                   <p className="text-3xl font-black text-blue-400">{formatHMS(seconds)}</p>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Net Worked Hours</p>
                 </div>
+              </div>
+
+              {/* GPS Geofence Live Location Verification Badge */}
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs my-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="font-bold text-white">Office Geofence HQ Location</p>
+                    <p className="text-[11px] text-slate-400 font-mono">Lat: {officeLat.toFixed(4)}, Lng: {officeLng.toFixed(4)} (Radius Limit: {geofenceRadius}m)</p>
+                  </div>
+                </div>
+                <span className="bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 shrink-0">
+                  <ShieldCheck className="w-3.5 h-3.5" /> GEOFENCE VERIFIED
+                </span>
               </div>
 
               {/* Shift Selector */}
