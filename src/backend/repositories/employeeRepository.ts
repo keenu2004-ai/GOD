@@ -147,6 +147,13 @@ export class EmployeeRepository {
   }
 
   async create(data: Partial<Employee> & { password_hash: string }): Promise<Employee> {
+    // Sync PostgreSQL serial sequence with MAX(id) to guarantee zero primary key collisions
+    try {
+      await dbService.query(`SELECT setval(pg_get_serial_sequence('employees', 'id'), COALESCE((SELECT MAX(id) FROM employees), 1))`);
+    } catch (e) {
+      // Ignore fallback
+    }
+
     const res = await dbService.query<Employee>(
       `INSERT INTO employees (
         employee_code, first_name, last_name, email, phone, password_hash, role,

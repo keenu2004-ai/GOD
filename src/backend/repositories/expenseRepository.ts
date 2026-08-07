@@ -37,6 +37,10 @@ export class ExpenseRepository {
   }
 
   async createExpense(data: Partial<ExpenseClaim>): Promise<ExpenseClaim> {
+    try {
+      await dbService.query(`SELECT setval(pg_get_serial_sequence('expenses', 'id'), COALESCE((SELECT MAX(id) FROM expenses), 1))`);
+    } catch (e) {}
+
     const res = await dbService.query<ExpenseClaim>(
       `INSERT INTO expenses (employee_id, title, category, amount, date, description, receipt_url, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING')
