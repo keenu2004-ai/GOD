@@ -3,30 +3,34 @@ import dbService from '../database/db.js';
 export class DashboardRepository {
   async getMetrics() {
     const today = new Date().toISOString().split('T')[0];
-    const sql = `
-      SELECT 
-        (SELECT COUNT(*) FROM employees WHERE is_deleted = false OR is_deleted IS NULL) as total_employees,
-        (SELECT COUNT(*) FROM departments) as total_departments,
-        (SELECT COUNT(*) FROM branches) as total_branches,
-        (SELECT COUNT(*) FROM attendance WHERE date = $1 OR date = CURRENT_DATE::text) as present_today,
-        (SELECT COUNT(*) FROM attendance WHERE (date = $1 OR date = CURRENT_DATE::text) AND is_late = true) as late_today,
-        (SELECT COUNT(*) FROM leaves WHERE status IN ('MANAGER_PENDING', 'HR_PENDING', 'PENDING')) as pending_leaves,
-        (SELECT COUNT(*) FROM expenses WHERE status = 'PENDING') as pending_expenses,
-        (SELECT COUNT(*) FROM projects WHERE status IN ('IN_PROGRESS', 'ACTIVE')) as active_projects
-    `;
 
-    const res = await dbService.query(sql, [today]);
-    const row = res.rows[0] || {};
+    const safeCount = async (sql: string, params: any[] = []): Promise<number> => {
+      try {
+        const res = await dbService.query(sql, params);
+        return parseInt((res.rows[0] as any)?.count || (res.rows[0] as any)?.total || '0', 10);
+      } catch (e) {
+        return 0;
+      }
+    };
+
+    const totalEmployees = await safeCount(`SELECT COUNT(*) as count FROM employees WHERE is_deleted = false OR is_deleted IS NULL`);
+    const totalDepartments = await safeCount(`SELECT COUNT(*) as count FROM departments`);
+    const totalBranches = await safeCount(`SELECT COUNT(*) as count FROM branches`);
+    const presentToday = await safeCount(`SELECT COUNT(*) as count FROM attendance WHERE date = $1::date OR date = CURRENT_DATE`, [today]);
+    const lateToday = await safeCount(`SELECT COUNT(*) as count FROM attendance WHERE (date = $1::date OR date = CURRENT_DATE) AND is_late = true`, [today]);
+    const pendingLeaves = await safeCount(`SELECT COUNT(*) as count FROM leaves WHERE status IN ('MANAGER_PENDING', 'HR_PENDING', 'PENDING')`);
+    const pendingExpenses = await safeCount(`SELECT COUNT(*) as count FROM expenses WHERE status = 'PENDING'`);
+    const activeProjects = await safeCount(`SELECT COUNT(*) as count FROM projects WHERE status IN ('IN_PROGRESS', 'ACTIVE')`);
 
     return {
-      totalEmployees: parseInt((row as any).total_employees || '0', 10),
-      totalDepartments: parseInt((row as any).total_departments || '0', 10),
-      totalBranches: parseInt((row as any).total_branches || '0', 10),
-      presentToday: parseInt((row as any).present_today || '0', 10),
-      lateToday: parseInt((row as any).late_today || '0', 10),
-      pendingLeaves: parseInt((row as any).pending_leaves || '0', 10),
-      pendingExpenses: parseInt((row as any).pending_expenses || '0', 10),
-      activeProjects: parseInt((row as any).active_projects || '0', 10),
+      totalEmployees,
+      totalDepartments,
+      totalBranches,
+      presentToday,
+      lateToday,
+      pendingLeaves,
+      pendingExpenses,
+      activeProjects,
     };
   }
 
