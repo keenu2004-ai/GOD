@@ -13,8 +13,11 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
+  WifiOff,
+  RotateCw,
 } from 'lucide-react';
 import { attendanceService } from '../services/attendanceService.js';
+import { attendanceOfflineSync, OfflineAction } from '../services/attendanceOfflineSync.js';
 
 export const AttendancePage: React.FC = () => {
   const [status, setStatus] = useState<any>(null);
@@ -41,6 +44,22 @@ export const AttendancePage: React.FC = () => {
 
   // Live seconds counter
   const [seconds, setSeconds] = useState<number>(0);
+  const [offlineStatus, setOfflineStatus] = useState<{ isOnline: boolean; pendingCount: number; queue: OfflineAction[] }>({
+    isOnline: navigator.onLine,
+    pendingCount: 0,
+    queue: [],
+  });
+
+  useEffect(() => {
+    const unsub = attendanceOfflineSync.subscribe((queue, isOnline) => {
+      setOfflineStatus({
+        isOnline,
+        pendingCount: queue.filter(q => !q.synced).length,
+        queue,
+      });
+    });
+    return () => unsub();
+  }, []);
 
   const fetchStatusAndHistory = async () => {
     try {
@@ -88,6 +107,15 @@ export const AttendancePage: React.FC = () => {
         () => console.log('Using default HQ coordinates')
       );
     }
+
+    // Auto refresh polling every 20 seconds
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchStatusAndHistory();
+      }
+    }, 20000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const fetchRegularizations = async () => {
@@ -217,6 +245,35 @@ export const AttendancePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Offline Sync Banner */}
+      {(!offlineStatus.isOnline || offlineStatus.pendingCount > 0) && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-xs shadow-sm ${
+          !offlineStatus.isOnline ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-blue-50 border-blue-200 text-blue-900'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <WifiOff className="w-5 h-5 shrink-0 text-amber-600" />
+            <div>
+              <p className="font-bold">
+                {!offlineStatus.isOnline ? 'Working in Offline Mode' : 'Offline Actions Queued'}
+              </p>
+              <p className="text-[11px] opacity-80">
+                {!offlineStatus.isOnline
+                  ? 'Attendance requests will be stored locally and automatically synchronized when internet reconnects.'
+                  : `${offlineStatus.pendingCount} action(s) waiting to sync with PostgreSQL backend.`}
+              </p>
+            </div>
+          </div>
+          {offlineStatus.isOnline && (
+            <button
+              onClick={() => attendanceOfflineSync.syncQueue()}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg shadow shrink-0"
+            >
+              <RotateCw className="w-3.5 h-3.5" /> Sync Now
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Tab Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div>

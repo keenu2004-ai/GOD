@@ -11,6 +11,7 @@ import { dashboardController } from '../controllers/dashboardController.js';
 import { miscController } from '../controllers/miscController.js';
 import { shiftController } from '../controllers/shiftController.js';
 import { analyticsController } from '../controllers/analyticsController.js';
+import { attendanceFinalizationController } from '../controllers/attendanceFinalizationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -214,5 +215,12 @@ router.get('/analytics/attendance/charts', authenticateToken, authorizeRoles(...
 router.get('/analytics/attendance/punch-distribution', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getPunchDistribution(req, res));
 router.get('/analytics/attendance/work-hour-distribution', authenticateToken, authorizeRoles(...mgr), (req, res) => analyticsController.getWorkHourDistribution(req, res));
 router.post('/analytics/attendance/log-export', authenticateToken, (req, res) => analyticsController.logExport(req, res));
+
+// 24. Enterprise Attendance Finalization & Integration Routes
+router.get('/attendance/health-score', authenticateToken, authorizeRoles(...mgr), (req, res) => attendanceFinalizationController.getHealthScore(req, res));
+router.get('/attendance/integrations/weekly-planner', authenticateToken, (req, res) => attendanceFinalizationController.getWeeklyPlanner(req, res));
+router.get('/attendance/integrations/org-chart', authenticateToken, (req, res) => attendanceFinalizationController.getOrgChart(req, res));
+router.get('/attendance/integrations/dashboard-feed', authenticateToken, (req, res) => attendanceFinalizationController.getDashboardFeed(req, res));
+router.post('/attendance/log-event', authenticateToken, (req, res) => attendanceFinalizationController.logEvent(req, res));
 
 export default router;
