@@ -20,6 +20,7 @@ import { leaveAnalyticsController } from '../controllers/leaveAnalyticsControlle
 import { leaveFinalizationController } from '../controllers/leaveFinalizationController.js';
 import { payrollFoundationController } from '../controllers/payrollFoundationController.js';
 import { salaryComponentEngineController } from '../controllers/salaryComponentEngineController.js';
+import { payrollProcessingController } from '../controllers/payrollProcessingController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -230,6 +231,13 @@ router.get('/payroll/bank-details/all', authenticateToken, authorizeRoles(...pay
 router.get('/payroll/bank-details/:employeeId', authenticateToken, (req, res) => salaryComponentEngineController.getBankDetails(req, res));
 router.post('/payroll/benefits', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.assignBenefit(req, res));
 router.get('/payroll/benefits', authenticateToken, (req, res) => salaryComponentEngineController.getBenefits(req, res));
+
+// 6c. Enterprise Payroll Processing Wizard & Lock/Unlock Routes
+router.post('/payroll/process', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.processPayroll(req, res));
+router.get('/payroll/preview', authenticateToken, (req, res) => payrollProcessingController.getPreview(req, res));
+router.post('/payroll/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.approvePayroll(req, res));
+router.patch('/payroll/unlock', authenticateToken, authorizeRoles('SUPER_ADMIN'), (req, res) => payrollProcessingController.unlockPayroll(req, res));
+router.post('/payroll/adjustment', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.addAdjustment(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

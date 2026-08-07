@@ -42,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign },
     { id: 'payroll-foundation', label: 'Payroll Foundation & CTC', icon: DollarSign },
     { id: 'salary-components', label: 'Salary Components & Loans', icon: Settings },
+    { id: 'payroll-processing', label: 'Payroll Processing Wizard', icon: AlarmClock },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Tasks', icon: FolderGit2 },
     { id: 'assets', label: 'Asset Management', icon: Laptop },

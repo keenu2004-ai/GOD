@@ -508,17 +508,85 @@ export async function initializeSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS employee_benefits (
+    CREATE TABLE IF NOT EXISTS payroll_runs (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      benefit_name VARCHAR(100) NOT NULL,
-      benefit_type VARCHAR(50) NOT NULL, -- 'HEALTH_INSURANCE' | 'LIFE_INSURANCE' | 'MEAL_CARD' | 'FUEL_CARD' | 'GYM'
-      coverage_amount NUMERIC(12, 2) DEFAULT 0,
-      monthly_employer_cost NUMERIC(10, 2) DEFAULT 0,
-      monthly_employee_cost NUMERIC(10, 2) DEFAULT 0,
-      status VARCHAR(20) DEFAULT 'ACTIVE',
+      month VARCHAR(20) NOT NULL,
+      year INTEGER NOT NULL,
+      status VARCHAR(30) DEFAULT 'PREVIEW', -- 'PREVIEW' | 'SUBMITTED' | 'APPROVED' | 'LOCKED'
+      total_gross NUMERIC(14, 2) DEFAULT 0,
+      total_deductions NUMERIC(14, 2) DEFAULT 0,
+      total_net NUMERIC(14, 2) DEFAULT 0,
+      total_employees INTEGER DEFAULT 0,
+      created_by INTEGER REFERENCES employees(id),
+      updated_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(month, year)
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_run_items (
+      id SERIAL PRIMARY KEY,
+      run_id INTEGER NOT NULL REFERENCES payroll_runs(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      basic_salary NUMERIC(12, 2) DEFAULT 0,
+      hra NUMERIC(12, 2) DEFAULT 0,
+      special_allowance NUMERIC(12, 2) DEFAULT 0,
+      overtime_pay NUMERIC(12, 2) DEFAULT 0,
+      night_shift_pay NUMERIC(12, 2) DEFAULT 0,
+      bonus NUMERIC(12, 2) DEFAULT 0,
+      reimbursements NUMERIC(12, 2) DEFAULT 0,
+      gross_salary NUMERIC(12, 2) DEFAULT 0,
+      pf_deduction NUMERIC(12, 2) DEFAULT 0,
+      pt_deduction NUMERIC(12, 2) DEFAULT 0,
+      esi_deduction NUMERIC(12, 2) DEFAULT 0,
+      tds_deduction NUMERIC(12, 2) DEFAULT 0,
+      loan_deduction NUMERIC(12, 2) DEFAULT 0,
+      advance_deduction NUMERIC(12, 2) DEFAULT 0,
+      lop_deduction NUMERIC(12, 2) DEFAULT 0,
+      arrears NUMERIC(12, 2) DEFAULT 0,
+      net_salary NUMERIC(12, 2) DEFAULT 0,
+      working_days INTEGER DEFAULT 22,
+      present_days INTEGER DEFAULT 22,
+      absent_days INTEGER DEFAULT 0,
+      lop_days NUMERIC(5, 1) DEFAULT 0,
+      ot_hours NUMERIC(5, 1) DEFAULT 0,
+      warning_flags TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_approvals (
+      id SERIAL PRIMARY KEY,
+      run_id INTEGER NOT NULL REFERENCES payroll_runs(id) ON DELETE CASCADE,
+      approver_id INTEGER NOT NULL REFERENCES employees(id),
+      level VARCHAR(30) NOT NULL, -- 'PAYROLL_MANAGER' | 'FINANCE_MANAGER' | 'HR_MANAGER' | 'SUPER_ADMIN'
+      status VARCHAR(20) DEFAULT 'APPROVED',
+      comment TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_lock_periods (
+      id SERIAL PRIMARY KEY,
+      month VARCHAR(20) NOT NULL,
+      year INTEGER NOT NULL,
+      is_locked BOOLEAN DEFAULT true,
+      locked_by INTEGER REFERENCES employees(id),
+      locked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      unlocked_by INTEGER REFERENCES employees(id),
+      unlocked_at TIMESTAMP,
+      reason TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(month, year)
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_adjustments (
+      id SERIAL PRIMARY KEY,
+      run_id INTEGER REFERENCES payroll_runs(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      adjustment_type VARCHAR(50) NOT NULL, -- 'BONUS' | 'ARREARS' | 'DEDUCTION_CORRECTION' | 'MANUAL'
+      amount NUMERIC(12, 2) NOT NULL,
+      reason TEXT NOT NULL,
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payroll_settings (

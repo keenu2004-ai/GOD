@@ -22,6 +22,7 @@ import { EnterpriseHolidayPage } from './pages/EnterpriseHolidayPage.js';
 import { LeaveAnalyticsPage } from './pages/LeaveAnalyticsPage.js';
 import { PayrollFoundationPage } from './pages/PayrollFoundationPage.js';
 import { SalaryComponentEnginePage } from './pages/SalaryComponentEnginePage.js';
+import { PayrollProcessingPage } from './pages/PayrollProcessingPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -61,6 +62,8 @@ const AppContent: React.FC = () => {
             return <PayrollFoundationPage />;
           case 'salary-components':
             return <SalaryComponentEnginePage />;
+          case 'payroll-processing':
+            return <PayrollProcessingPage />;
           case 'expenses':
             return <ExpensesPage />;
           case 'projects':
