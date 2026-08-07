@@ -12,6 +12,7 @@ import { miscController } from '../controllers/miscController.js';
 import { shiftController } from '../controllers/shiftController.js';
 import { analyticsController } from '../controllers/analyticsController.js';
 import { attendanceFinalizationController } from '../controllers/attendanceFinalizationController.js';
+import { leavePolicyController } from '../controllers/leavePolicyController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -112,14 +113,31 @@ router.get('/shifts/:id', authenticateToken, (req, res) => shiftController.getSh
 router.put('/shifts/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.updateShift(req, res));
 router.delete('/shifts/:id', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => shiftController.deleteShift(req, res));
 
-// 5. Leave Module Routes
+// 5. Leave Module & Policy Engine Routes
+router.post('/leave/seed-defaults', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leavePolicyController.seedDefaults(req, res));
+router.get('/leave/types', authenticateToken, (req, res) => leavePolicyController.getTypes(req, res));
+router.post('/leave/types', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.createType(req, res));
+router.get('/leave/policies', authenticateToken, (req, res) => leavePolicyController.getPolicies(req, res));
+router.post('/leave/policies', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.createPolicy(req, res));
+router.patch('/leave/policies/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.updatePolicy(req, res));
+router.delete('/leave/policies/:id', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leavePolicyController.deletePolicy(req, res));
+router.post('/leave/policy/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.assignPolicy(req, res));
+router.get('/leave/assignments', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.getAssignments(req, res));
+router.get('/leave/settings', authenticateToken, (req, res) => leavePolicyController.getSettings(req, res));
+router.post('/leave/settings', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.updateSettings(req, res));
+router.post('/leave/encash', authenticateToken, (req, res) => leavePolicyController.requestEncashment(req, res));
+router.get('/leave/encashments', authenticateToken, (req, res) => leavePolicyController.getEncashments(req, res));
+router.get('/leave/balance', authenticateToken, (req, res) => leaveController.getBalances(req, res));
+router.get('/leave/history', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));
+
+// Legacy compat leave applications
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));
 router.post('/leaves', authenticateToken, (req, res) => leaveController.applyLeave(req, res));
 router.post('/leaves/apply', authenticateToken, (req, res) => leaveController.applyLeave(req, res));
 router.get('/leaves/balances', authenticateToken, (req, res) => leaveController.getBalances(req, res));
 router.get('/leaves/balances/:employeeId', authenticateToken, (req, res) => leaveController.getBalances(req, res));
 router.put('/leaves/balances/:employeeId', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => leaveController.updateBalance(req, res));
-router.get('/leaves/types', authenticateToken, (req, res) => leaveController.getTypes(req, res));
+router.get('/leaves/types', authenticateToken, (req, res) => leavePolicyController.getTypes(req, res));
 router.get('/leaves/holidays', authenticateToken, (req, res) => leaveController.getHolidays(req, res));
 router.get('/leaves/calendar', authenticateToken, (req, res) => leaveController.getCalendar(req, res));
 router.post('/leaves/bulk-approve', authenticateToken, (req, res) => leaveController.bulkApprove(req, res));

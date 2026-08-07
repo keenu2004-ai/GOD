@@ -82,10 +82,87 @@ export async function initializeSchema() {
     CREATE TABLE IF NOT EXISTS leave_types (
       id SERIAL PRIMARY KEY,
       name VARCHAR(100) NOT NULL,
-      code VARCHAR(20) NOT NULL UNIQUE,
+      code VARCHAR(50) NOT NULL UNIQUE,
       color VARCHAR(20) DEFAULT '#3B82F6',
       days_allowed INTEGER NOT NULL DEFAULT 12,
-      is_carry_forward BOOLEAN DEFAULT true
+      is_carry_forward BOOLEAN DEFAULT true,
+      is_paid BOOLEAN DEFAULT true,
+      is_encashable BOOLEAN DEFAULT false,
+      max_consecutive_days INTEGER DEFAULT 14,
+      requires_attachment BOOLEAN DEFAULT false,
+      description TEXT,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_policies (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      description TEXT,
+      leave_type_id INTEGER REFERENCES leave_types(id),
+      annual_allocation NUMERIC(5, 1) NOT NULL DEFAULT 12.0,
+      monthly_accrual NUMERIC(4, 2) NOT NULL DEFAULT 1.0,
+      max_balance NUMERIC(5, 1) DEFAULT 30.0,
+      carry_forward_limit NUMERIC(5, 1) DEFAULT 6.0,
+      encashment_limit NUMERIC(5, 1) DEFAULT 0.0,
+      half_day_allowed BOOLEAN DEFAULT true,
+      hourly_leave_allowed BOOLEAN DEFAULT false,
+      negative_balance_allowed BOOLEAN DEFAULT false,
+      probation_applicable BOOLEAN DEFAULT true,
+      min_notice_days INTEGER DEFAULT 0,
+      max_consecutive_days INTEGER DEFAULT 14,
+      attachment_required BOOLEAN DEFAULT false,
+      is_active BOOLEAN DEFAULT true,
+      branch_id INTEGER REFERENCES branches(id),
+      department_id INTEGER REFERENCES departments(id),
+      deleted_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_policy_assignments (
+      id SERIAL PRIMARY KEY,
+      policy_id INTEGER NOT NULL REFERENCES leave_policies(id),
+      employee_id INTEGER REFERENCES employees(id),
+      department_id INTEGER REFERENCES departments(id),
+      branch_id INTEGER REFERENCES branches(id),
+      role VARCHAR(50),
+      employment_type VARCHAR(50),
+      effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      expiry_date DATE,
+      is_active BOOLEAN DEFAULT true,
+      deleted_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_encashments (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      days_encashed NUMERIC(5, 1) NOT NULL,
+      amount_per_day NUMERIC(10, 2) NOT NULL,
+      total_amount NUMERIC(12, 2) NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      rejection_reason TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_settings (
+      id SERIAL PRIMARY KEY,
+      leave_year_start_month INTEGER DEFAULT 1,
+      auto_carry_forward BOOLEAN DEFAULT true,
+      max_negative_days NUMERIC(4, 1) DEFAULT 0,
+      sandwich_rule_enabled BOOLEAN DEFAULT false,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_applications (
