@@ -31,6 +31,7 @@ import { EnterpriseProjectWorkspacePage } from './pages/EnterpriseProjectWorkspa
 import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
 import { TaskCollaborationFeedPage } from './pages/TaskCollaborationFeedPage.js';
 import { EnterpriseTimeTrackingPage } from './pages/EnterpriseTimeTrackingPage.js';
+import { ProjectAnalyticsPage } from './pages/ProjectAnalyticsPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -84,6 +85,8 @@ const AppContent: React.FC = () => {
             return <ExpensesPage />;
           case 'projects':
             return <EnterpriseProjectWorkspacePage />;
+          case 'project-analytics':
+            return <ProjectAnalyticsPage />;
           case 'tasks-kanban':
             return <EnterpriseTaskBoardPage />;
           case 'task-collaboration':

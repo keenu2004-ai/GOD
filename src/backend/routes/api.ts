@@ -31,6 +31,7 @@ import { enterpriseTaskController } from '../controllers/enterpriseTaskControlle
 import { taskCollaborationController } from '../controllers/taskCollaborationController.js';
 import { weeklyPlannerController } from '../controllers/weeklyPlannerController.js';
 import { timeTrackingController } from '../controllers/timeTrackingController.js';
+import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -347,6 +348,13 @@ router.post('/timetracking/timesheet/submit', authenticateToken, (req, res) => t
 router.patch('/timetracking/timesheet/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => timeTrackingController.approveTimesheet(req, res));
 router.get('/timetracking/timesheets/pending', authenticateToken, (req, res) => timeTrackingController.getPendingTimesheets(req, res));
 router.get('/timetracking/analytics/kpis', authenticateToken, (req, res) => timeTrackingController.getKPIs(req, res));
+
+// 8f. Enterprise Project Analytics, Portfolio BI, Milestones & Risk Register Routes
+router.get('/projects/portfolio/kpis', authenticateToken, (req, res) => projectAnalyticsController.getKPIs(req, res));
+router.post('/projects/milestones', authenticateToken, (req, res) => projectAnalyticsController.createMilestone(req, res));
+router.get('/projects/milestones', authenticateToken, (req, res) => projectAnalyticsController.getMilestones(req, res));
+router.post('/projects/risks', authenticateToken, (req, res) => projectAnalyticsController.createRisk(req, res));
+router.get('/projects/risks', authenticateToken, (req, res) => projectAnalyticsController.getRisks(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));

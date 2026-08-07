@@ -857,6 +857,31 @@ export async function initializeSchema() {
       UNIQUE(employee_id, week_number, year)
     );
 
+    CREATE TABLE IF NOT EXISTS project_milestones (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      milestone_name VARCHAR(200) NOT NULL,
+      planned_date DATE NOT NULL,
+      actual_date DATE,
+      status VARCHAR(30) DEFAULT 'PLANNED', -- 'PLANNED' | 'ACHIEVED' | 'DELAYED'
+      owner_id INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_risks (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      risk_description TEXT NOT NULL,
+      severity VARCHAR(30) DEFAULT 'MEDIUM', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+      probability VARCHAR(30) DEFAULT 'MEDIUM', -- 'HIGH' | 'MEDIUM' | 'LOW'
+      mitigation_plan TEXT,
+      status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN' | 'MITIGATED' | 'CLOSED'
+      owner_id INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS payroll_settings (
       id SERIAL PRIMARY KEY,
       payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',
