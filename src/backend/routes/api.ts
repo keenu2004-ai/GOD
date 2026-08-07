@@ -19,6 +19,7 @@ import { holidayEngineController } from '../controllers/holidayEngineController.
 import { leaveAnalyticsController } from '../controllers/leaveAnalyticsController.js';
 import { leaveFinalizationController } from '../controllers/leaveFinalizationController.js';
 import { payrollFoundationController } from '../controllers/payrollFoundationController.js';
+import { salaryComponentEngineController } from '../controllers/salaryComponentEngineController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -213,6 +214,22 @@ router.get('/payroll/revisions', authenticateToken, (req, res) => payrollFoundat
 router.get('/payroll/settings', authenticateToken, (req, res) => payrollFoundationController.getSettings(req, res));
 router.post('/payroll/settings', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => payrollFoundationController.updateSettings(req, res));
 router.get('/payroll/dashboard/kpis', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.getDashboardKPIs(req, res));
+
+// 6b. Enterprise Salary Component Engine, Loans, Advances, Bank & Benefits Routes
+router.post('/payroll/components/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => salaryComponentEngineController.seedComponents(req, res));
+router.get('/payroll/components', authenticateToken, (req, res) => salaryComponentEngineController.getComponents(req, res));
+router.post('/payroll/components', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => salaryComponentEngineController.createComponent(req, res));
+router.post('/payroll/loans/request', authenticateToken, (req, res) => salaryComponentEngineController.requestLoan(req, res));
+router.patch('/payroll/loans/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.approveLoan(req, res));
+router.get('/payroll/loans', authenticateToken, (req, res) => salaryComponentEngineController.getLoans(req, res));
+router.post('/payroll/advances/request', authenticateToken, (req, res) => salaryComponentEngineController.requestAdvance(req, res));
+router.patch('/payroll/advances/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.approveAdvance(req, res));
+router.get('/payroll/advances', authenticateToken, (req, res) => salaryComponentEngineController.getAdvances(req, res));
+router.post('/payroll/bank-details', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => salaryComponentEngineController.saveBankDetails(req, res));
+router.get('/payroll/bank-details/all', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.getAllBankDetails(req, res));
+router.get('/payroll/bank-details/:employeeId', authenticateToken, (req, res) => salaryComponentEngineController.getBankDetails(req, res));
+router.post('/payroll/benefits', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.assignBenefit(req, res));
+router.get('/payroll/benefits', authenticateToken, (req, res) => salaryComponentEngineController.getBenefits(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));

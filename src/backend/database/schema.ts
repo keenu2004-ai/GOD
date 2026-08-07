@@ -446,6 +446,81 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS salary_component_master (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(50) UNIQUE NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      category VARCHAR(30) NOT NULL, -- 'EARNING' | 'DEDUCTION' | 'REIMBURSEMENT' | 'BENEFIT' | 'TAX'
+      calculation_mode VARCHAR(30) DEFAULT 'PERCENTAGE', -- 'FLAT' | 'PERCENTAGE' | 'FORMULA'
+      formula_expression TEXT,
+      min_value NUMERIC(10, 2) DEFAULT 0,
+      max_value NUMERIC(12, 2),
+      is_taxable BOOLEAN DEFAULT true,
+      is_active BOOLEAN DEFAULT true,
+      created_by INTEGER REFERENCES employees(id),
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_loans (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      loan_amount NUMERIC(12, 2) NOT NULL,
+      interest_rate NUMERIC(5, 2) DEFAULT 0,
+      tenure_months INTEGER NOT NULL,
+      emi_amount NUMERIC(10, 2) NOT NULL,
+      total_repaid NUMERIC(12, 2) DEFAULT 0,
+      outstanding_balance NUMERIC(12, 2) NOT NULL,
+      reason TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED'
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_salary_advances (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      advance_amount NUMERIC(12, 2) NOT NULL,
+      monthly_deduction NUMERIC(10, 2) NOT NULL,
+      total_recovered NUMERIC(12, 2) DEFAULT 0,
+      outstanding_balance NUMERIC(12, 2) NOT NULL,
+      reason TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED'
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_bank_details (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
+      account_holder_name VARCHAR(150) NOT NULL,
+      account_number VARCHAR(50) NOT NULL,
+      bank_name VARCHAR(100) NOT NULL,
+      ifsc_code VARCHAR(30) NOT NULL,
+      branch_name VARCHAR(100),
+      payment_mode VARCHAR(30) DEFAULT 'BANK_TRANSFER',
+      is_verified BOOLEAN DEFAULT true,
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_benefits (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      benefit_name VARCHAR(100) NOT NULL,
+      benefit_type VARCHAR(50) NOT NULL, -- 'HEALTH_INSURANCE' | 'LIFE_INSURANCE' | 'MEAL_CARD' | 'FUEL_CARD' | 'GYM'
+      coverage_amount NUMERIC(12, 2) DEFAULT 0,
+      monthly_employer_cost NUMERIC(10, 2) DEFAULT 0,
+      monthly_employee_cost NUMERIC(10, 2) DEFAULT 0,
+      status VARCHAR(20) DEFAULT 'ACTIVE',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS payroll_settings (
       id SERIAL PRIMARY KEY,
       payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',
