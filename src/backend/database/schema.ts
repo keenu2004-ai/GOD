@@ -299,14 +299,52 @@ export async function initializeSchema() {
       UNIQUE(employee_id, leave_type_id)
     );
 
+    CREATE TABLE IF NOT EXISTS holiday_regions (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(50) UNIQUE NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      description TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS holidays (
       id SERIAL PRIMARY KEY,
       branch_id INTEGER REFERENCES branches(id),
+      region_code VARCHAR(50) DEFAULT 'COMMON',
       name VARCHAR(255) NOT NULL,
       date DATE NOT NULL,
       type VARCHAR(50) DEFAULT 'NATIONAL',
+      is_optional BOOLEAN DEFAULT false,
+      description TEXT,
       is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_by INTEGER,
+      updated_by INTEGER,
+      deleted_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS company_events (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      event_date DATE NOT NULL,
+      event_type VARCHAR(50) DEFAULT 'TOWNHALL',
+      branch_id INTEGER REFERENCES branches(id),
+      department_id INTEGER REFERENCES departments(id),
+      is_active BOOLEAN DEFAULT true,
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS optional_holiday_selections (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      holiday_id INTEGER NOT NULL REFERENCES holidays(id),
+      year INTEGER NOT NULL,
+      status VARCHAR(30) DEFAULT 'APPROVED',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, holiday_id, year)
     );
 
     CREATE TABLE IF NOT EXISTS audit_logs (

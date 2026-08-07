@@ -15,6 +15,7 @@ import { attendanceFinalizationController } from '../controllers/attendanceFinal
 import { leavePolicyController } from '../controllers/leavePolicyController.js';
 import { leaveWorkflowController } from '../controllers/leaveWorkflowController.js';
 import { leaveBalanceEngineController } from '../controllers/leaveBalanceEngineController.js';
+import { holidayEngineController } from '../controllers/holidayEngineController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -152,6 +153,17 @@ router.post('/leave/carry-forward/run', authenticateToken, authorizeRoles('ADMIN
 router.get('/leave/ledger', authenticateToken, (req, res) => leaveBalanceEngineController.getLedger(req, res));
 router.get('/leave/adjustments', authenticateToken, (req, res) => leaveBalanceEngineController.getAdjustments(req, res));
 router.get('/leave/comp-offs', authenticateToken, (req, res) => leaveBalanceEngineController.getCompOffs(req, res));
+
+// 5d. Enterprise Holiday Engine & Unified Calendar Feed Routes
+router.post('/holidays/seed-defaults', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => holidayEngineController.seedDefaults(req, res));
+router.get('/holidays', authenticateToken, (req, res) => holidayEngineController.getHolidays(req, res));
+router.post('/holidays', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => holidayEngineController.createHoliday(req, res));
+router.delete('/holidays/:id', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => holidayEngineController.deleteHoliday(req, res));
+router.post('/holidays/optional/select', authenticateToken, (req, res) => holidayEngineController.selectOptionalHoliday(req, res));
+router.get('/holidays/optional/my', authenticateToken, (req, res) => holidayEngineController.getMyOptionalHolidays(req, res));
+router.get('/company-events', authenticateToken, (req, res) => holidayEngineController.getCompanyEvents(req, res));
+router.post('/company-events', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => holidayEngineController.createCompanyEvent(req, res));
+router.get('/calendar/unified-feed', authenticateToken, (req, res) => holidayEngineController.getUnifiedCalendarFeed(req, res));
 
 // Legacy compat leave applications
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));

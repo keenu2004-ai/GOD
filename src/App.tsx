@@ -18,6 +18,7 @@ import { SettingsPage } from './pages/SettingsPage.js';
 import { ShiftManagementPage } from './pages/ShiftManagementPage.js';
 import { AttendanceRegularizationPage } from './pages/AttendanceRegularizationPage.js';
 import { AttendanceAnalyticsPage } from './pages/AttendanceAnalyticsPage.js';
+import { EnterpriseHolidayPage } from './pages/EnterpriseHolidayPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -47,6 +48,8 @@ const AppContent: React.FC = () => {
             return <AttendancePage />;
           case 'leave':
             return <LeavePage />;
+          case 'holidays':
+            return <EnterpriseHolidayPage />;
           case 'payroll':
             return <PayrollPage />;
           case 'expenses':
