@@ -174,14 +174,60 @@ export async function initializeSchema() {
       total_days NUMERIC(4, 1) NOT NULL,
       is_half_day BOOLEAN DEFAULT false,
       half_day_session VARCHAR(20),
+      is_hourly BOOLEAN DEFAULT false,
+      hours_requested NUMERIC(4, 2),
       reason TEXT NOT NULL,
       emergency_contact VARCHAR(50),
+      contact_during_leave VARCHAR(100),
+      work_handover TEXT,
+      replacement_employee_id INTEGER REFERENCES employees(id),
       attachment_url TEXT,
       status VARCHAR(30) DEFAULT 'MANAGER_PENDING',
+      manager_id INTEGER REFERENCES employees(id),
+      manager_action VARCHAR(20),
+      manager_comment TEXT,
+      manager_actioned_at TIMESTAMP,
+      hr_id INTEGER REFERENCES employees(id),
+      hr_action VARCHAR(20),
+      hr_comment TEXT,
+      hr_actioned_at TIMESTAMP,
       approver_id INTEGER REFERENCES employees(id),
       rejection_reason TEXT,
+      attendance_synced BOOLEAN DEFAULT false,
+      payroll_synced BOOLEAN DEFAULT false,
+      deleted_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_approvals (
+      id SERIAL PRIMARY KEY,
+      leave_id INTEGER NOT NULL REFERENCES leave_applications(id),
+      approver_id INTEGER NOT NULL REFERENCES employees(id),
+      level VARCHAR(20) NOT NULL DEFAULT 'MANAGER',
+      action VARCHAR(20) NOT NULL,
+      comment TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_request_comments (
+      id SERIAL PRIMARY KEY,
+      leave_id INTEGER NOT NULL REFERENCES leave_applications(id),
+      commenter_id INTEGER NOT NULL REFERENCES employees(id),
+      comment TEXT NOT NULL,
+      is_internal BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_conflicts (
+      id SERIAL PRIMARY KEY,
+      leave_id INTEGER NOT NULL REFERENCES leave_applications(id),
+      conflict_type VARCHAR(50) NOT NULL,
+      conflict_description TEXT NOT NULL,
+      severity VARCHAR(20) DEFAULT 'WARNING',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_balances (

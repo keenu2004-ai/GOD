@@ -131,12 +131,13 @@ export const LeaveManagementPage: React.FC = () => {
   const isHRAdmin = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'].includes(userRole);
   const isManager = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'].includes(userRole);
 
-  const [tab, setTab] = useState<'applications' | 'balances' | 'policies' | 'assignments' | 'settings'>('applications');
+  const [tab, setTab] = useState<'applications' | 'balances' | 'availability' | 'policies' | 'assignments' | 'settings'>('applications');
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [policies, setPolicies] = useState<LeavePolicy[]>([]);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
   const [applications, setApplications] = useState<LeaveApplication[]>([]);
   const [assignments, setAssignments] = useState<PolicyAssignment[]>([]);
+  const [teamAvailability, setTeamAvailability] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -190,18 +191,19 @@ export const LeaveManagementPage: React.FC = () => {
   }, []);
 
   const fetchHRData = useCallback(async () => {
-    if (!isHRAdmin) return;
     try {
-      const [polRes, assRes, setRes] = await Promise.all([
-        apiClient.get('/leave/policies'),
-        apiClient.get('/leave/assignments'),
-        apiClient.get('/leave/settings'),
+      const [polRes, assRes, setRes, availRes] = await Promise.all([
+        apiClient.get('/leave/policies').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/leave/assignments').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/leave/settings').catch(() => ({ data: { data: null } })),
+        apiClient.get('/leave/team-availability').catch(() => ({ data: { data: [] } })),
       ]);
       setPolicies(polRes.data?.data || []);
       setAssignments(assRes.data?.data || []);
       setSettings(setRes.data?.data || null);
+      setTeamAvailability(availRes.data?.data || []);
     } catch (e) { console.error(e); }
-  }, [isHRAdmin]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { if (['policies', 'assignments', 'settings'].includes(tab)) fetchHRData(); }, [tab, fetchHRData]);
@@ -287,6 +289,7 @@ export const LeaveManagementPage: React.FC = () => {
   const TABS = [
     { key: 'applications', label: 'Leave Applications', icon: <Calendar className="w-4 h-4" />, count: applications.length },
     { key: 'balances', label: 'Leave Balances & Encashment', icon: <Layers className="w-4 h-4" />, count: balances.length },
+    { key: 'availability', label: 'Team Availability', icon: <Users className="w-4 h-4" />, count: teamAvailability.filter(t => t.active_leave_id).length },
     ...(isHRAdmin ? [
       { key: 'policies', label: 'Policy Engine', icon: <Shield className="w-4 h-4" />, count: policies.length },
       { key: 'assignments', label: 'Assignments', icon: <UserCheck className="w-4 h-4" />, count: assignments.length },
@@ -491,6 +494,64 @@ export const LeaveManagementPage: React.FC = () => {
               <p className="text-xs text-slate-400 mt-1">Assign a leave policy or seed leave types to generate balances</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── TEAM AVAILABILITY TAB ───────────────────────────────────────── */}
+      {tab === 'availability' && (
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" /> Team Availability & Capacity Matrix
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Real-time team presence, active leaves, and staffing thresholds</p>
+              </div>
+              <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-200">
+                {teamAvailability.filter(t => !t.active_leave_id).length} / {teamAvailability.length} Available Today
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {teamAvailability.map(t => (
+                <div key={t.employee_id} className={`border rounded-2xl p-4 transition-all shadow-sm ${
+                  t.active_leave_id ? 'bg-amber-50/60 border-amber-200' : 'bg-white border-slate-200'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{t.first_name} {t.last_name}</p>
+                      <p className="text-[10px] text-slate-500 font-mono">{t.employee_code} • {t.department_name}</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      t.active_leave_id ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {t.active_leave_id ? 'On Leave' : 'Available'}
+                    </span>
+                  </div>
+
+                  {t.active_leave_id && (
+                    <div className="mt-3 bg-white/80 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-900 space-y-1">
+                      <p className="font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.leave_type_color || '#F59E0B' }} />
+                        {t.leave_type_name}
+                      </p>
+                      <p className="text-[10px] text-slate-600 font-mono">
+                        {fmtDate(t.start_date)} – {fmtDate(t.end_date)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {teamAvailability.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p>Loading team availability...</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

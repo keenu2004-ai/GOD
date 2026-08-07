@@ -13,6 +13,7 @@ import { shiftController } from '../controllers/shiftController.js';
 import { analyticsController } from '../controllers/analyticsController.js';
 import { attendanceFinalizationController } from '../controllers/attendanceFinalizationController.js';
 import { leavePolicyController } from '../controllers/leavePolicyController.js';
+import { leaveWorkflowController } from '../controllers/leaveWorkflowController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -129,6 +130,17 @@ router.post('/leave/encash', authenticateToken, (req, res) => leavePolicyControl
 router.get('/leave/encashments', authenticateToken, (req, res) => leavePolicyController.getEncashments(req, res));
 router.get('/leave/balance', authenticateToken, (req, res) => leaveController.getBalances(req, res));
 router.get('/leave/history', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));
+
+// 5b. Leave Request Workflow & Availability Routes
+const leaveMgrRoles = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'];
+router.get('/leave/conflicts/check', authenticateToken, (req, res) => leaveWorkflowController.checkConflicts(req, res));
+router.get('/leave/team-availability', authenticateToken, (req, res) => leaveWorkflowController.getTeamAvailability(req, res));
+router.post('/leave/request', authenticateToken, (req, res) => leaveWorkflowController.submitRequest(req, res));
+router.patch('/leave/requests/:id/approve', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveWorkflowController.approve(req, res));
+router.patch('/leave/requests/:id/reject', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveWorkflowController.reject(req, res));
+router.post('/leave/requests/bulk-approve', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveWorkflowController.bulkApprove(req, res));
+router.post('/leave/requests/:id/override', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leaveWorkflowController.superAdminOverride(req, res));
+router.get('/leave/calendar-events', authenticateToken, (req, res) => leaveWorkflowController.getCalendarEvents(req, res));
 
 // Legacy compat leave applications
 router.get('/leaves', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));
