@@ -16,6 +16,7 @@ import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { ShiftManagementPage } from './pages/ShiftManagementPage.js';
+import { AttendanceRegularizationPage } from './pages/AttendanceRegularizationPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -63,6 +64,8 @@ const AppContent: React.FC = () => {
             return <PerformancePage />;
           case 'planner':
             return <WeeklyPlannerPage />;
+          case 'regularization':
+            return <AttendanceRegularizationPage />;
           case 'shifts':
             return <ShiftManagementPage />;
           case 'settings':

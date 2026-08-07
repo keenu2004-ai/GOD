@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authController } from '../controllers/authController.js';
 import { employeeController } from '../controllers/employeeController.js';
 import { attendanceController } from '../controllers/attendanceController.js';
+import { regularizationController } from '../controllers/regularizationController.js';
 import { leaveController } from '../controllers/leaveController.js';
 import { payrollController } from '../controllers/payrollController.js';
 import { expenseController } from '../controllers/expenseController.js';
@@ -69,8 +70,23 @@ router.get('/attendance/calendar', authenticateToken, (req, res) => attendanceCo
 router.get('/attendance/live', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.getLiveManagerDashboard(req, res));
 router.get('/attendance/analytics', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.getAnalytics(req, res));
 router.post('/attendance/regularize', authenticateToken, (req, res) => attendanceController.applyRegularization(req, res));
-router.get('/attendance/regularizations', authenticateToken, (req, res) => attendanceController.getRegularizations(req, res));
-router.put('/attendance/regularizations/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => attendanceController.processRegularization(req, res));
+
+// 4c. Enterprise Attendance Regularization Routes
+router.get('/attendance/regularizations/request-types', authenticateToken, (req, res) => regularizationController.getRequestTypes(req, res));
+router.get('/attendance/regularizations/stats', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.getStats(req, res));
+router.get('/attendance/regularizations', authenticateToken, (req, res) => regularizationController.getAll(req, res));
+router.post('/attendance/regularizations', authenticateToken, (req, res) => regularizationController.submit(req, res));
+router.post('/attendance/regularizations/bulk-approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.bulkApprove(req, res));
+router.get('/attendance/pending-approvals', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.getPendingApprovals(req, res));
+router.get('/attendance/regularizations/:id', authenticateToken, (req, res) => regularizationController.getById(req, res));
+router.patch('/attendance/regularizations/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.approve(req, res));
+router.patch('/attendance/regularizations/:id/reject', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.reject(req, res));
+router.patch('/attendance/regularizations/:id/request-info', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.requestInfo(req, res));
+router.patch('/attendance/regularizations/:id/forward-hr', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => regularizationController.forwardToHR(req, res));
+router.post('/attendance/regularizations/:id/comments', authenticateToken, (req, res) => regularizationController.addComment(req, res));
+router.delete('/attendance/regularizations/:id', authenticateToken, (req, res) => regularizationController.cancel(req, res));
+// Legacy compat
+router.put('/attendance/regularizations/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => regularizationController.approve(req, res));
 
 // 4b. Shift Management Routes
 router.get('/shifts', authenticateToken, (req, res) => shiftController.getAllShifts(req, res));

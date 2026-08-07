@@ -315,13 +315,67 @@ export async function initializeSchema() {
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
       attendance_date DATE NOT NULL,
+      request_type VARCHAR(50) NOT NULL DEFAULT 'MISSED_PUNCH',
       requested_punch_in TIMESTAMP,
       requested_punch_out TIMESTAMP,
+      requested_break_start TIMESTAMP,
+      requested_break_end TIMESTAMP,
       reason TEXT NOT NULL,
-      status VARCHAR(20) DEFAULT 'PENDING',
+      supporting_notes TEXT,
+      attachment_url TEXT,
+      status VARCHAR(30) NOT NULL DEFAULT 'PENDING_MANAGER',
+      manager_id INTEGER REFERENCES employees(id),
+      manager_action VARCHAR(20),
+      manager_comment TEXT,
+      manager_actioned_at TIMESTAMP,
+      hr_id INTEGER REFERENCES employees(id),
+      hr_action VARCHAR(20),
+      hr_comment TEXT,
+      hr_actioned_at TIMESTAMP,
+      admin_id INTEGER REFERENCES employees(id),
+      admin_action VARCHAR(20),
+      admin_comment TEXT,
+      admin_actioned_at TIMESTAMP,
       approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      approved_at TIMESTAMP,
+      rejection_reason TEXT,
+      attendance_updated BOOLEAN NOT NULL DEFAULT false,
+      payroll_recalculated BOOLEAN NOT NULL DEFAULT false,
+      deleted_at TIMESTAMP,
+      created_by INTEGER,
+      updated_by INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS regularization_comments (
+      id SERIAL PRIMARY KEY,
+      regularization_id INTEGER NOT NULL REFERENCES attendance_regularizations(id),
+      commenter_id INTEGER NOT NULL REFERENCES employees(id),
+      comment TEXT NOT NULL,
+      is_internal BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS regularization_audit (
+      id SERIAL PRIMARY KEY,
+      regularization_id INTEGER NOT NULL REFERENCES attendance_regularizations(id),
+      actor_id INTEGER NOT NULL REFERENCES employees(id),
+      action VARCHAR(50) NOT NULL,
+      from_status VARCHAR(30),
+      to_status VARCHAR(30),
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Indexes for regularization queries
+    CREATE INDEX IF NOT EXISTS idx_reg_emp ON attendance_regularizations(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_reg_date ON attendance_regularizations(attendance_date);
+    CREATE INDEX IF NOT EXISTS idx_reg_status ON attendance_regularizations(status);
+    CREATE INDEX IF NOT EXISTS idx_reg_manager ON attendance_regularizations(manager_id);
+    CREATE INDEX IF NOT EXISTS idx_reg_comment ON regularization_comments(regularization_id);
+    CREATE INDEX IF NOT EXISTS idx_reg_audit ON regularization_audit(regularization_id);
+
 
     CREATE TABLE IF NOT EXISTS documents (
       id SERIAL PRIMARY KEY,
