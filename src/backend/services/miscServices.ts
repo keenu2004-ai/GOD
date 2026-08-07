@@ -75,8 +75,8 @@ export class ProjectService {
     return await projectRepository.createTask(data);
   }
 
-  async updateTaskStatus(taskId: number, status: string) {
-    return await projectRepository.updateTaskStatus(taskId, status);
+  async updateTaskStatus(taskId: number, status: string, reportSummary?: string) {
+    return await projectRepository.updateTaskStatus(taskId, status, reportSummary);
   }
 }
 

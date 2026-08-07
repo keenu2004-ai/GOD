@@ -63,6 +63,7 @@ router.post('/leaves', authenticateToken, (req, res) => leaveController.applyLea
 router.post('/leaves/apply', authenticateToken, (req, res) => leaveController.applyLeave(req, res));
 router.get('/leaves/balances', authenticateToken, (req, res) => leaveController.getBalances(req, res));
 router.get('/leaves/balances/:employeeId', authenticateToken, (req, res) => leaveController.getBalances(req, res));
+router.put('/leaves/balances/:employeeId', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => leaveController.updateBalance(req, res));
 router.get('/leaves/types', authenticateToken, (req, res) => leaveController.getTypes(req, res));
 router.get('/leaves/holidays', authenticateToken, (req, res) => leaveController.getHolidays(req, res));
 router.get('/leaves/calendar', authenticateToken, (req, res) => leaveController.getCalendar(req, res));
@@ -73,7 +74,7 @@ router.put('/leaves/:id/status', authenticateToken, (req, res) => leaveControlle
 router.post('/leaves/:id/approve', authenticateToken, (req, res) => leaveController.processApproval(req, res));
 
 // 6. Payroll Module Routes
-router.get('/payrolls', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'EMPLOYEE'), (req, res) => payrollController.getAllPayrolls(req, res));
+router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));
 router.post('/payrolls/generate', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => payrollController.generatePayroll(req, res));
 

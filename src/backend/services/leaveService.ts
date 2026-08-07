@@ -202,6 +202,10 @@ export class LeaveService {
   async executeCarryForward(employeeId: number, leaveTypeId: number, maxCarryForwardDays: number) {
     return await leaveRepository.calculateCarryForward(employeeId, leaveTypeId, maxCarryForwardDays);
   }
+
+  async updateLeaveBalance(employeeId: number, leaveTypeId: number, totalDays: number, remainingDays: number) {
+    return await leaveRepository.updateLeaveBalance(employeeId, leaveTypeId, totalDays, remainingDays);
+  }
 }
 
 export const leaveService = new LeaveService();

@@ -82,10 +82,16 @@ export class ProjectRepository {
     return res.rows[0];
   }
 
-  async updateTaskStatus(taskId: number, status: string): Promise<ProjectTask | null> {
+  async updateTaskStatus(taskId: number, status: string, reportSummary?: string): Promise<ProjectTask | null> {
     const res = await dbService.query<ProjectTask>(
-      'UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *',
-      [status, taskId]
+      `UPDATE tasks
+       SET status = $1,
+           description = CASE
+             WHEN $2::text IS NOT NULL AND $2::text != '' THEN COALESCE(description, '') || E'\n\n[Work Done Report]: ' || $2::text
+             ELSE description
+           END
+       WHERE id = $3 RETURNING *`,
+      [status, reportSummary || null, taskId]
     );
     return res.rows[0] || null;
   }

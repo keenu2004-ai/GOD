@@ -43,9 +43,9 @@ export class ProjectController {
   async updateTaskStatus(req: Request, res: Response) {
     try {
       const taskId = parseInt(req.params.taskId, 10);
-      const { status } = req.body;
-      const data = await projectService.updateTaskStatus(taskId, status);
-      return res.json(sendSuccess(data, 'Task status updated'));
+      const { status, report_summary } = req.body;
+      const data = await projectService.updateTaskStatus(taskId, status, report_summary);
+      return res.json(sendSuccess(data, 'Task status and work report updated successfully'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
     }

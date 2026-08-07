@@ -110,6 +110,17 @@ export class LeaveController {
       return res.status(400).json(sendError(error.message));
     }
   }
+
+  async updateBalance(req: Request, res: Response) {
+    try {
+      const employeeId = parseInt(req.params.employeeId, 10);
+      const { leave_type_id, total_days, remaining_days } = req.body;
+      const data = await leaveService.updateLeaveBalance(employeeId, leave_type_id, total_days, remaining_days);
+      return res.json(sendSuccess(data, 'Leave balance updated successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const leaveController = new LeaveController();

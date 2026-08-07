@@ -27,6 +27,17 @@ export function authorizeRoles(...roles: string[]) {
     }
     const userRole = (user.role || '').toUpperCase();
     const superRoles = ['ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'SUPER_BOSS'];
+
+    // BUSINESS_ASSOCIATE Role Enforcement: strictly restrict from payroll, employee mgmt, settings, leave approvals!
+    if (userRole === 'BUSINESS_ASSOCIATE') {
+      const allowedPaths = ['/projects', '/helpdesk', '/expenses', '/documents', '/auth/me'];
+      const currentPath = req.baseUrl || req.path || '';
+      const isAllowed = allowedPaths.some(p => currentPath.includes(p));
+      if (!isAllowed) {
+        return res.status(403).json(sendError('Business Associate role is restricted from accessing this HRMS module'));
+      }
+    }
+
     if (superRoles.includes(userRole) || roles.map(r => r.toUpperCase()).includes(userRole)) {
       return next();
     }

@@ -332,6 +332,17 @@ export class LeaveRepository {
 
     return isPrevHolidayOrWeekend && isNextHolidayOrWeekend;
   }
+  async updateLeaveBalance(employeeId: number, leaveTypeId: number, totalDays: number, remainingDays: number) {
+    const res = await dbService.query(
+      `INSERT INTO leave_balances (employee_id, leave_type_id, total_days, remaining_days, used_days, year)
+       VALUES ($1, $2, $3, $4, GREATEST(0, $3 - $4), EXTRACT(YEAR FROM CURRENT_DATE))
+       ON CONFLICT (employee_id, leave_type_id, year)
+       DO UPDATE SET total_days = $3, remaining_days = $4, used_days = GREATEST(0, EXCLUDED.total_days - EXCLUDED.remaining_days), updated_at = NOW()
+       RETURNING *`,
+      [employeeId, leaveTypeId, totalDays, remainingDays]
+    );
+    return res.rows[0];
+  }
 }
 
 export const leaveRepository = new LeaveRepository();

@@ -5,9 +5,16 @@ import { sendSuccess, sendError } from '../utils/response.js';
 export class PayrollController {
   async getAllPayrolls(req: Request, res: Response) {
     try {
+      const user = (req as any).user;
       const month = req.query.month as string;
       const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
-      const empId = req.query.employeeId ? parseInt(req.query.employeeId as string, 10) : undefined;
+      let empId = req.query.employeeId ? parseInt(req.query.employeeId as string, 10) : undefined;
+
+      // Privacy Enforcement: Standard employees can strictly only view their own payroll slips!
+      const isSuperOrHr = ['ADMIN', 'SUPER_ADMIN', 'HR_MANAGER'].includes((user?.role || '').toUpperCase());
+      if (!isSuperOrHr) {
+        empId = user?.id;
+      }
 
       const data = await payrollService.getAllPayrolls(month, year, empId);
       return res.json(sendSuccess(data, 'Payroll records retrieved'));
