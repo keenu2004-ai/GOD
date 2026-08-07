@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'orgchart', label: 'Organization Chart', icon: Network },
     { id: 'performance', label: 'Performance Reviews', icon: Award },
-    { id: 'planner', label: 'Weekly Planner', icon: Calendar },
+    { id: 'planner', label: 'Weekly Planner & Workload', icon: Calendar },
     { id: 'shifts', label: 'Shift Management', icon: AlarmClock },
     { id: 'settings', label: 'Company Settings & Audits', icon: Settings },
   ];
