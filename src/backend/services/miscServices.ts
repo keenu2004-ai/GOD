@@ -16,6 +16,8 @@ import {
   plannerRepository,
   systemConfigRepository,
   auditLogRepository,
+  permissionRepository,
+  companyDocumentRepository,
 } from '../repositories/miscRepository.js';
 
 import { payrollRepository } from '../repositories/payrollRepository.js';
@@ -170,6 +172,13 @@ export class MiscService {
   async getAuditLogs(limit?: number) { return await auditLogRepository.getAuditLogs(limit); }
   async logAction(empId: number | null, action: string, module: string, details: string, ip?: string) {
     return await auditLogRepository.logAction(empId, action, module, details, ip);
+  }
+
+  // Permissions & Company Docs
+  async getAllPermissions() { return await permissionRepository.getAllPermissions(); }
+  async getCompanyDocs() { return await companyDocumentRepository.getAllCompanyDocs(); }
+  async createCompanyDoc(title: string, category: string, fileUrl: string, uploadedBy: number) {
+    return await companyDocumentRepository.createCompanyDoc(title, category, fileUrl, uploadedBy);
   }
 }
 

@@ -225,6 +225,31 @@ export class MiscController {
       return res.json(sendSuccess(data, 'Audit logs retrieved'));
     } catch (e: any) { return res.status(500).json(sendError(e.message)); }
   }
+
+  // Permissions
+  async getPermissions(req: Request, res: Response) {
+    try {
+      const data = await miscService.getAllPermissions();
+      return res.json(sendSuccess(data, 'Permissions matrix retrieved'));
+    } catch (e: any) { return res.status(500).json(sendError(e.message)); }
+  }
+
+  // Company Documents
+  async getCompanyDocs(req: Request, res: Response) {
+    try {
+      const data = await miscService.getCompanyDocs();
+      return res.json(sendSuccess(data, 'Company documents retrieved'));
+    } catch (e: any) { return res.status(500).json(sendError(e.message)); }
+  }
+
+  async createCompanyDoc(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      const { title, category, file_url } = req.body;
+      const data = await miscService.createCompanyDoc(title, category, file_url, user?.id || 1);
+      return res.status(201).json(sendSuccess(data, 'Company document uploaded'));
+    } catch (e: any) { return res.status(400).json(sendError(e.message)); }
+  }
 }
 
 export const miscController = new MiscController();

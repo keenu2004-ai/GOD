@@ -132,4 +132,11 @@ router.put('/config', authenticateToken, authorizeRoles('ADMIN'), (req, res) => 
 // 20. Audit Logs
 router.get('/audit-logs', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => miscController.getAuditLogs(req, res));
 
+// 21. Enterprise Permissions Matrix
+router.get('/permissions', authenticateToken, (req, res) => miscController.getPermissions(req, res));
+
+// 22. Company Documents Center
+router.get('/company-documents', authenticateToken, (req, res) => miscController.getCompanyDocs(req, res));
+router.post('/company-documents', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => miscController.createCompanyDoc(req, res));
+
 export default router;

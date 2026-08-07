@@ -218,6 +218,33 @@ export class AuditLogRepository {
   }
 }
 
+export class PermissionRepository {
+  async getAllPermissions() {
+    const res = await dbService.query(`SELECT * FROM permissions ORDER BY module, name`);
+    return res.rows;
+  }
+
+  async getRolePermissions(role: string) {
+    const res = await dbService.query(`SELECT permission_code FROM role_permissions WHERE role = $1`, [role]);
+    return res.rows.map((r: any) => r.permission_code);
+  }
+}
+
+export class CompanyDocumentRepository {
+  async getAllCompanyDocs() {
+    const res = await dbService.query(`SELECT * FROM company_documents ORDER BY id DESC`);
+    return res.rows;
+  }
+
+  async createCompanyDoc(title: string, category: string, fileUrl: string, uploadedBy: number) {
+    const res = await dbService.query(
+      `INSERT INTO company_documents (title, category, file_url, uploaded_by) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [title, category, fileUrl, uploadedBy]
+    );
+    return res.rows[0];
+  }
+}
+
 export const helpdeskRepository = new HelpdeskRepository();
 export const branchRepository = new BranchRepository();
 export const documentRepository = new DocumentRepository();
@@ -226,3 +253,5 @@ export const performanceRepository = new PerformanceRepository();
 export const plannerRepository = new PlannerRepository();
 export const systemConfigRepository = new SystemConfigRepository();
 export const auditLogRepository = new AuditLogRepository();
+export const permissionRepository = new PermissionRepository();
+export const companyDocumentRepository = new CompanyDocumentRepository();

@@ -255,7 +255,30 @@ export async function seedDatabase() {
     (2, 'LEAVE_APPROVAL', 'LEAVE', 'Approved 1 day casual leave for Sneha Gupta', '192.168.1.105');
   `);
 
-  // 22. Reset PostgreSQL Serial Sequences
+  // 22. Enterprise Granular Permissions
+  await safeQuery('Permissions', `
+    INSERT INTO permissions (code, name, module, description) VALUES
+    ('EMP_VIEW', 'View Employees', 'EMPLOYEE', 'Can view employee directory'),
+    ('EMP_MANAGE', 'Manage Employees', 'EMPLOYEE', 'Can create, edit, deactivate employees'),
+    ('ATT_PUNCH', 'GPS Attendance Punch', 'ATTENDANCE', 'Can mark GPS clock in/out'),
+    ('ATT_REGULARIZE', 'Regularize Attendance', 'ATTENDANCE', 'Can apply/approve missed punches'),
+    ('LEAVE_APPLY', 'Apply Leave', 'LEAVE', 'Can apply for leave requests'),
+    ('LEAVE_APPROVE', 'Approve Leaves', 'LEAVE', 'Can approve team leave applications'),
+    ('PAYROLL_VIEW', 'View Payroll', 'PAYROLL', 'Can view monthly salary slips'),
+    ('PAYROLL_MANAGE', 'Manage Payroll', 'PAYROLL', 'Can process monthly payroll runs'),
+    ('EXPENSE_SUBMIT', 'Submit Expenses', 'EXPENSE', 'Can submit reimbursement claims'),
+    ('EXPENSE_APPROVE', 'Approve Expenses', 'EXPENSE', 'Can approve reimbursement claims'),
+    ('SETTINGS_MANAGE', 'Manage Company Settings', 'SETTINGS', 'Can configure shift rules, grace periods, and audit logs')
+    ON CONFLICT (code) DO NOTHING;
+  `);
+
+  await safeQuery('Company Documents', `
+    INSERT INTO company_documents (title, category, file_url, version) VALUES
+    ('THEIAKSHI Corporate Code of Conduct 2026', 'POLICY', 'https://example.com/docs/code-of-conduct.pdf', '2.0'),
+    ('Employee Health & Wellness Benefits Guide', 'BENEFITS', 'https://example.com/docs/health-guide.pdf', '1.2');
+  `);
+
+  // 23. Reset PostgreSQL Serial Sequences
   await safeQuery('Reset Sequences', `
     SELECT setval(pg_get_serial_sequence('branches', 'id'), COALESCE((SELECT MAX(id) FROM branches), 1));
     SELECT setval(pg_get_serial_sequence('departments', 'id'), COALESCE((SELECT MAX(id) FROM departments), 1));

@@ -274,6 +274,33 @@ export async function initializeSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS permissions (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(100) UNIQUE NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      module VARCHAR(50) NOT NULL,
+      description TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      id SERIAL PRIMARY KEY,
+      role VARCHAR(50) NOT NULL,
+      permission_code VARCHAR(100) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(role, permission_code)
+    );
+
+    CREATE TABLE IF NOT EXISTS company_documents (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      category VARCHAR(100) NOT NULL,
+      file_url TEXT NOT NULL,
+      version VARCHAR(20) DEFAULT '1.0',
+      expiry_date DATE,
+      uploaded_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS audit_logs (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER REFERENCES employees(id),
