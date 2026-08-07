@@ -22,10 +22,14 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 export function authorizeRoles(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
-    if (!user || !roles.includes(user.role)) {
+    if (!user) {
       return res.status(403).json(sendError('Insufficient permission for this HRMS resource'));
     }
-    next();
+    // Super Admin / ADMIN override: Super Boss has complete power over all tabs & endpoints
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || roles.includes(user.role)) {
+      return next();
+    }
+    return res.status(403).json(sendError('Insufficient permission for this HRMS resource'));
   };
 }
 

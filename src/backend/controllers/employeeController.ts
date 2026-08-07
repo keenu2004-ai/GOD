@@ -86,6 +86,18 @@ export class EmployeeController {
       return res.status(400).json(sendError(error.message));
     }
   }
+
+  async updateRole(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { role } = req.body;
+      if (!role) return res.status(400).json(sendError('Role is required'));
+      await employeeService.updateRole(id, role);
+      return res.json(sendSuccess(null, `Employee role updated to ${role}`));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const employeeController = new EmployeeController();

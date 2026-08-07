@@ -18,6 +18,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { employeeService } from '../services/employeeService.js';
+import apiClient from '../services/apiClient.js';
 import { UserProfile } from '../types/index.js';
 
 export const EmployeesPage: React.FC = () => {
@@ -298,9 +299,27 @@ export const EmployeesPage: React.FC = () => {
                 <span className="text-slate-400">Phone:</span>
                 <span className="font-medium text-white">{selectedEmployee.phone || 'N/A'}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/60">
-                <span className="text-slate-400">Role:</span>
-                <span className="font-medium text-blue-400 font-mono">{selectedEmployee.role}</span>
+              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Power Role:</span>
+                <select
+                  value={selectedEmployee.role}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    apiClient.put(`/employees/${selectedEmployee.id}/role`, { role: newRole })
+                      .then(() => {
+                        alert(`User power role updated to ${newRole}!`);
+                        setSelectedEmployee({ ...selectedEmployee, role: newRole });
+                        fetchEmployees();
+                      })
+                      .catch((err) => alert(err.response?.data?.message || 'Failed to update role'));
+                  }}
+                  className="bg-slate-950 border border-slate-700 text-blue-400 text-xs font-mono font-bold px-2 py-1 rounded cursor-pointer"
+                >
+                  <option value="ADMIN">ADMIN / SUPER BOSS (Full Power)</option>
+                  <option value="HR_MANAGER">HR_MANAGER (Employees, Payroll, Bills)</option>
+                  <option value="DEPT_HEAD">DEPT_HEAD (Approvals, Team Manager)</option>
+                  <option value="EMPLOYEE">EMPLOYEE (Standard Access)</option>
+                </select>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Department:</span>

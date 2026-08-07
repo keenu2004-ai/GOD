@@ -101,6 +101,12 @@ export class EmployeeService {
     }
     return await employeeRepository.restore(id);
   }
+
+  async updateRole(id: number, role: string) {
+    const existing = await employeeRepository.findById(id);
+    if (!existing) throw new Error('Employee not found');
+    return await employeeRepository.updateRole(id, role);
+  }
 }
 
 export const employeeService = new EmployeeService();

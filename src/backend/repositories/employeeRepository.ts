@@ -219,6 +219,11 @@ export class EmployeeRepository {
     await dbService.query('UPDATE employees SET is_deleted = false, status = $1 WHERE id = $2', ['ACTIVE', id]);
     return true;
   }
+
+  async updateRole(id: number, role: string): Promise<boolean> {
+    await dbService.query('UPDATE employees SET role = $1 WHERE id = $2', [role, id]);
+    return true;
+  }
 }
 
 export const employeeRepository = new EmployeeRepository();
