@@ -25,6 +25,7 @@ import {
   LogOut,
   CheckSquare,
   MessageSquare,
+  Building2,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -55,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Workspaces', icon: FolderGit2 },
     { id: 'project-analytics', label: 'Project Analytics & Portfolio', icon: BarChart2 },
+    { id: 'client-portal', label: 'Client Portal & Approvals', icon: Building2 },
     { id: 'tasks-kanban', label: 'Sprint Kanban & Tasks', icon: CheckSquare },
     { id: 'task-collaboration', label: 'Task Collaboration & Standups', icon: MessageSquare },
     { id: 'time-tracking', label: 'Time Tracking & Timesheets', icon: Clock },

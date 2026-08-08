@@ -882,6 +882,74 @@ export async function initializeSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS client_organizations (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(200) NOT NULL,
+      company_name VARCHAR(200) NOT NULL,
+      contact_person VARCHAR(150),
+      email VARCHAR(150) UNIQUE NOT NULL,
+      phone VARCHAR(50),
+      address TEXT,
+      industry VARCHAR(100),
+      status VARCHAR(30) DEFAULT 'ACTIVE', -- 'ACTIVE' | 'INACTIVE'
+      account_manager_id INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS client_users (
+      id SERIAL PRIMARY KEY,
+      client_org_id INTEGER NOT NULL REFERENCES client_organizations(id) ON DELETE CASCADE,
+      first_name VARCHAR(100) NOT NULL,
+      last_name VARCHAR(100) NOT NULL,
+      email VARCHAR(150) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      role VARCHAR(30) DEFAULT 'CLIENT_ADMIN', -- 'CLIENT_ADMIN' | 'CLIENT_APPROVER' | 'CLIENT_VIEWER'
+      status VARCHAR(30) DEFAULT 'ACTIVE',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS client_project_access (
+      id SERIAL PRIMARY KEY,
+      client_org_id INTEGER NOT NULL REFERENCES client_organizations(id) ON DELETE CASCADE,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      access_level VARCHAR(30) DEFAULT 'FULL', -- 'FULL' | 'READ_ONLY' | 'LIMITED'
+      granted_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(client_org_id, project_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS project_deliverables (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      due_date DATE,
+      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED'
+      version VARCHAR(20) DEFAULT 'v1.0',
+      approval_status VARCHAR(30) DEFAULT 'UNDER_REVIEW',
+      client_comments TEXT,
+      reviewed_by INTEGER REFERENCES client_users(id),
+      reviewed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_change_requests (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      client_user_id INTEGER REFERENCES client_users(id),
+      title VARCHAR(200) NOT NULL,
+      description TEXT NOT NULL,
+      reason TEXT,
+      priority VARCHAR(30) DEFAULT 'MEDIUM', -- 'HIGH' | 'MEDIUM' | 'LOW'
+      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'
+      manager_response TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS payroll_settings (
       id SERIAL PRIMARY KEY,
       payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',

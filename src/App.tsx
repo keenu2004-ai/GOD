@@ -32,6 +32,7 @@ import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
 import { TaskCollaborationFeedPage } from './pages/TaskCollaborationFeedPage.js';
 import { EnterpriseTimeTrackingPage } from './pages/EnterpriseTimeTrackingPage.js';
 import { ProjectAnalyticsPage } from './pages/ProjectAnalyticsPage.js';
+import { ClientPortalPage } from './pages/ClientPortalPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -87,6 +88,8 @@ const AppContent: React.FC = () => {
             return <EnterpriseProjectWorkspacePage />;
           case 'project-analytics':
             return <ProjectAnalyticsPage />;
+          case 'client-portal':
+            return <ClientPortalPage />;
           case 'tasks-kanban':
             return <EnterpriseTaskBoardPage />;
           case 'task-collaboration':

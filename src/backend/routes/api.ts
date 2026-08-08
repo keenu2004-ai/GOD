@@ -32,6 +32,7 @@ import { taskCollaborationController } from '../controllers/taskCollaborationCon
 import { weeklyPlannerController } from '../controllers/weeklyPlannerController.js';
 import { timeTrackingController } from '../controllers/timeTrackingController.js';
 import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
+import { clientPortalController } from '../controllers/clientPortalController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -358,6 +359,16 @@ router.get('/projects/risks', authenticateToken, (req, res) => projectAnalyticsC
 router.get('/projects/analytics/workload', authenticateToken, (req, res) => projectAnalyticsController.getWorkload(req, res));
 router.get('/projects/analytics/budget-variance', authenticateToken, (req, res) => projectAnalyticsController.getBudgetVariance(req, res));
 router.get('/projects/analytics/export/portfolio-csv', authenticateToken, (req, res) => projectAnalyticsController.exportCSV(req, res));
+
+// 8g. Enterprise Client Portal, Deliverables Approval & Change Request Routes
+router.post('/client/organizations', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'SUPER_ADMIN'), (req, res) => clientPortalController.createOrganization(req, res));
+router.post('/client/access/grant', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'SUPER_ADMIN'), (req, res) => clientPortalController.grantAccess(req, res));
+router.get('/client/projects', authenticateToken, (req, res) => clientPortalController.getClientProjects(req, res));
+router.post('/client/deliverables', authenticateToken, (req, res) => clientPortalController.createDeliverable(req, res));
+router.get('/client/deliverables', authenticateToken, (req, res) => clientPortalController.getDeliverables(req, res));
+router.patch('/client/deliverables/:id/review', authenticateToken, (req, res) => clientPortalController.reviewDeliverable(req, res));
+router.post('/client/change-requests', authenticateToken, (req, res) => clientPortalController.createChangeRequest(req, res));
+router.get('/client/change-requests', authenticateToken, (req, res) => clientPortalController.getChangeRequests(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
