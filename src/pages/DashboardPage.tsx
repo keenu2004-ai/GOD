@@ -33,6 +33,7 @@ import {
   Server,
   HardDrive,
   RefreshCw,
+  FolderGit2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -65,6 +66,13 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
   const [leaveBalances, setLeaveBalances] = useState<any[]>([]);
   const [myTasks, setMyTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Attendance Widget State
   const [attendanceStatus, setAttendanceStatus] = useState<any>(null);
@@ -181,6 +189,169 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
   const isSuperAdmin = ['ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'SUPER_BOSS'].includes(userRole);
   const isHR = ['HR_MANAGER', 'HR_EXECUTIVE'].includes(userRole);
   const isManager = ['DEPARTMENT_HEAD', 'PROJECT_MANAGER', 'TEAM_LEAD'].includes(userRole);
+
+  if (isMobile) {
+    return (
+      <div className="space-y-5 text-slate-800 pb-16 font-sans">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 p-5 rounded-2xl border border-slate-800 text-white shadow-lg">
+          <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-semibold">Welcome back,</p>
+          <h2 className="text-xl font-black mt-1 text-white">
+            {user?.first_name} {user?.last_name}
+          </h2>
+          <p className="text-[11px] text-slate-300 mt-1 font-normal leading-relaxed">
+            {user?.role || 'EMPLOYEE'} • {user?.branch_name || 'Bengaluru HQ'}
+          </p>
+        </div>
+
+        {/* Work / Session Summary Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${isCheckedIn ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}`}>
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
+                <span className="font-extrabold text-[11px] text-slate-900 uppercase tracking-tight">
+                  {isCheckedIn ? 'Active Work Session' : isCheckedOut ? 'Shift Completed' : 'Not Clocked In'}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-normal">
+                {isCheckedIn ? 'General Shift: 9:00 AM - 6:00 PM' : 'Tap Attendance to Clock In'}
+              </p>
+            </div>
+          </div>
+
+          {isCheckedIn && (
+            <div className="font-mono text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded text-xs border border-emerald-100 shadow-inner">
+              {formatTimer(seconds)}
+            </div>
+          )}
+        </div>
+
+        {/* 8 Module Grid */}
+        <div>
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 pl-1 font-mono">
+            Quick Access
+          </h3>
+          <div className="grid grid-cols-2 gap-3.5">
+            {/* 1. Attendance */}
+            <button
+              onClick={() => onNavigate('attendance')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-blue-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Attendance</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">GPS Geofence & Logs</p>
+              </div>
+            </button>
+
+            {/* 2. Leave */}
+            <button
+              onClick={() => onNavigate('leave')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-amber-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center transition-colors group-hover:bg-amber-600 group-hover:text-white">
+                <CalendarCheck2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Leave</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">Balances & Requests</p>
+              </div>
+            </button>
+
+            {/* 3. Expenses */}
+            <button
+              onClick={() => onNavigate('expenses')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-rose-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center transition-colors group-hover:bg-rose-600 group-hover:text-white">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Expenses</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">Claim Reimbursements</p>
+              </div>
+            </button>
+
+            {/* 4. Timesheet */}
+            <button
+              onClick={() => onNavigate('time-tracking')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-indigo-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Timesheet</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">Weekly Work Logs</p>
+              </div>
+            </button>
+
+            {/* 5. Engagement */}
+            <button
+              onClick={() => onNavigate('engagement')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-teal-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center transition-colors group-hover:bg-teal-600 group-hover:text-white">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Engagement</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">Celebrations & Feed</p>
+              </div>
+            </button>
+
+            {/* 6. Helpdesk */}
+            <button
+              onClick={() => onNavigate('helpdesk')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-emerald-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Helpdesk</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">IT & HR Support Tickets</p>
+              </div>
+            </button>
+
+            {/* 7. Roost */}
+            <button
+              onClick={() => onNavigate('roost')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-purple-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center transition-colors group-hover:bg-purple-600 group-hover:text-white">
+                <Flame className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">Roost</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">Kudos & Feedbacks</p>
+              </div>
+            </button>
+
+            {/* 8. My Folder */}
+            <button
+              onClick={() => onNavigate('documents')}
+              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-cyan-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center transition-colors group-hover:bg-cyan-600 group-hover:text-white">
+                <FolderGit2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-xs tracking-tight">My Folder</h4>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">My Digital Documents</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-slate-800">

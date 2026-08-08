@@ -49,6 +49,9 @@ import { EnterpriseAssetsPage } from './pages/EnterpriseAssetsPage.js';
 import { EnterpriseAssetProcurementPage } from './pages/EnterpriseAssetProcurementPage.js';
 import { EnterpriseAssetMaintenancePage } from './pages/EnterpriseAssetMaintenancePage.js';
 import { EnterpriseAssetAnalyticsPage } from './pages/EnterpriseAssetAnalyticsPage.js';
+import { EngagementPage } from './pages/EngagementPage.js';
+import { RoostPage } from './pages/RoostPage.js';
+import { MyFolderPage } from './pages/MyFolderPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -75,9 +78,9 @@ const AppContent: React.FC = () => {
           case 'employees':
             return <EnterpriseEmployeePage />;
           case 'attendance':
-            return <EnterpriseAttendancePage />;
+            return <EnterpriseAttendancePage onNavigate={setActiveTab} />;
           case 'leave':
-            return <EnterpriseLeavePage />;
+            return <EnterpriseLeavePage onNavigate={setActiveTab} />;
           case 'holidays':
             return <EnterpriseHolidayPage />;
           case 'leave-analytics':
@@ -99,7 +102,7 @@ const AppContent: React.FC = () => {
           case 'exit-management':
             return <ExitManagementPage />;
           case 'expenses':
-            return <EnterpriseExpensesPage />;
+            return <EnterpriseExpensesPage onNavigate={setActiveTab} />;
           case 'expense-policy':
             return <EnterpriseExpensePolicyPage />;
           case 'projects':
@@ -115,7 +118,7 @@ const AppContent: React.FC = () => {
           case 'task-collaboration':
             return <TaskCollaborationFeedPage />;
           case 'time-tracking':
-            return <EnterpriseTimeTrackingPage />;
+            return <EnterpriseTimeTrackingPage onNavigate={setActiveTab} />;
           case 'assets':
             return <EnterpriseAssetPage />;
           case 'asset-procurement':
@@ -125,7 +128,13 @@ const AppContent: React.FC = () => {
           case 'asset-analytics':
             return <EnterpriseAssetAnalyticsPage />;
           case 'helpdesk':
-            return <EnterpriseHelpdeskPage />;
+            return <EnterpriseHelpdeskPage onNavigate={setActiveTab} />;
+          case 'engagement':
+            return <EngagementPage onNavigate={setActiveTab} />;
+          case 'roost':
+            return <RoostPage onNavigate={setActiveTab} />;
+          case 'documents':
+            return <MyFolderPage onNavigate={setActiveTab} />;
           case 'notifications':
             return <EnterpriseNotificationPage />;
           case 'announcements':

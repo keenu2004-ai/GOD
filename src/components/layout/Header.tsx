@@ -174,7 +174,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
           <Menu className="w-5 h-5 text-slate-700" />
         </button>
 
-        <div className="hidden sm:flex items-center gap-2 text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium">
+        {/* Mobile Brand Name */}
+        <div className="md:hidden flex items-center gap-2 ml-1">
+          <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm text-xs">
+            T1
+          </div>
+          <span className="font-extrabold text-slate-950 text-xs tracking-tight uppercase font-sans">
+            THEIAKSHI ENTERPRISE
+          </span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium">
           <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span className="text-slate-900 font-semibold truncate max-w-[140px] md:max-w-none">{user?.branch_name || 'THEIAKSHI HQ'}</span>
           <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold hidden lg:inline-block">
@@ -201,7 +211,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
 
       {/* Center/Right: Global Attendance Punch Widget */}
       <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium">
+        <div className="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium">
           <div className="flex items-center gap-1.5">
             <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
             <span className="font-bold text-slate-800 uppercase text-[11px]">
@@ -217,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           {!isCheckedIn && !isCheckedOut && (
             <button
               onClick={handlePunchIn}

@@ -1789,5 +1789,115 @@ export async function initializeSchema() {
     CREATE INDEX IF NOT EXISTS idx_payroll_emp_year_month ON payrolls(employee_id, year, month);
     CREATE INDEX IF NOT EXISTS idx_tasks_proj ON tasks(project_id);
     CREATE INDEX IF NOT EXISTS idx_notif_emp ON notifications(employee_id);
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- ENTERPRISE HELPDESK & TICKET MANAGEMENT EXTENSION TABLES
+    -- ═══════════════════════════════════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS helpdesk_categories (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      description TEXT,
+      department_id INTEGER REFERENCES departments(id),
+      default_assignee_id INTEGER REFERENCES employees(id),
+      default_priority VARCHAR(20) DEFAULT 'MEDIUM',
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_escalation_rules (
+      id SERIAL PRIMARY KEY,
+      category_id INTEGER REFERENCES helpdesk_categories(id),
+      priority VARCHAR(20) NOT NULL,
+      escalation_after_hours INTEGER NOT NULL DEFAULT 4,
+      escalate_to_role VARCHAR(50) NOT NULL DEFAULT 'HR_MANAGER',
+      escalate_to_employee_id INTEGER REFERENCES employees(id),
+      notify_manager BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_attachments (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE,
+      file_name VARCHAR(255) NOT NULL,
+      file_url TEXT NOT NULL,
+      file_type VARCHAR(50),
+      file_size_bytes INTEGER DEFAULT 0,
+      uploaded_by INTEGER NOT NULL REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_watchers (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      added_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(ticket_id, employee_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_tags (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE,
+      tag_name VARCHAR(50) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_activity_log (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE,
+      actor_id INTEGER NOT NULL REFERENCES employees(id),
+      action_type VARCHAR(50) NOT NULL,
+      from_value VARCHAR(100),
+      to_value VARCHAR(100),
+      details TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_satisfaction_ratings (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE UNIQUE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+      feedback TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS helpdesk_knowledge_base (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      category_id INTEGER REFERENCES helpdesk_categories(id),
+      tags TEXT,
+      views_count INTEGER DEFAULT 0,
+      is_published BOOLEAN DEFAULT true,
+      created_by INTEGER REFERENCES employees(id),
+      updated_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS helpdesk_canned_responses (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      response_text TEXT NOT NULL,
+      category VARCHAR(50),
+      shortcut_code VARCHAR(50) UNIQUE,
+      usage_count INTEGER DEFAULT 0,
+      created_by INTEGER REFERENCES employees(id),
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Helpdesk indexes
+    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_emp ON helpdesk_tickets(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_status ON helpdesk_tickets(status);
+    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_priority ON helpdesk_tickets(priority);
+    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_assigned ON helpdesk_tickets(assigned_to);
+    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_category ON helpdesk_tickets(category);
+    CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket ON ticket_comments(ticket_id);
+    CREATE INDEX IF NOT EXISTS idx_ticket_activity_ticket ON ticket_activity_log(ticket_id);
+    CREATE INDEX IF NOT EXISTS idx_ticket_watchers_ticket ON ticket_watchers(ticket_id);
+    CREATE INDEX IF NOT EXISTS idx_ticket_attachments_ticket ON ticket_attachments(ticket_id);
   `);
 }

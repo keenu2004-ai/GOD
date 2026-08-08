@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Calendar, CheckCircle2, Clock, AlertTriangle, Plus, RefreshCw, X,
-  FileText, ShieldCheck, ArrowRight, UserCheck, Award, Layers
+  FileText, ShieldCheck, ArrowRight, ArrowLeft, UserCheck, Award, Layers
 } from 'lucide-react';
 import apiClient from '../services/apiClient.js';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -40,11 +40,18 @@ interface LedgerEntry {
   created_at: string;
 }
 
-export const EnterpriseLeavePage: React.FC = () => {
+export const EnterpriseLeavePage: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
   const { user } = useAuth();
   const userRole = (user as any)?.role || 'EMPLOYEE';
   const isManager = ['ADMIN', 'HR_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'].includes(userRole);
   const isSuperAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userRole);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [tab, setTab] = useState<'balances' | 'applications' | 'ledger'>('balances');
 
@@ -141,9 +148,18 @@ export const EnterpriseLeavePage: React.FC = () => {
   const totalRemaining = balances.reduce((a, b) => a + Number(b.remaining_days), 0);
 
   return (
-    <div className="space-y-5 min-h-screen pb-10">
+    <div className="space-y-5 min-h-screen pb-10 font-sans text-slate-800">
+      {isMobile ? (
+        <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+          <button onClick={() => onNavigate?.('dashboard')} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="font-extrabold text-sm uppercase tracking-tight">Leave Workspace</span>
+        </div>
+      ) : null}
+
       {/* ─── Header Workspace ──────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 shadow-xl border border-emerald-900/40">
+      <div className={isMobile ? "bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-4 shadow-xl border border-emerald-900/40 text-slate-800" : "bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 shadow-xl border border-emerald-900/40 text-slate-800"}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-600/30 rounded-xl">
@@ -239,7 +255,7 @@ export const EnterpriseLeavePage: React.FC = () => {
 
       {/* ─── LEAVE APPLICATIONS TAB ──────────────────────────────────────── */}
       {tab === 'applications' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
           <table className="w-full text-xs text-left text-slate-700">
             <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
               <tr>
@@ -289,7 +305,7 @@ export const EnterpriseLeavePage: React.FC = () => {
 
       {/* ─── IMMUTABLE BALANCE LEDGER TAB ─────────────────────────────────── */}
       {tab === 'ledger' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
           <table className="w-full text-xs text-left text-slate-700">
             <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
               <tr>

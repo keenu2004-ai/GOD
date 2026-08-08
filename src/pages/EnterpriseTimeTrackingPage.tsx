@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Clock, Play, Pause, Square, Plus, CheckCircle2, AlertCircle, DollarSign,
-  Calendar, Users, UserCheck, Shield, RefreshCw, X, FileText, Zap, BarChart2
+  Calendar, Users, UserCheck, Shield, RefreshCw, X, FileText, Zap, BarChart2, ArrowLeft
 } from 'lucide-react';
 import apiClient from '../services/apiClient.js';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -50,10 +50,17 @@ interface ProductivityKPIs {
 
 const fmtDate = (s?: string) => s ? new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-export const EnterpriseTimeTrackingPage: React.FC = () => {
+export const EnterpriseTimeTrackingPage: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
   const { user } = useAuth();
   const userRole = (user as any)?.role || 'EMPLOYEE';
   const isManager = ['ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'].includes(userRole);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [tab, setTab] = useState<'my-timesheet' | 'approvals' | 'analytics'>('my-timesheet');
   const [activeTimer, setActiveTimer] = useState<ActiveTimer | null>(null);
@@ -177,9 +184,18 @@ export const EnterpriseTimeTrackingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 min-h-screen pb-10">
+    <div className="space-y-5 min-h-screen pb-10 font-sans text-slate-800">
+      {isMobile ? (
+        <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+          <button onClick={() => onNavigate?.('dashboard')} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="font-extrabold text-sm uppercase tracking-tight">Timesheet Workspace</span>
+        </div>
+      ) : null}
+
       {/* ─── Live Work Session Timer Banner ─────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 shadow-xl border border-emerald-900/40">
+      <div className={isMobile ? "bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-4 shadow-xl border border-emerald-900/40 text-slate-800" : "bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 shadow-xl border border-emerald-900/40 text-slate-800"}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-600/30 rounded-2xl">
@@ -267,7 +283,7 @@ export const EnterpriseTimeTrackingPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
             <table className="w-full text-xs text-left text-slate-700">
               <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
                 <tr>
@@ -306,7 +322,7 @@ export const EnterpriseTimeTrackingPage: React.FC = () => {
 
       {/* ─── MANAGER APPROVALS TAB ───────────────────────────────────────── */}
       {tab === 'approvals' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
           <table className="w-full text-xs text-left text-slate-700">
             <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
               <tr>

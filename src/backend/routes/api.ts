@@ -46,6 +46,7 @@ import { assetMaintenanceController } from '../controllers/assetMaintenanceContr
 import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
 import { helpdeskTicketController } from '../controllers/helpdeskTicketController.js';
 import { helpdeskController } from '../controllers/helpdeskController.js';
+import { helpdeskEnterpriseController } from '../controllers/helpdeskEnterpriseController.js';
 import { expenseManagementController } from '../controllers/expenseManagementController.js';
 import { expensePolicyController } from '../controllers/expensePolicyController.js';
 import { organizationController } from '../controllers/organizationController.js';
@@ -486,13 +487,41 @@ router.get('/notifications', authenticateToken, (req, res) => notificationEngine
 router.get('/announcements', authenticateToken, (req, res) => miscController.getAnnouncements(req, res));
 router.post('/announcements', authenticateToken, (req, res) => miscController.createAnnouncement(req, res));
 
-// 13. Helpdesk & Support Desk Routes
-router.post('/helpdesk/create', authenticateToken, (req, res) => helpdeskTicketController.createTicket(req, res));
-router.get('/helpdesk/all', authenticateToken, (req, res) => helpdeskTicketController.getTickets(req, res));
-router.patch('/helpdesk/tickets/:id/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => helpdeskTicketController.assignTicket(req, res));
-router.patch('/helpdesk/tickets/:id/resolve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => helpdeskTicketController.resolveTicket(req, res));
-router.post('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskTicketController.addComment(req, res));
-router.get('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskTicketController.getComments(req, res));
+// 13. Enterprise Helpdesk & Ticket Management Routes
+const helpdeskAgentRoles = ['ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN', 'SUPPORT_AGENT'];
+router.post('/helpdesk/seed-categories', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => helpdeskEnterpriseController.seedCategories(req, res));
+router.post('/helpdesk/create', authenticateToken, (req, res) => helpdeskEnterpriseController.createTicket(req, res));
+router.get('/helpdesk/all', authenticateToken, (req, res) => helpdeskEnterpriseController.getTickets(req, res));
+router.get('/helpdesk/my-tickets', authenticateToken, (req, res) => helpdeskEnterpriseController.getMyTickets(req, res));
+router.get('/helpdesk/agent-queue', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.getAgentQueue(req, res));
+router.get('/helpdesk/analytics', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.getAnalytics(req, res));
+router.get('/helpdesk/categories', authenticateToken, (req, res) => helpdeskEnterpriseController.getCategories(req, res));
+router.post('/helpdesk/categories', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => helpdeskEnterpriseController.createCategory(req, res));
+router.get('/helpdesk/sla-rules', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.getSLARules(req, res));
+router.post('/helpdesk/sla-rules', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => helpdeskEnterpriseController.createSLARule(req, res));
+router.get('/helpdesk/escalation-rules', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.getEscalationRules(req, res));
+router.post('/helpdesk/escalation-rules', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => helpdeskEnterpriseController.createEscalationRule(req, res));
+router.get('/helpdesk/knowledge-base', authenticateToken, (req, res) => helpdeskEnterpriseController.getArticles(req, res));
+router.post('/helpdesk/knowledge-base', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.createArticle(req, res));
+router.get('/helpdesk/knowledge-base/:id', authenticateToken, (req, res) => helpdeskEnterpriseController.viewArticle(req, res));
+router.get('/helpdesk/canned-responses', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.getCannedResponses(req, res));
+router.post('/helpdesk/canned-responses', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.createCannedResponse(req, res));
+router.post('/helpdesk/canned-responses/:id/use', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.useCannedResponse(req, res));
+router.post('/helpdesk/bulk-assign', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.bulkAssign(req, res));
+router.post('/helpdesk/bulk-close', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.bulkClose(req, res));
+router.get('/helpdesk/tickets/:id', authenticateToken, (req, res) => helpdeskEnterpriseController.getTicketById(req, res));
+router.patch('/helpdesk/tickets/:id/assign', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.assignTicket(req, res));
+router.patch('/helpdesk/tickets/:id/status', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.updateStatus(req, res));
+router.patch('/helpdesk/tickets/:id/resolve', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.updateStatus(req, res));
+router.patch('/helpdesk/tickets/:id/escalate', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.escalateTicket(req, res));
+router.post('/helpdesk/tickets/:id/reopen', authenticateToken, (req, res) => helpdeskEnterpriseController.reopenTicket(req, res));
+router.post('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskEnterpriseController.addComment(req, res));
+router.get('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskEnterpriseController.getComments(req, res));
+router.post('/helpdesk/tickets/:id/watchers', authenticateToken, (req, res) => helpdeskEnterpriseController.addWatcher(req, res));
+router.delete('/helpdesk/tickets/:id/watchers/:employeeId', authenticateToken, (req, res) => helpdeskEnterpriseController.removeWatcher(req, res));
+router.post('/helpdesk/tickets/:id/tags', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.addTag(req, res));
+router.delete('/helpdesk/tickets/:id/tags', authenticateToken, authorizeRoles(...helpdeskAgentRoles), (req, res) => helpdeskEnterpriseController.removeTag(req, res));
+router.post('/helpdesk/tickets/:id/rate', authenticateToken, (req, res) => helpdeskEnterpriseController.rateSatisfaction(req, res));
 
 // 14. Branches & Organization Management Routes
 router.get('/branches', authenticateToken, (req, res) => organizationController.getBranches(req, res));
