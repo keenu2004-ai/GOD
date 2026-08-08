@@ -966,15 +966,45 @@ export async function initializeSchema() {
 
     CREATE TABLE IF NOT EXISTS expenses (
       id SERIAL PRIMARY KEY,
+      expense_number VARCHAR(50) UNIQUE,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
       title VARCHAR(255) NOT NULL,
       category VARCHAR(50) NOT NULL,
       amount NUMERIC(12, 2) NOT NULL,
+      currency VARCHAR(10) DEFAULT 'INR',
+      merchant_name VARCHAR(150),
       date DATE NOT NULL,
       description TEXT,
       receipt_url TEXT,
-      status VARCHAR(20) DEFAULT 'PENDING',
+      project_id INTEGER REFERENCES projects(id),
+      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'MANAGER_APPROVED' | 'FINANCE_APPROVED' | 'REJECTED' | 'REIMBURSED'
       approved_by INTEGER REFERENCES employees(id),
+      reimbursed_amount NUMERIC(12, 2),
+      payment_status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'PAID' | 'FAILED'
+      payment_reference VARCHAR(100),
+      policy_warning TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS expense_advances (
+      id SERIAL PRIMARY KEY,
+      advance_number VARCHAR(50) NOT NULL UNIQUE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      advance_amount NUMERIC(12, 2) NOT NULL,
+      purpose TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING_APPROVAL', -- 'PENDING_APPROVAL' | 'APPROVED' | 'SETTLED'
+      settled_amount NUMERIC(12, 2) DEFAULT 0,
+      is_settled BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS expense_policy_rules (
+      id SERIAL PRIMARY KEY,
+      category VARCHAR(50) NOT NULL UNIQUE,
+      max_limit_amount NUMERIC(12, 2) DEFAULT 25000,
+      receipt_required BOOLEAN DEFAULT true,
+      manager_approval_required BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 

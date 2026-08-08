@@ -39,6 +39,7 @@ import { assetProcurementController } from '../controllers/assetProcurementContr
 import { assetMaintenanceController } from '../controllers/assetMaintenanceController.js';
 import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
 import { helpdeskController } from '../controllers/helpdeskController.js';
+import { expenseManagementController } from '../controllers/expenseManagementController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -305,10 +306,19 @@ router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAl
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));
 router.post('/payrolls/generate', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => payrollController.generatePayroll(req, res));
 
-// 7. Expense Module Routes
+// 7. Expense Module & Policy Engine Routes
 router.get('/expenses', authenticateToken, (req, res) => expenseController.getAll(req, res));
 router.post('/expenses', authenticateToken, (req, res) => expenseController.submit(req, res));
 router.put('/expenses/:id/status', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => expenseController.approve(req, res));
+
+router.post('/expenses/claims', authenticateToken, (req, res) => expenseManagementController.createClaim(req, res));
+router.get('/expenses/claims', authenticateToken, (req, res) => expenseManagementController.getClaims(req, res));
+router.patch('/expenses/claims/:id/manager-approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => expenseManagementController.approveManager(req, res));
+router.patch('/expenses/claims/:id/finance-settle', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expenseManagementController.approveFinanceAndSettle(req, res));
+router.patch('/expenses/claims/:id/reject', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => expenseManagementController.rejectExpense(req, res));
+router.post('/expenses/advances', authenticateToken, (req, res) => expenseManagementController.requestAdvance(req, res));
+router.get('/expenses/advances', authenticateToken, (req, res) => expenseManagementController.getAdvances(req, res));
+router.patch('/expenses/advances/:id/settle', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expenseManagementController.settleAdvance(req, res));
 
 // 8. Projects & Tasks Routes
 router.post('/projects/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => enterpriseProjectController.seedCategories(req, res));
