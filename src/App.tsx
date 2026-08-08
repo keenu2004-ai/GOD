@@ -37,6 +37,7 @@ import { ProjectAutomationManagementPage } from './pages/ProjectAutomationManage
 import { EnterpriseAssetsPage } from './pages/EnterpriseAssetsPage.js';
 import { EnterpriseAssetProcurementPage } from './pages/EnterpriseAssetProcurementPage.js';
 import { EnterpriseAssetMaintenancePage } from './pages/EnterpriseAssetMaintenancePage.js';
+import { EnterpriseAssetAnalyticsPage } from './pages/EnterpriseAssetAnalyticsPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -108,6 +109,8 @@ const AppContent: React.FC = () => {
             return <EnterpriseAssetProcurementPage />;
           case 'asset-maintenance':
             return <EnterpriseAssetMaintenancePage />;
+          case 'asset-analytics':
+            return <EnterpriseAssetAnalyticsPage />;
           case 'helpdesk':
             return <HelpdeskPage />;
           case 'announcements':

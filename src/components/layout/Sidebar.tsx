@@ -67,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'assets', label: 'Asset Management', icon: Laptop },
     { id: 'asset-procurement', label: 'Asset Requests & Procurement', icon: ShoppingBag },
     { id: 'asset-maintenance', label: 'Asset Maintenance & Recovery', icon: Wrench },
+    { id: 'asset-analytics', label: 'Asset Analytics & Physical Audits', icon: BarChart2 },
     { id: 'helpdesk', label: 'IT & HR Helpdesk', icon: HelpCircle },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'orgchart', label: 'Organization Chart', icon: Network },

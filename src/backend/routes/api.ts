@@ -37,6 +37,7 @@ import { projectAutomationController } from '../controllers/projectAutomationCon
 import { assetManagementController } from '../controllers/assetManagementController.js';
 import { assetProcurementController } from '../controllers/assetProcurementController.js';
 import { assetMaintenanceController } from '../controllers/assetMaintenanceController.js';
+import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -411,6 +412,16 @@ router.get('/assets/damage-investigations', authenticateToken, (req, res) => ass
 router.post('/assets/payroll-recoveries', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.createPayrollRecovery(req, res));
 router.get('/assets/payroll-recoveries', authenticateToken, (req, res) => assetMaintenanceController.getPayrollRecoveries(req, res));
 router.patch('/assets/payroll-recoveries/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.approvePayrollRecovery(req, res));
+
+// 9d. Enterprise Asset Financial Valuation, Depreciation & Physical Audit Routes
+router.get('/assets/analytics/financial', authenticateToken, (req, res) => assetAnalyticsController.getFinancialAnalytics(req, res));
+router.post('/assets/depreciation/calculate', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.calculateDepreciation(req, res));
+router.get('/assets/depreciation/schedules', authenticateToken, (req, res) => assetAnalyticsController.getDepreciationSchedules(req, res));
+router.post('/assets/audits', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.createAudit(req, res));
+router.get('/assets/audits', authenticateToken, (req, res) => assetAnalyticsController.getAudits(req, res));
+router.post('/assets/audits/:id/findings', authenticateToken, (req, res) => assetAnalyticsController.recordFinding(req, res));
+router.get('/assets/audit-findings', authenticateToken, (req, res) => assetAnalyticsController.getFindings(req, res));
+router.patch('/assets/audit-findings/:id/reconcile', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.reconcileFinding(req, res));
 
 // 11. Notifications Routes
 router.get('/notifications', authenticateToken, (req, res) => miscController.getNotifications(req, res));

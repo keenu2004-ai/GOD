@@ -1163,6 +1163,43 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS asset_depreciation_schedules (
+      id SERIAL PRIMARY KEY,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      purchase_cost NUMERIC(12, 2) NOT NULL,
+      residual_value NUMERIC(12, 2) DEFAULT 0,
+      useful_life_years INTEGER DEFAULT 3,
+      method VARCHAR(30) DEFAULT 'STRAIGHT_LINE',
+      annual_depreciation NUMERIC(12, 2) NOT NULL,
+      monthly_depreciation NUMERIC(12, 2) NOT NULL,
+      current_book_value NUMERIC(12, 2) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_inventory_audits (
+      id SERIAL PRIMARY KEY,
+      audit_name VARCHAR(150) NOT NULL,
+      auditor_id INTEGER REFERENCES employees(id),
+      total_expected INTEGER DEFAULT 0,
+      total_scanned INTEGER DEFAULT 0,
+      missing_count INTEGER DEFAULT 0,
+      status VARCHAR(30) DEFAULT 'IN_PROGRESS', -- 'IN_PROGRESS' | 'COMPLETED'
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_audit_findings (
+      id SERIAL PRIMARY KEY,
+      audit_id INTEGER NOT NULL REFERENCES asset_inventory_audits(id) ON DELETE CASCADE,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      expected_location VARCHAR(100),
+      actual_location VARCHAR(100),
+      discrepancy_type VARCHAR(50) DEFAULT 'MISSING', -- 'MISSING' | 'LOCATION_MISMATCH' | 'DAMAGED'
+      status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN' | 'RECONCILED'
+      reconciliation_action TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
