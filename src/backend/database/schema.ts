@@ -1127,6 +1127,42 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS asset_warranty_claims (
+      id SERIAL PRIMARY KEY,
+      claim_number VARCHAR(50) UNIQUE NOT NULL,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      vendor_name VARCHAR(150),
+      claim_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      issue_description TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'CLAIM_SUBMITTED', -- 'CLAIM_SUBMITTED' | 'CLAIM_APPROVED' | 'RESOLVED' | 'REJECTED'
+      resolution_notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_damage_investigations (
+      id SERIAL PRIMARY KEY,
+      issue_id INTEGER REFERENCES asset_issues(id) ON DELETE CASCADE,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      employee_id INTEGER REFERENCES employees(id),
+      damage_severity VARCHAR(30) DEFAULT 'MODERATE', -- 'CRITICAL' | 'MODERATE' | 'MINOR'
+      estimated_cost NUMERIC(10, 2) DEFAULT 0,
+      responsibility VARCHAR(30) DEFAULT 'COMPANY', -- 'COMPANY' | 'EMPLOYEE' | 'SHARED'
+      status VARCHAR(30) DEFAULT 'UNDER_INVESTIGATION', -- 'UNDER_INVESTIGATION' | 'RESOLVED' | 'RECOVERY_APPROVED'
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_payroll_recoveries (
+      id SERIAL PRIMARY KEY,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      recovery_amount NUMERIC(10, 2) NOT NULL,
+      reason TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING_FINANCE_APPROVAL', -- 'PENDING_FINANCE_APPROVAL' | 'PAYROLL_APPROVED' | 'COMPLETED'
+      payroll_deducted BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),

@@ -36,6 +36,7 @@ import { clientPortalController } from '../controllers/clientPortalController.js
 import { projectAutomationController } from '../controllers/projectAutomationController.js';
 import { assetManagementController } from '../controllers/assetManagementController.js';
 import { assetProcurementController } from '../controllers/assetProcurementController.js';
+import { assetMaintenanceController } from '../controllers/assetMaintenanceController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -401,6 +402,15 @@ router.get('/assets/requests/:id/quotations', authenticateToken, (req, res) => a
 router.post('/assets/purchase-orders', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.createPO(req, res));
 router.get('/assets/purchase-orders', authenticateToken, (req, res) => assetProcurementController.getPOs(req, res));
 router.post('/assets/purchase-orders/:id/receive', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.receivePO(req, res));
+
+// 9c. Enterprise Asset Warranty Claims, Damage Investigations & Payroll Recovery Routes
+router.post('/assets/warranty-claims', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.createWarrantyClaim(req, res));
+router.get('/assets/warranty-claims', authenticateToken, (req, res) => assetMaintenanceController.getWarrantyClaims(req, res));
+router.post('/assets/damage-investigations', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => assetMaintenanceController.createDamageInvestigation(req, res));
+router.get('/assets/damage-investigations', authenticateToken, (req, res) => assetMaintenanceController.getDamageInvestigations(req, res));
+router.post('/assets/payroll-recoveries', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.createPayrollRecovery(req, res));
+router.get('/assets/payroll-recoveries', authenticateToken, (req, res) => assetMaintenanceController.getPayrollRecoveries(req, res));
+router.patch('/assets/payroll-recoveries/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.approvePayrollRecovery(req, res));
 
 // 11. Notifications Routes
 router.get('/notifications', authenticateToken, (req, res) => miscController.getNotifications(req, res));
