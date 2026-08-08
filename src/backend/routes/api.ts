@@ -3,6 +3,7 @@ import { authController } from '../controllers/authController.js';
 import { employeeController } from '../controllers/employeeController.js';
 import { attendanceController } from '../controllers/attendanceController.js';
 import { regularizationController } from '../controllers/regularizationController.js';
+import { attendanceManagementController } from '../controllers/attendanceManagementController.js';
 import { leaveController } from '../controllers/leaveController.js';
 import { payrollController } from '../controllers/payrollController.js';
 import { expenseController } from '../controllers/expenseController.js';
@@ -92,9 +93,13 @@ router.put('/employees/:id/role', authenticateToken, authorizeRoles('ADMIN'), (r
 router.delete('/employees/:id/permanent', authenticateToken, authorizeRoles('ADMIN'), (req, res) => employeeController.permanentDelete(req, res));
 
 // 4. Attendance Module Routes
-router.post('/attendance/punch-in', authenticateToken, (req, res) => attendanceController.punchIn(req, res));
-router.post('/attendance/punch-out', authenticateToken, (req, res) => attendanceController.punchOut(req, res));
-router.post('/attendance/break', authenticateToken, (req, res) => attendanceController.updateBreak(req, res));
+router.get('/attendance', authenticateToken, (req, res) => attendanceController.getHistory(req, res));
+router.post('/attendance/clock-in', authenticateToken, (req, res) => attendanceManagementController.clockIn(req, res));
+router.post('/attendance/clock-out', authenticateToken, (req, res) => attendanceManagementController.clockOut(req, res));
+router.get('/attendance/today', authenticateToken, (req, res) => attendanceManagementController.getToday(req, res));
+router.get('/attendance/my-history', authenticateToken, (req, res) => attendanceManagementController.getMyHistory(req, res));
+router.post('/attendance/corrections', authenticateToken, (req, res) => attendanceManagementController.requestCorrection(req, res));
+router.patch('/attendance/corrections/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => attendanceManagementController.approveCorrection(req, res));
 router.get('/attendance/my-status', authenticateToken, (req, res) => attendanceController.getMyStatus(req, res));
 router.get('/attendance/history', authenticateToken, (req, res) => attendanceController.getHistory(req, res));
 router.get('/attendance/summary', authenticateToken, (req, res) => attendanceController.getMonthlySummary(req, res));

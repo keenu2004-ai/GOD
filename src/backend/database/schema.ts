@@ -1350,6 +1350,16 @@ export async function initializeSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS attendance_shifts (
+      id SERIAL PRIMARY KEY,
+      shift_name VARCHAR(100) NOT NULL UNIQUE,
+      start_time TIME NOT NULL,
+      end_time TIME NOT NULL,
+      grace_period_minutes INTEGER DEFAULT 15,
+      break_duration_minutes INTEGER DEFAULT 60,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS permissions (
       id SERIAL PRIMARY KEY,
       code VARCHAR(100) UNIQUE NOT NULL,

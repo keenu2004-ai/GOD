@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { EmployeesPage } from './pages/EmployeesPage.js';
 import { AttendancePage } from './pages/AttendancePage.js';
+import { EnterpriseAttendancePage } from './pages/EnterpriseAttendancePage.js';
 import { LeavePage } from './pages/LeavePage.js';
 import { PayrollPage } from './pages/PayrollPage.js';
 import { ExpensesPage } from './pages/ExpensesPage.js';
@@ -67,7 +68,7 @@ const AppContent: React.FC = () => {
           case 'employees':
             return <EmployeesPage />;
           case 'attendance':
-            return <AttendancePage />;
+            return <EnterpriseAttendancePage />;
           case 'leave':
             return <LeavePage />;
           case 'holidays':
