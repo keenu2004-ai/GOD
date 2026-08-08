@@ -22,6 +22,18 @@ export class ProjectAnalyticsService {
   async getRisks(projectId?: number) {
     return projectAnalyticsRepository.getRisks(projectId);
   }
+
+  async getDepartmentWorkload() {
+    return projectAnalyticsRepository.getDepartmentWorkloadBreakdown();
+  }
+
+  async getBudgetVariance() {
+    return projectAnalyticsRepository.getProjectBudgetVariance();
+  }
+
+  async exportPortfolioCSV() {
+    return projectAnalyticsRepository.exportPortfolioCSV();
+  }
 }
 
 export const projectAnalyticsService = new ProjectAnalyticsService();

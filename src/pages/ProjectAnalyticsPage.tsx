@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart2, FolderGit2, AlertTriangle, CheckCircle2, Clock, DollarSign,
-  TrendingUp, Plus, Shield, ShieldAlert, Flag, Filter, RefreshCw, X, Award
+  TrendingUp, Plus, Shield, ShieldAlert, Flag, Filter, RefreshCw, X, Award,
+  Download, Users, PieChart
 } from 'lucide-react';
 import apiClient from '../services/apiClient.js';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -41,6 +42,31 @@ interface Risk {
   last_name?: string;
 }
 
+interface DepartmentWorkload {
+  department_name: string;
+  total_employees: number;
+  assigned_tasks: number;
+  total_planned_hours: number;
+  total_actual_hours: number;
+  department_capacity_hours: number;
+  utilization_pct: number;
+  status: string;
+}
+
+interface BudgetVariance {
+  id: number;
+  name: string;
+  code: string;
+  budget: number;
+  status: string;
+  progress_percentage: number;
+  estimated_salary_cost: number;
+  actual_cost: number;
+  budget_variance: number;
+  budget_utilization_pct: number;
+  budget_status: string;
+}
+
 const fmtCurrency = (n?: number) => n ? `₹${n.toLocaleString('en-IN')}` : '₹0';
 const fmtDate = (s?: string) => s ? new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -49,10 +75,12 @@ export const ProjectAnalyticsPage: React.FC = () => {
   const userRole = (user as any)?.role || 'EMPLOYEE';
   const isManager = ['ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'].includes(userRole);
 
-  const [tab, setTab] = useState<'milestones' | 'risks'>('milestones');
+  const [tab, setTab] = useState<'milestones' | 'risks' | 'workload' | 'budget'>('milestones');
   const [kpis, setKpis] = useState<PortfolioKPIs | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [risks, setRisks] = useState<Risk[]>([]);
+  const [workloads, setWorkloads] = useState<DepartmentWorkload[]>([]);
+  const [budgets, setBudgets] = useState<BudgetVariance[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -79,15 +107,19 @@ export const ProjectAnalyticsPage: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [kpiRes, msRes, rskRes, prjRes] = await Promise.all([
+      const [kpiRes, msRes, rskRes, wrkRes, bdgRes, prjRes] = await Promise.all([
         apiClient.get('/projects/portfolio/kpis').catch(() => ({ data: { data: null } })),
         apiClient.get('/projects/milestones').catch(() => ({ data: { data: [] } })),
         apiClient.get('/projects/risks').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/projects/analytics/workload').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/projects/analytics/budget-variance').catch(() => ({ data: { data: [] } })),
         apiClient.get('/projects').catch(() => ({ data: { data: [] } })),
       ]);
       setKpis(kpiRes.data?.data || null);
       setMilestones(msRes.data?.data || []);
       setRisks(rskRes.data?.data || []);
+      setWorkloads(wrkRes.data?.data || []);
+      setBudgets(bdgRes.data?.data || []);
       setProjects(prjRes.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -125,6 +157,20 @@ export const ProjectAnalyticsPage: React.FC = () => {
     finally { setSubmitting(false); }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await apiClient.get('/projects/analytics/export/portfolio-csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'PROJECT_PORTFOLIO_ANALYTICS_REPORT.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      alert('✅ Portfolio Analytics CSV exported!');
+    } catch (e: any) { alert('Export failed'); }
+  };
+
   const mockMonthlyData = [
     { month: 'Mar', achieved: 4, planned: 5 },
     { month: 'Apr', achieved: 6, planned: 6 },
@@ -145,10 +191,13 @@ export const ProjectAnalyticsPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-black text-white tracking-tight">Enterprise Project Analytics & Portfolio BI</h2>
-              <p className="text-xs text-indigo-300/70 font-mono mt-0.5">Executive Portfolio Dashboard • Milestones Engine • Risk Register</p>
+              <p className="text-xs text-indigo-300/70 font-mono mt-0.5">Executive Portfolio Dashboard • Milestones Engine • Risk Register • Budget Analysis</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={handleExportCSV} className="bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-white/20 flex items-center gap-1.5">
+              <Download className="w-3.5 h-3.5 text-indigo-300" /> Export Portfolio CSV
+            </button>
             <button onClick={() => setShowMilestoneModal(true)} className="bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-white/20">
               <Plus className="w-3.5 h-3.5 inline mr-1" /> Add Milestone
             </button>
@@ -218,6 +267,18 @@ export const ProjectAnalyticsPage: React.FC = () => {
           }`}>
           <ShieldAlert className="w-4 h-4" /> Risk Register & Mitigation Hub ({risks.length})
         </button>
+        <button onClick={() => setTab('workload')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
+            tab === 'workload' ? 'bg-white text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:text-slate-800'
+          }`}>
+          <Users className="w-4 h-4" /> Department Capacity & Workload ({workloads.length})
+        </button>
+        <button onClick={() => setTab('budget')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
+            tab === 'budget' ? 'bg-white text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:text-slate-800'
+          }`}>
+          <DollarSign className="w-4 h-4" /> Project Budget & Cost Variance ({budgets.length})
+        </button>
       </div>
 
       {/* ─── MILESTONES TRACKER TAB ──────────────────────────────────────── */}
@@ -280,6 +341,69 @@ export const ProjectAnalyticsPage: React.FC = () => {
                   <td className="p-3 font-sans text-slate-700">{r.mitigation_plan || 'Under review'}</td>
                   <td className="p-3 font-sans">
                     <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded">{r.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ─── DEPARTMENT WORKLOAD TAB ────────────────────────────────────── */}
+      {tab === 'workload' && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-5 space-y-3">
+          <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+            <Users className="w-4 h-4 text-indigo-600" /> Department Capacity & Workload Allocation
+          </h3>
+          <div className="space-y-3">
+            {workloads.map((w, idx) => (
+              <div key={idx} className="p-4 bg-slate-50 border rounded-xl space-y-2 text-xs">
+                <div className="flex justify-between font-bold text-slate-900">
+                  <span>{w.department_name} ({w.total_employees} Employees, {w.assigned_tasks} Tasks)</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    w.status === 'OVERALLOCATED' ? 'bg-red-50 text-red-700 border-red-200' :
+                    w.status === 'UNDERUTILIZED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                    'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}>{w.status} ({w.utilization_pct}%)</span>
+                </div>
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div style={{ width: `${w.utilization_pct}%` }} className={`h-full ${w.utilization_pct > 100 ? 'bg-red-500' : 'bg-indigo-600'}`} />
+                </div>
+                <p className="text-[10px] text-slate-500 font-mono">Planned Hours: {w.total_planned_hours}h / Capacity: {w.department_capacity_hours}h</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── PROJECT BUDGET & COST VARIANCE TAB ──────────────────────────── */}
+      {tab === 'budget' && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <table className="w-full text-xs text-left text-slate-700">
+            <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
+              <tr>
+                <th className="p-3">Project</th>
+                <th className="p-3">Budget (INR)</th>
+                <th className="p-3">Actual Cost (INR)</th>
+                <th className="p-3">Remaining (INR)</th>
+                <th className="p-3">Utilization %</th>
+                <th className="p-3">Budget Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-mono">
+              {budgets.map(b => (
+                <tr key={b.id} className="hover:bg-slate-50">
+                  <td className="p-3 font-sans font-bold text-slate-900">{b.name} ({b.code})</td>
+                  <td className="p-3 font-sans font-bold text-slate-800">{fmtCurrency(b.budget)}</td>
+                  <td className="p-3 font-sans text-emerald-700 font-bold">{fmtCurrency(b.actual_cost)}</td>
+                  <td className="p-3 font-sans text-slate-600 font-bold">{fmtCurrency(b.budget_variance)}</td>
+                  <td className="p-3 font-sans font-bold text-indigo-700">{b.budget_utilization_pct}%</td>
+                  <td className="p-3 font-sans">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      b.budget_status === 'OVER_BUDGET' ? 'bg-red-50 text-red-700 border-red-200' :
+                      b.budget_status === 'WARNING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>{b.budget_status}</span>
                   </td>
                 </tr>
               ))}

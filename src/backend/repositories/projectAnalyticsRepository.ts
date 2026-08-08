@@ -114,6 +114,78 @@ export class ProjectAnalyticsRepository {
     const res = await dbService.query(sql, params);
     return res.rows;
   }
+
+  // ─── Department Workload & Resource Utilization Breakdown ─────────────────
+  async getDepartmentWorkloadBreakdown() {
+    const res = await dbService.query(`
+      SELECT d.name as department_name,
+             COUNT(DISTINCT e.id) as total_employees,
+             COUNT(DISTINCT pt.id) as assigned_tasks,
+             COALESCE(SUM(pt.estimated_hours), 0) as total_planned_hours,
+             COALESCE(SUM(pt.actual_hours), 0) as total_actual_hours
+      FROM departments d
+      LEFT JOIN employees e ON d.id = e.department_id AND e.is_deleted = false
+      LEFT JOIN project_tasks pt ON e.id = pt.assignee_id
+      GROUP BY d.id, d.name
+      ORDER BY total_planned_hours DESC
+    `);
+
+    return res.rows.map(r => {
+      const planned = parseFloat(r.total_planned_hours || '0');
+      const capacity = (parseInt(r.total_employees || '1', 10) || 1) * 40;
+      return {
+        ...r,
+        department_capacity_hours: capacity,
+        utilization_pct: Math.min(100, Math.round((planned / capacity) * 100)),
+        status: planned > capacity ? 'OVERALLOCATED' : planned < capacity * 0.7 ? 'UNDERUTILIZED' : 'OPTIMAL'
+      };
+    });
+  }
+
+  // ─── Project Budget & Cost Variance Analysis ──────────────────────────────
+  async getProjectBudgetVariance() {
+    const res = await dbService.query(`
+      SELECT p.id, p.name, p.code, p.budget, p.status, p.progress_percentage,
+             COALESCE(SUM(te.hours_worked * 500), 0) as estimated_salary_cost,
+             (p.budget - COALESCE(SUM(te.hours_worked * 500), 0)) as remaining_budget
+      FROM projects p
+      LEFT JOIN time_entries te ON p.id = te.project_id
+      GROUP BY p.id, p.name, p.code, p.budget, p.status, p.progress_percentage
+      ORDER BY p.budget DESC
+    `);
+
+    return res.rows.map(r => {
+      const budget = parseFloat(r.budget || '0');
+      const spent = parseFloat(r.estimated_salary_cost || '0');
+      const variance = budget - spent;
+      return {
+        ...r,
+        budget: budget,
+        actual_cost: spent,
+        budget_variance: variance,
+        budget_utilization_pct: budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0,
+        budget_status: spent > budget ? 'OVER_BUDGET' : spent > budget * 0.85 ? 'WARNING' : 'ON_TRACK'
+      };
+    });
+  }
+
+  // ─── Portfolio Analytics CSV Exporter ─────────────────────────────────────
+  async exportPortfolioCSV() {
+    const res = await dbService.query(`
+      SELECT p.code, p.name, p.status, p.priority, p.progress_percentage, p.budget,
+             e.first_name || ' ' || e.last_name as project_manager
+      FROM projects p
+      LEFT JOIN employees e ON p.manager_id = e.id
+      ORDER BY p.name ASC
+    `);
+
+    let csv = `Project Code,Project Name,Manager,Status,Priority,Progress %,Budget (INR)\n`;
+    for (const r of res.rows) {
+      csv += `"${r.code}","${r.name}","${r.project_manager || 'N/A'}","${r.status}","${r.priority}",${r.progress_percentage},${r.budget}\n`;
+    }
+    return { filename: `PROJECT_PORTFOLIO_ANALYTICS_REPORT.csv`, content: csv };
+  }
 }
 
 export const projectAnalyticsRepository = new ProjectAnalyticsRepository();
+
