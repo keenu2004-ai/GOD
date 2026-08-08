@@ -41,6 +41,7 @@ import { assetManagementController } from '../controllers/assetManagementControl
 import { assetProcurementController } from '../controllers/assetProcurementController.js';
 import { assetMaintenanceController } from '../controllers/assetMaintenanceController.js';
 import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
+import { helpdeskTicketController } from '../controllers/helpdeskTicketController.js';
 import { helpdeskController } from '../controllers/helpdeskController.js';
 import { expenseManagementController } from '../controllers/expenseManagementController.js';
 import { expensePolicyController } from '../controllers/expensePolicyController.js';
@@ -471,13 +472,12 @@ router.get('/announcements', authenticateToken, (req, res) => miscController.get
 router.post('/announcements', authenticateToken, (req, res) => miscController.createAnnouncement(req, res));
 
 // 13. Helpdesk & Support Desk Routes
-router.post('/helpdesk/tickets', authenticateToken, (req, res) => helpdeskController.createTicket(req, res));
-router.get('/helpdesk/tickets', authenticateToken, (req, res) => helpdeskController.getTickets(req, res));
-router.patch('/helpdesk/tickets/:id/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => helpdeskController.assignTicket(req, res));
-router.patch('/helpdesk/tickets/:id/status', authenticateToken, (req, res) => helpdeskController.updateStatus(req, res));
-router.post('/helpdesk/tickets/:id/reopen', authenticateToken, (req, res) => helpdeskController.reopenTicket(req, res));
-router.post('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskController.addComment(req, res));
-router.get('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskController.getComments(req, res));
+router.post('/helpdesk/create', authenticateToken, (req, res) => helpdeskTicketController.createTicket(req, res));
+router.get('/helpdesk/all', authenticateToken, (req, res) => helpdeskTicketController.getTickets(req, res));
+router.patch('/helpdesk/tickets/:id/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => helpdeskTicketController.assignTicket(req, res));
+router.patch('/helpdesk/tickets/:id/resolve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => helpdeskTicketController.resolveTicket(req, res));
+router.post('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskTicketController.addComment(req, res));
+router.get('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskTicketController.getComments(req, res));
 
 // 14. Branches & Organization Management Routes
 router.get('/branches', authenticateToken, (req, res) => organizationController.getBranches(req, res));
