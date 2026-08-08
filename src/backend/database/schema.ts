@@ -2,10 +2,19 @@ import dbService from './db.js';
 
 export async function initializeSchema() {
   await dbService.query(`
+    CREATE TABLE IF NOT EXISTS regions (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      code VARCHAR(30) NOT NULL UNIQUE,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS branches (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       code VARCHAR(50) NOT NULL UNIQUE,
+      region_id INTEGER REFERENCES regions(id),
       city VARCHAR(100) NOT NULL,
       state VARCHAR(100) NOT NULL,
       country VARCHAR(100) DEFAULT 'India',
@@ -15,6 +24,42 @@ export async function initializeSchema() {
       longitude NUMERIC(10, 6) DEFAULT 77.594566,
       geofence_radius_meters INTEGER DEFAULT 500,
       is_headquarters BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS roles (
+      id SERIAL PRIMARY KEY,
+      role_name VARCHAR(50) NOT NULL UNIQUE,
+      display_name VARCHAR(100) NOT NULL,
+      description TEXT,
+      is_system_role BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS permissions (
+      id SERIAL PRIMARY KEY,
+      permission_code VARCHAR(100) NOT NULL UNIQUE,
+      category VARCHAR(50) NOT NULL,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      id SERIAL PRIMARY KEY,
+      role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      permission_id INTEGER NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+      scope VARCHAR(30) DEFAULT 'ORGANIZATION', -- 'ORGANIZATION' | 'BRANCH' | 'DEPARTMENT' | 'SELF'
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_branch_transfers (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      from_branch_id INTEGER REFERENCES branches(id),
+      to_branch_id INTEGER NOT NULL REFERENCES branches(id),
+      transfer_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      reason TEXT NOT NULL,
+      transferred_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 

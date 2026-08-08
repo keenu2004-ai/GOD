@@ -41,6 +41,7 @@ import { assetAnalyticsController } from '../controllers/assetAnalyticsControlle
 import { helpdeskController } from '../controllers/helpdeskController.js';
 import { expenseManagementController } from '../controllers/expenseManagementController.js';
 import { expensePolicyController } from '../controllers/expensePolicyController.js';
+import { organizationController } from '../controllers/organizationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -462,8 +463,13 @@ router.post('/helpdesk/tickets/:id/reopen', authenticateToken, (req, res) => hel
 router.post('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskController.addComment(req, res));
 router.get('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskController.getComments(req, res));
 
-// 14. Branches Route
-router.get('/branches', authenticateToken, (req, res) => miscController.getBranches(req, res));
+// 14. Branches & Organization Management Routes
+router.get('/branches', authenticateToken, (req, res) => organizationController.getBranches(req, res));
+router.post('/org/branches', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => organizationController.createBranch(req, res));
+router.post('/org/transfers', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => organizationController.transferEmployee(req, res));
+router.get('/org/roles', authenticateToken, (req, res) => organizationController.getRoles(req, res));
+router.get('/org/roles/:id/permissions', authenticateToken, (req, res) => organizationController.getRolePermissions(req, res));
+router.get('/org/hierarchy', authenticateToken, (req, res) => organizationController.getHierarchy(req, res));
 
 // 15. Documents Route
 router.get('/documents', authenticateToken, (req, res) => miscController.getDocuments(req, res));

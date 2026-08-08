@@ -11,6 +11,7 @@ import { PayrollPage } from './pages/PayrollPage.js';
 import { ExpensesPage } from './pages/ExpensesPage.js';
 import { EnterpriseExpensesPage } from './pages/EnterpriseExpensesPage.js';
 import { EnterpriseExpensePolicyPage } from './pages/EnterpriseExpensePolicyPage.js';
+import { EnterpriseOrganizationPage } from './pages/EnterpriseOrganizationPage.js';
 import { ProjectsPage } from './pages/ProjectsPage.js';
 import { AssetsPage } from './pages/RecruitmentPage.js';
 import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
@@ -120,7 +121,7 @@ const AppContent: React.FC = () => {
           case 'announcements':
             return <AnnouncementsPage />;
           case 'orgchart':
-            return <OrgChartPage />;
+            return <EnterpriseOrganizationPage />;
           case 'performance':
             return <PerformancePage />;
           case 'planner':
