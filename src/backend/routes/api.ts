@@ -34,6 +34,7 @@ import { enterpriseTaskController } from '../controllers/enterpriseTaskControlle
 import { taskCollaborationController } from '../controllers/taskCollaborationController.js';
 import { weeklyPlannerController } from '../controllers/weeklyPlannerController.js';
 import { timeTrackingController } from '../controllers/timeTrackingController.js';
+import { projectTaskController } from '../controllers/projectTaskController.js';
 import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
 import { clientPortalController } from '../controllers/clientPortalController.js';
 import { projectAutomationController } from '../controllers/projectAutomationController.js';
@@ -352,10 +353,13 @@ router.post('/expenses/periods/lock', authenticateToken, authorizeRoles('ADMIN',
 router.get('/expenses/periods', authenticateToken, (req, res) => expensePolicyController.getPeriodLocks(req, res));
 
 // 8. Projects & Tasks Routes
-router.post('/projects/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => enterpriseProjectController.seedCategories(req, res));
-router.get('/projects', authenticateToken, (req, res) => enterpriseProjectController.getProjects(req, res));
-router.post('/projects', authenticateToken, (req, res) => enterpriseProjectController.createProject(req, res));
-router.get('/projects/:id/workspace', authenticateToken, (req, res) => enterpriseProjectController.getProjectWorkspace(req, res));
+router.post('/projects/create', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => projectTaskController.createProject(req, res));
+router.get('/projects/all', authenticateToken, (req, res) => projectTaskController.getProjects(req, res));
+router.post('/projects/tasks/create', authenticateToken, (req, res) => projectTaskController.createTask(req, res));
+router.get('/projects/tasks/all', authenticateToken, (req, res) => projectTaskController.getTasks(req, res));
+router.patch('/projects/tasks/:id/status', authenticateToken, (req, res) => projectTaskController.updateTaskStatus(req, res));
+router.post('/projects/tasks/:id/work-update', authenticateToken, (req, res) => projectTaskController.submitWorkUpdate(req, res));
+router.get('/projects/tasks/:id/work-updates', authenticateToken, (req, res) => projectTaskController.getWorkUpdates(req, res));
 router.post('/projects/members', authenticateToken, (req, res) => enterpriseProjectController.addMember(req, res));
 router.delete('/projects/:id/members/:employeeId', authenticateToken, (req, res) => enterpriseProjectController.removeMember(req, res));
 router.post('/projects/documents', authenticateToken, (req, res) => enterpriseProjectController.addDocument(req, res));

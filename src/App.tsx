@@ -16,6 +16,7 @@ import { EnterpriseExpensesPage } from './pages/EnterpriseExpensesPage.js';
 import { EnterpriseExpensePolicyPage } from './pages/EnterpriseExpensePolicyPage.js';
 import { EnterpriseOrganizationPage } from './pages/EnterpriseOrganizationPage.js';
 import { ProjectsPage } from './pages/ProjectsPage.js';
+import { EnterpriseProjectTaskPage } from './pages/EnterpriseProjectTaskPage.js';
 import { AssetsPage } from './pages/RecruitmentPage.js';
 import { EnterpriseAssetPage } from './pages/EnterpriseAssetPage.js';
 import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
@@ -100,7 +101,7 @@ const AppContent: React.FC = () => {
           case 'expense-policy':
             return <EnterpriseExpensePolicyPage />;
           case 'projects':
-            return <EnterpriseProjectWorkspacePage />;
+            return <EnterpriseProjectTaskPage />;
           case 'project-analytics':
             return <ProjectAnalyticsPage />;
           case 'client-portal':

@@ -1165,6 +1165,18 @@ export async function initializeSchema() {
       due_date DATE NOT NULL,
       priority VARCHAR(20) DEFAULT 'MEDIUM',
       status VARCHAR(20) DEFAULT 'TODO',
+      progress_pct INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS project_work_updates (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      work_completed TEXT NOT NULL,
+      hours_worked NUMERIC(5, 2) NOT NULL,
+      progress_pct INTEGER NOT NULL,
+      blockers TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
