@@ -38,6 +38,7 @@ import { assetManagementController } from '../controllers/assetManagementControl
 import { assetProcurementController } from '../controllers/assetProcurementController.js';
 import { assetMaintenanceController } from '../controllers/assetMaintenanceController.js';
 import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
+import { helpdeskController } from '../controllers/helpdeskController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -431,10 +432,14 @@ router.put('/notifications/:id/read', authenticateToken, (req, res) => miscContr
 router.get('/announcements', authenticateToken, (req, res) => miscController.getAnnouncements(req, res));
 router.post('/announcements', authenticateToken, (req, res) => miscController.createAnnouncement(req, res));
 
-// 13. Helpdesk Routes
-router.get('/helpdesk', authenticateToken, (req, res) => miscController.getHelpdeskTickets(req, res));
-router.post('/helpdesk', authenticateToken, (req, res) => miscController.createTicket(req, res));
-router.put('/helpdesk/:id/status', authenticateToken, (req, res) => miscController.updateTicketStatus(req, res));
+// 13. Helpdesk & Support Desk Routes
+router.post('/helpdesk/tickets', authenticateToken, (req, res) => helpdeskController.createTicket(req, res));
+router.get('/helpdesk/tickets', authenticateToken, (req, res) => helpdeskController.getTickets(req, res));
+router.patch('/helpdesk/tickets/:id/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => helpdeskController.assignTicket(req, res));
+router.patch('/helpdesk/tickets/:id/status', authenticateToken, (req, res) => helpdeskController.updateStatus(req, res));
+router.post('/helpdesk/tickets/:id/reopen', authenticateToken, (req, res) => helpdeskController.reopenTicket(req, res));
+router.post('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskController.addComment(req, res));
+router.get('/helpdesk/tickets/:id/comments', authenticateToken, (req, res) => helpdeskController.getComments(req, res));
 
 // 14. Branches Route
 router.get('/branches', authenticateToken, (req, res) => miscController.getBranches(req, res));

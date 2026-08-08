@@ -1368,6 +1368,27 @@ export async function initializeSchema() {
       priority VARCHAR(20) DEFAULT 'MEDIUM',
       status VARCHAR(20) DEFAULT 'OPEN',
       assigned_to INTEGER REFERENCES employees(id),
+      asset_id INTEGER REFERENCES assets(id),
+      resolution_notes TEXT,
+      sla_due_date TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_comments (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE,
+      author_id INTEGER NOT NULL REFERENCES employees(id),
+      comment_text TEXT NOT NULL,
+      is_internal_note BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_sla_rules (
+      id SERIAL PRIMARY KEY,
+      category VARCHAR(50) NOT NULL,
+      priority VARCHAR(20) NOT NULL,
+      resolution_hours INTEGER DEFAULT 24,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
