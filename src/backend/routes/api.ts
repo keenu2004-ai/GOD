@@ -33,6 +33,7 @@ import { weeklyPlannerController } from '../controllers/weeklyPlannerController.
 import { timeTrackingController } from '../controllers/timeTrackingController.js';
 import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
 import { clientPortalController } from '../controllers/clientPortalController.js';
+import { projectAutomationController } from '../controllers/projectAutomationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -369,6 +370,12 @@ router.get('/client/deliverables', authenticateToken, (req, res) => clientPortal
 router.patch('/client/deliverables/:id/review', authenticateToken, (req, res) => clientPortalController.reviewDeliverable(req, res));
 router.post('/client/change-requests', authenticateToken, (req, res) => clientPortalController.createChangeRequest(req, res));
 router.get('/client/change-requests', authenticateToken, (req, res) => clientPortalController.getChangeRequests(req, res));
+
+// 8h. Enterprise Project Automation, Health Recalculations, Bulk Actions & Global Search Routes
+router.post('/projects/automation/check-deadlines', authenticateToken, (req, res) => projectAutomationController.checkDeadlines(req, res));
+router.post('/projects/:id/recalculate-health', authenticateToken, (req, res) => projectAutomationController.recalculateHealth(req, res));
+router.post('/tasks/bulk-update', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => projectAutomationController.bulkUpdate(req, res));
+router.get('/projects/search', authenticateToken, (req, res) => projectAutomationController.globalSearch(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
