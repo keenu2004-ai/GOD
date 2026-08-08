@@ -40,6 +40,7 @@ import { assetMaintenanceController } from '../controllers/assetMaintenanceContr
 import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
 import { helpdeskController } from '../controllers/helpdeskController.js';
 import { expenseManagementController } from '../controllers/expenseManagementController.js';
+import { expensePolicyController } from '../controllers/expensePolicyController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -319,6 +320,16 @@ router.patch('/expenses/claims/:id/reject', authenticateToken, authorizeRoles('A
 router.post('/expenses/advances', authenticateToken, (req, res) => expenseManagementController.requestAdvance(req, res));
 router.get('/expenses/advances', authenticateToken, (req, res) => expenseManagementController.getAdvances(req, res));
 router.patch('/expenses/advances/:id/settle', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expenseManagementController.settleAdvance(req, res));
+
+// 7b. Expense Policy Controls, Budgeting, Risk Radar & Period Lock Routes
+router.get('/expenses/risk-flags', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.getRiskFlags(req, res));
+router.patch('/expenses/risk-flags/:id/clear', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.clearRiskFlag(req, res));
+router.post('/expenses/budgets', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.createBudget(req, res));
+router.get('/expenses/budgets', authenticateToken, (req, res) => expensePolicyController.getBudgets(req, res));
+router.post('/expenses/reconciliations', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.reconcilePayment(req, res));
+router.get('/expenses/reconciliations', authenticateToken, (req, res) => expensePolicyController.getReconciliations(req, res));
+router.post('/expenses/periods/lock', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.lockPeriod(req, res));
+router.get('/expenses/periods', authenticateToken, (req, res) => expensePolicyController.getPeriodLocks(req, res));
 
 // 8. Projects & Tasks Routes
 router.post('/projects/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => enterpriseProjectController.seedCategories(req, res));

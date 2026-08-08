@@ -1008,6 +1008,48 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS expense_risk_flags (
+      id SERIAL PRIMARY KEY,
+      expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+      risk_level VARCHAR(30) DEFAULT 'LOW', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+      risk_reason TEXT NOT NULL,
+      is_duplicate BOOLEAN DEFAULT false,
+      is_cleared BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS expense_budgets (
+      id SERIAL PRIMARY KEY,
+      cost_center_name VARCHAR(100) NOT NULL,
+      department_id INTEGER REFERENCES departments(id),
+      total_budget_amount NUMERIC(14, 2) NOT NULL,
+      committed_amount NUMERIC(14, 2) DEFAULT 0,
+      paid_amount NUMERIC(14, 2) DEFAULT 0,
+      financial_year VARCHAR(20) DEFAULT '2026-2027',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS expense_reconciliations (
+      id SERIAL PRIMARY KEY,
+      expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+      approved_amount NUMERIC(12, 2) NOT NULL,
+      paid_amount NUMERIC(12, 2) NOT NULL,
+      status VARCHAR(30) DEFAULT 'MATCHED', -- 'MATCHED' | 'MISMATCH'
+      payment_reference VARCHAR(100),
+      reconciled_by INTEGER REFERENCES employees(id),
+      reconciled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS expense_period_locks (
+      id SERIAL PRIMARY KEY,
+      period_name VARCHAR(50) NOT NULL UNIQUE,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      is_locked BOOLEAN DEFAULT false,
+      locked_by INTEGER REFERENCES employees(id),
+      locked_at TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS projects (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,

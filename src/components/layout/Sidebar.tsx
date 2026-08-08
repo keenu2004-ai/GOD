@@ -29,6 +29,7 @@ import {
   Zap,
   ShoppingBag,
   Wrench,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -57,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'payroll-analytics', label: 'Payroll Analytics & BI', icon: BarChart2 },
     { id: 'exit-management', label: 'Exit & FnF Settlement', icon: LogOut },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
+    { id: 'expense-policy', label: 'Expense Policy & Risk Controls', icon: ShieldAlert },
     { id: 'projects', label: 'Projects & Workspaces', icon: FolderGit2 },
     { id: 'project-analytics', label: 'Project Analytics & Portfolio', icon: BarChart2 },
     { id: 'client-portal', label: 'Client Portal & Approvals', icon: Building2 },
