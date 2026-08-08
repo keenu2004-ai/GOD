@@ -1049,6 +1049,46 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS asset_assignments (
+      id SERIAL PRIMARY KEY,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      assignment_date DATE NOT NULL,
+      expected_return_date DATE,
+      return_date DATE,
+      condition_at_assignment VARCHAR(30) DEFAULT 'EXCELLENT',
+      condition_at_return VARCHAR(30),
+      status VARCHAR(30) DEFAULT 'ASSIGNED', -- 'ASSIGNED' | 'RETURNED'
+      is_acknowledged BOOLEAN DEFAULT false,
+      acknowledged_at TIMESTAMP,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_maintenance (
+      id SERIAL PRIMARY KEY,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      maintenance_type VARCHAR(50) DEFAULT 'PREVENTIVE', -- 'PREVENTIVE' | 'REPAIR' | 'INSPECTION'
+      description TEXT NOT NULL,
+      cost NUMERIC(10, 2) DEFAULT 0,
+      start_date DATE NOT NULL,
+      end_date DATE,
+      status VARCHAR(30) DEFAULT 'SCHEDULED', -- 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED'
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_issues (
+      id SERIAL PRIMARY KEY,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      reported_by INTEGER NOT NULL REFERENCES employees(id),
+      issue_type VARCHAR(50) DEFAULT 'DAMAGE', -- 'DAMAGE' | 'LOSS' | 'FUNCTIONAL' | 'WRONG_ITEM'
+      description TEXT NOT NULL,
+      severity VARCHAR(30) DEFAULT 'MEDIUM', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+      status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN' | 'IN_REPAIR' | 'RESOLVED'
+      resolution_notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),

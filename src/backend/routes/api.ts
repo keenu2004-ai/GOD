@@ -34,6 +34,7 @@ import { timeTrackingController } from '../controllers/timeTrackingController.js
 import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
 import { clientPortalController } from '../controllers/clientPortalController.js';
 import { projectAutomationController } from '../controllers/projectAutomationController.js';
+import { assetManagementController } from '../controllers/assetManagementController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -380,9 +381,15 @@ router.get('/projects/:id', authenticateToken, (req, res) => projectController.g
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
 
-// 9. Assets Routes
-router.get('/assets', authenticateToken, (req, res) => miscController.getAllAssets(req, res));
-router.post('/assets', authenticateToken, (req, res) => miscController.createAsset(req, res));
+// 9. Enterprise IT Asset Management & Lifecycle Routes
+router.get('/assets/kpis', authenticateToken, (req, res) => assetManagementController.getKPIs(req, res));
+router.post('/assets', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.createAsset(req, res));
+router.get('/assets', authenticateToken, (req, res) => assetManagementController.getAssets(req, res));
+router.post('/assets/:id/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.assignAsset(req, res));
+router.patch('/assets/assignments/:id/acknowledge', authenticateToken, (req, res) => assetManagementController.acknowledgeAsset(req, res));
+router.post('/assets/:id/return', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.returnAsset(req, res));
+router.post('/assets/:id/maintenance', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.scheduleMaintenance(req, res));
+router.post('/assets/:id/issues', authenticateToken, (req, res) => assetManagementController.reportIssue(req, res));
 
 // 11. Notifications Routes
 router.get('/notifications', authenticateToken, (req, res) => miscController.getNotifications(req, res));
