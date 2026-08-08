@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authController } from '../controllers/authController.js';
+import { employeeManagementController } from '../controllers/employeeManagementController.js';
 import { employeeController } from '../controllers/employeeController.js';
 import { attendanceController } from '../controllers/attendanceController.js';
 import { regularizationController } from '../controllers/regularizationController.js';
@@ -87,8 +88,12 @@ router.put('/dashboard/preferences', authenticateToken, (req, res) => dashboardC
 router.get('/dashboard/quick-actions', authenticateToken, (req, res) => dashboardController.getMetrics(req, res));
 
 // 3. Employee Module Routes
-router.get('/employees', authenticateToken, (req, res) => employeeController.getAll(req, res));
-router.post('/employees', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.create(req, res));
+router.get('/employees', authenticateToken, (req, res) => employeeManagementController.getEmployees(req, res));
+router.post('/employees', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => employeeManagementController.createEmployee(req, res));
+router.post('/employees/create', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => employeeManagementController.createEmployee(req, res));
+router.get('/employees/all', authenticateToken, (req, res) => employeeManagementController.getEmployees(req, res));
+router.get('/employees/org-chart', authenticateToken, (req, res) => employeeManagementController.getOrgChartTree(req, res));
+router.get('/employees/:id/profile', authenticateToken, (req, res) => employeeManagementController.getEmployeeProfile(req, res));
 router.get('/employees/:id', authenticateToken, (req, res) => employeeController.getById(req, res));
 router.put('/employees/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.update(req, res));
 router.delete('/employees/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.softDelete(req, res));

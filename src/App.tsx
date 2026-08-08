@@ -5,6 +5,7 @@ import { MainLayout } from './components/layout/MainLayout.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { EmployeesPage } from './pages/EmployeesPage.js';
+import { EnterpriseEmployeePage } from './pages/EnterpriseEmployeePage.js';
 import { AttendancePage } from './pages/AttendancePage.js';
 import { EnterpriseAttendancePage } from './pages/EnterpriseAttendancePage.js';
 import { LeavePage } from './pages/LeavePage.js';
@@ -71,7 +72,7 @@ const AppContent: React.FC = () => {
           case 'dashboard':
             return <DashboardPage onNavigate={setActiveTab} />;
           case 'employees':
-            return <EmployeesPage />;
+            return <EnterpriseEmployeePage />;
           case 'attendance':
             return <EnterpriseAttendancePage />;
           case 'leave':

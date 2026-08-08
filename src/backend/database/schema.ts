@@ -105,6 +105,25 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS employee_documents (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      file_url TEXT NOT NULL,
+      uploaded_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_onboarding_checklists (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      step_name VARCHAR(255) NOT NULL,
+      is_completed BOOLEAN DEFAULT false,
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS attendance (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
