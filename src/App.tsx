@@ -22,6 +22,7 @@ import { AssetsPage } from './pages/RecruitmentPage.js';
 import { EnterpriseAssetPage } from './pages/EnterpriseAssetPage.js';
 import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
 import { EnterpriseHelpdeskPage } from './pages/EnterpriseHelpdeskPage.js';
+import { EnterpriseNotificationPage } from './pages/EnterpriseNotificationPage.js';
 import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
@@ -125,6 +126,8 @@ const AppContent: React.FC = () => {
             return <EnterpriseAssetAnalyticsPage />;
           case 'helpdesk':
             return <EnterpriseHelpdeskPage />;
+          case 'notifications':
+            return <EnterpriseNotificationPage />;
           case 'announcements':
             return <AnnouncementsPage />;
           case 'orgchart':

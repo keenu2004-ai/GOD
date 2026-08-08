@@ -38,6 +38,7 @@ import { timeTrackingController } from '../controllers/timeTrackingController.js
 import { projectTaskController } from '../controllers/projectTaskController.js';
 import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
 import { clientPortalController } from '../controllers/clientPortalController.js';
+import { notificationEngineController } from '../controllers/notificationEngineController.js';
 import { projectAutomationController } from '../controllers/projectAutomationController.js';
 import { assetManagementController } from '../controllers/assetManagementController.js';
 import { assetProcurementController } from '../controllers/assetProcurementController.js';
@@ -473,8 +474,13 @@ router.get('/assets/audit-findings', authenticateToken, (req, res) => assetAnaly
 router.patch('/assets/audit-findings/:id/reconcile', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.reconcileFinding(req, res));
 
 // 11. Notifications Routes
-router.get('/notifications', authenticateToken, (req, res) => miscController.getNotifications(req, res));
-router.put('/notifications/:id/read', authenticateToken, (req, res) => miscController.markNotificationRead(req, res));
+router.post('/notifications/dispatch', authenticateToken, (req, res) => notificationEngineController.dispatchNotification(req, res));
+router.get('/notifications/my-notifications', authenticateToken, (req, res) => notificationEngineController.getNotifications(req, res));
+router.get('/notifications/unread-count', authenticateToken, (req, res) => notificationEngineController.getUnreadCount(req, res));
+router.patch('/notifications/:id/read', authenticateToken, (req, res) => notificationEngineController.markAsRead(req, res));
+router.post('/notifications/mark-all-read', authenticateToken, (req, res) => notificationEngineController.markAllAsRead(req, res));
+router.post('/notifications/devices/register', authenticateToken, (req, res) => notificationEngineController.registerDevice(req, res));
+router.get('/notifications', authenticateToken, (req, res) => notificationEngineController.getNotifications(req, res));
 
 // 12. Announcements Routes
 router.get('/announcements', authenticateToken, (req, res) => miscController.getAnnouncements(req, res));

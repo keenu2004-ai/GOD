@@ -1400,12 +1400,34 @@ export async function initializeSchema() {
 
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       message TEXT NOT NULL,
-      type VARCHAR(20) DEFAULT 'INFO',
+      type VARCHAR(50) DEFAULT 'INFO',
+      channel VARCHAR(20) DEFAULT 'IN_APP',
+      priority VARCHAR(20) DEFAULT 'NORMAL',
+      deep_link TEXT,
       is_read BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS notification_devices (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      device_token TEXT NOT NULL,
+      platform VARCHAR(30) DEFAULT 'ANDROID',
+      is_active BOOLEAN DEFAULT true,
+      last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS notification_preferences (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      module VARCHAR(50) NOT NULL,
+      enable_in_app BOOLEAN DEFAULT true,
+      enable_push BOOLEAN DEFAULT true,
+      enable_email BOOLEAN DEFAULT true,
+      UNIQUE(employee_id, module)
     );
 
     CREATE TABLE IF NOT EXISTS system_config (
