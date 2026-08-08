@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Building2,
   Zap,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -63,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'task-collaboration', label: 'Task Collaboration & Standups', icon: MessageSquare },
     { id: 'time-tracking', label: 'Time Tracking & Timesheets', icon: Clock },
     { id: 'assets', label: 'Asset Management', icon: Laptop },
+    { id: 'asset-procurement', label: 'Asset Requests & Procurement', icon: ShoppingBag },
     { id: 'helpdesk', label: 'IT & HR Helpdesk', icon: HelpCircle },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'orgchart', label: 'Organization Chart', icon: Network },

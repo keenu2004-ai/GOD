@@ -1089,6 +1089,44 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS asset_requests (
+      id SERIAL PRIMARY KEY,
+      request_number VARCHAR(50) UNIQUE NOT NULL,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      category VARCHAR(100) NOT NULL,
+      request_type VARCHAR(50) DEFAULT 'NEW_ASSET', -- 'NEW_ASSET' | 'REPLACEMENT' | 'UPGRADE'
+      reason TEXT NOT NULL,
+      priority VARCHAR(30) DEFAULT 'NORMAL', -- 'URGENT' | 'NORMAL' | 'LOW'
+      required_date DATE,
+      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'IN_PROCUREMENT' | 'COMPLETED'
+      estimated_cost NUMERIC(10, 2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id SERIAL PRIMARY KEY,
+      po_number VARCHAR(50) UNIQUE NOT NULL,
+      request_id INTEGER REFERENCES asset_requests(id),
+      vendor_name VARCHAR(150) NOT NULL,
+      total_amount NUMERIC(12, 2) NOT NULL,
+      status VARCHAR(30) DEFAULT 'APPROVED', -- 'APPROVED' | 'ORDERED' | 'RECEIVED' | 'CANCELLED'
+      expected_delivery DATE,
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS vendor_quotations (
+      id SERIAL PRIMARY KEY,
+      request_id INTEGER NOT NULL REFERENCES asset_requests(id) ON DELETE CASCADE,
+      vendor_name VARCHAR(150) NOT NULL,
+      quotation_amount NUMERIC(12, 2) NOT NULL,
+      delivery_days INTEGER DEFAULT 3,
+      is_selected BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id),

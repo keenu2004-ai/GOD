@@ -35,6 +35,7 @@ import { ProjectAnalyticsPage } from './pages/ProjectAnalyticsPage.js';
 import { ClientPortalPage } from './pages/ClientPortalPage.js';
 import { ProjectAutomationManagementPage } from './pages/ProjectAutomationManagementPage.js';
 import { EnterpriseAssetsPage } from './pages/EnterpriseAssetsPage.js';
+import { EnterpriseAssetProcurementPage } from './pages/EnterpriseAssetProcurementPage.js';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -102,6 +103,8 @@ const AppContent: React.FC = () => {
             return <EnterpriseTimeTrackingPage />;
           case 'assets':
             return <EnterpriseAssetsPage />;
+          case 'asset-procurement':
+            return <EnterpriseAssetProcurementPage />;
           case 'helpdesk':
             return <HelpdeskPage />;
           case 'announcements':

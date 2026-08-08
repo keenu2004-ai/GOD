@@ -35,6 +35,7 @@ import { projectAnalyticsController } from '../controllers/projectAnalyticsContr
 import { clientPortalController } from '../controllers/clientPortalController.js';
 import { projectAutomationController } from '../controllers/projectAutomationController.js';
 import { assetManagementController } from '../controllers/assetManagementController.js';
+import { assetProcurementController } from '../controllers/assetProcurementController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -390,6 +391,16 @@ router.patch('/assets/assignments/:id/acknowledge', authenticateToken, (req, res
 router.post('/assets/:id/return', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.returnAsset(req, res));
 router.post('/assets/:id/maintenance', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.scheduleMaintenance(req, res));
 router.post('/assets/:id/issues', authenticateToken, (req, res) => assetManagementController.reportIssue(req, res));
+
+// 9b. Enterprise Asset Requests, Procurement, POs & Receiving Routes
+router.post('/assets/requests', authenticateToken, (req, res) => assetProcurementController.createRequest(req, res));
+router.get('/assets/requests', authenticateToken, (req, res) => assetProcurementController.getRequests(req, res));
+router.patch('/assets/requests/:id/review', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => assetProcurementController.reviewRequest(req, res));
+router.post('/assets/requests/:id/quotations', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.addQuotation(req, res));
+router.get('/assets/requests/:id/quotations', authenticateToken, (req, res) => assetProcurementController.getQuotations(req, res));
+router.post('/assets/purchase-orders', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.createPO(req, res));
+router.get('/assets/purchase-orders', authenticateToken, (req, res) => assetProcurementController.getPOs(req, res));
+router.post('/assets/purchase-orders/:id/receive', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.receivePO(req, res));
 
 // 11. Notifications Routes
 router.get('/notifications', authenticateToken, (req, res) => miscController.getNotifications(req, res));
