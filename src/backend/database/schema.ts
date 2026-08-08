@@ -440,8 +440,23 @@ export async function initializeSchema() {
       tds_deduction NUMERIC(12, 2) NOT NULL,
       net_salary NUMERIC(12, 2) NOT NULL,
       payment_status VARCHAR(20) DEFAULT 'PAID',
-      payment_date DATE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_runs (
+      id SERIAL PRIMARY KEY,
+      period_name VARCHAR(50) NOT NULL UNIQUE,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      status VARCHAR(30) DEFAULT 'DRAFT', -- 'DRAFT' | 'APPROVED' | 'LOCKED'
+      gross_payroll NUMERIC(14, 2) DEFAULT 0,
+      total_deductions NUMERIC(14, 2) DEFAULT 0,
+      net_payroll NUMERIC(14, 2) DEFAULT 0,
+      locked_by INTEGER REFERENCES employees(id),
+      locked_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS salary_components (
       id SERIAL PRIMARY KEY,
       code VARCHAR(50) UNIQUE NOT NULL,

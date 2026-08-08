@@ -10,6 +10,7 @@ import { EnterpriseAttendancePage } from './pages/EnterpriseAttendancePage.js';
 import { LeavePage } from './pages/LeavePage.js';
 import { EnterpriseLeavePage } from './pages/EnterpriseLeavePage.js';
 import { PayrollPage } from './pages/PayrollPage.js';
+import { EnterprisePayrollPage } from './pages/EnterprisePayrollPage.js';
 import { ExpensesPage } from './pages/ExpensesPage.js';
 import { EnterpriseExpensesPage } from './pages/EnterpriseExpensesPage.js';
 import { EnterpriseExpensePolicyPage } from './pages/EnterpriseExpensePolicyPage.js';
@@ -77,7 +78,7 @@ const AppContent: React.FC = () => {
           case 'leave-analytics':
             return <LeaveAnalyticsPage />;
           case 'payroll':
-            return <PayrollPage />;
+            return <EnterprisePayrollPage />;
           case 'payroll-foundation':
             return <PayrollFoundationPage />;
           case 'salary-components':

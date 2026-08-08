@@ -5,6 +5,7 @@ import { attendanceController } from '../controllers/attendanceController.js';
 import { regularizationController } from '../controllers/regularizationController.js';
 import { attendanceManagementController } from '../controllers/attendanceManagementController.js';
 import { leaveManagementController } from '../controllers/leaveManagementController.js';
+import { payrollManagementController } from '../controllers/payrollManagementController.js';
 import { leaveController } from '../controllers/leaveController.js';
 import { payrollController } from '../controllers/payrollController.js';
 import { expenseController } from '../controllers/expenseController.js';
@@ -316,9 +317,14 @@ router.get('/payroll/validate', authenticateToken, authorizeRoles(...payrollRole
 router.get('/payroll/bank-file', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'PAYROLL_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollAutomationController.downloadBankFile(req, res));
 router.post('/payroll/cron/maintenance', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => payrollAutomationController.runCron(req, res));
 
-router.get('/payrolls', authenticateToken, (req, res) => payrollController.getAllPayrolls(req, res));
+router.get('/payrolls', authenticateToken, (req, res) => payrollManagementController.getPayrollRecords(req, res));
 router.get('/payrolls/:id', authenticateToken, (req, res) => payrollController.getPayslip(req, res));
-router.post('/payrolls/generate', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => payrollController.generatePayroll(req, res));
+router.post('/payrolls/generate', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollManagementController.processPayroll(req, res));
+router.post('/payroll/process', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollManagementController.processPayroll(req, res));
+router.get('/payroll/runs', authenticateToken, (req, res) => payrollManagementController.getPayrollRuns(req, res));
+router.get('/payroll/records', authenticateToken, (req, res) => payrollManagementController.getPayrollRecords(req, res));
+router.patch('/payroll/runs/:id/lock', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollManagementController.lockPayroll(req, res));
+router.get('/payroll/my-payslips', authenticateToken, (req, res) => payrollManagementController.getMyPayslips(req, res));
 
 // 7. Expense Module & Policy Engine Routes
 router.get('/expenses', authenticateToken, (req, res) => expenseController.getAll(req, res));
