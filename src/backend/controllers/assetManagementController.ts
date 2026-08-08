@@ -3,99 +3,61 @@ import { assetManagementService } from '../services/assetManagementService.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 
 export class AssetManagementController {
-  // GET /assets/kpis
-  async getKPIs(req: Request, res: Response) {
-    try {
-      const data = await assetManagementService.getAssetKPIs();
-      return res.json(sendSuccess(data, 'Asset inventory KPIs retrieved'));
-    } catch (e: any) {
-      return res.status(500).json(sendError(e.message));
-    }
-  }
-
-  // POST /assets
+  // POST /assets/create
   async createAsset(req: Request, res: Response) {
     try {
       const user = (req as any).user;
       const data = await assetManagementService.createAsset(req.body, user?.id || 1);
-      return res.status(201).json(sendSuccess(data, 'IT asset created in master inventory'));
+      return res.status(201).json(sendSuccess(data, 'Asset created in inventory'));
     } catch (e: any) {
       return res.status(400).json(sendError(e.message));
     }
   }
 
-  // GET /assets
+  // GET /assets/all
   async getAssets(req: Request, res: Response) {
     try {
-      const cat = req.query.category as string;
-      const stat = req.query.status as string;
-      const data = await assetManagementService.getAssets(cat, stat);
-      return res.json(sendSuccess(data, 'Assets list retrieved'));
+      const data = await assetManagementService.getAssets();
+      return res.json(sendSuccess(data, 'Assets inventory retrieved'));
     } catch (e: any) {
       return res.status(500).json(sendError(e.message));
     }
   }
 
-  // POST /assets/:id/assign
+  // POST /assets/assign
   async assignAsset(req: Request, res: Response) {
     try {
       const user = (req as any).user;
-      const assetId = parseInt(req.params.id);
-      const { employee_id } = req.body;
-      const data = await assetManagementService.assignAsset(assetId, employee_id, user?.id || 1);
+      const { asset_id, employee_id } = req.body;
+      const data = await assetManagementService.assignAsset(parseInt(asset_id), parseInt(employee_id), user?.id || 1);
       return res.json(sendSuccess(data, 'Asset assigned to employee'));
     } catch (e: any) {
       return res.status(400).json(sendError(e.message));
     }
   }
 
-  // PATCH /assets/assignments/:id/acknowledge
-  async acknowledgeAsset(req: Request, res: Response) {
+  // POST /assets/transfer
+  async transferAsset(req: Request, res: Response) {
     try {
       const user = (req as any).user;
-      const assignmentId = parseInt(req.params.id);
-      const data = await assetManagementService.acknowledgeAsset(assignmentId, user?.id || 1);
-      return res.json(sendSuccess(data, 'Asset receipt acknowledged'));
+      const { asset_id, from_employee_id, to_employee_id, reason } = req.body;
+      const data = await assetManagementService.transferAsset(
+        parseInt(asset_id), parseInt(from_employee_id || '0'), parseInt(to_employee_id), reason, user?.id || 1
+      );
+      return res.json(sendSuccess(data, 'Asset transferred successfully'));
     } catch (e: any) {
       return res.status(400).json(sendError(e.message));
     }
   }
 
-  // POST /assets/:id/return
-  async returnAsset(req: Request, res: Response) {
+  // GET /assets/my-assets
+  async getMyAssets(req: Request, res: Response) {
     try {
       const user = (req as any).user;
-      const assetId = parseInt(req.params.id);
-      const data = await assetManagementService.returnAsset(assetId, user?.id || 1);
-      return res.json(sendSuccess(data, 'Asset returned to inventory'));
+      const data = await assetManagementService.getMyAssignedAssets(user?.id || 1);
+      return res.json(sendSuccess(data, 'My assigned assets retrieved'));
     } catch (e: any) {
-      return res.status(400).json(sendError(e.message));
-    }
-  }
-
-  // POST /assets/:id/maintenance
-  async scheduleMaintenance(req: Request, res: Response) {
-    try {
-      const user = (req as any).user;
-      const assetId = parseInt(req.params.id);
-      const { maintenance_type, description, cost, start_date } = req.body;
-      const data = await assetManagementService.scheduleMaintenance(assetId, maintenance_type, description, cost, start_date, user?.id || 1);
-      return res.status(201).json(sendSuccess(data, 'Asset maintenance scheduled'));
-    } catch (e: any) {
-      return res.status(400).json(sendError(e.message));
-    }
-  }
-
-  // POST /assets/:id/issues
-  async reportIssue(req: Request, res: Response) {
-    try {
-      const user = (req as any).user;
-      const assetId = parseInt(req.params.id);
-      const { issue_type, description, severity } = req.body;
-      const data = await assetManagementService.reportIssue(assetId, user?.id || 1, issue_type, description, severity);
-      return res.status(201).json(sendSuccess(data, 'Asset issue reported'));
-    } catch (e: any) {
-      return res.status(400).json(sendError(e.message));
+      return res.status(500).json(sendError(e.message));
     }
   }
 }

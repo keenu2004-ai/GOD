@@ -1221,6 +1221,17 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS asset_transfers (
+      id SERIAL PRIMARY KEY,
+      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      from_employee_id INTEGER REFERENCES employees(id),
+      to_employee_id INTEGER NOT NULL REFERENCES employees(id),
+      transfer_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      reason TEXT NOT NULL,
+      transferred_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS asset_maintenance (
       id SERIAL PRIMARY KEY,
       asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,

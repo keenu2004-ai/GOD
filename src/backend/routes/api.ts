@@ -426,14 +426,12 @@ router.post('/projects/tasks', authenticateToken, (req, res) => projectControlle
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
 
 // 9. Enterprise IT Asset Management & Lifecycle Routes
-router.get('/assets/kpis', authenticateToken, (req, res) => assetManagementController.getKPIs(req, res));
-router.post('/assets', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.createAsset(req, res));
-router.get('/assets', authenticateToken, (req, res) => assetManagementController.getAssets(req, res));
-router.post('/assets/:id/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.assignAsset(req, res));
-router.patch('/assets/assignments/:id/acknowledge', authenticateToken, (req, res) => assetManagementController.acknowledgeAsset(req, res));
-router.post('/assets/:id/return', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.returnAsset(req, res));
-router.post('/assets/:id/maintenance', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.scheduleMaintenance(req, res));
-router.post('/assets/:id/issues', authenticateToken, (req, res) => assetManagementController.reportIssue(req, res));
+router.get('/assets/kpis', authenticateToken, (req, res) => assetAnalyticsController.getFinancialAnalytics(req, res));
+router.post('/assets/create', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'ASSET_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.createAsset(req, res));
+router.get('/assets/all', authenticateToken, (req, res) => assetManagementController.getAssets(req, res));
+router.post('/assets/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'ASSET_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.assignAsset(req, res));
+router.post('/assets/transfer', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'ASSET_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.transferAsset(req, res));
+router.get('/assets/my-assets', authenticateToken, (req, res) => assetManagementController.getMyAssets(req, res));
 
 // 9b. Enterprise Asset Requests, Procurement, POs & Receiving Routes
 router.post('/assets/requests', authenticateToken, (req, res) => assetProcurementController.createRequest(req, res));

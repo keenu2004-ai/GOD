@@ -17,6 +17,7 @@ import { EnterpriseExpensePolicyPage } from './pages/EnterpriseExpensePolicyPage
 import { EnterpriseOrganizationPage } from './pages/EnterpriseOrganizationPage.js';
 import { ProjectsPage } from './pages/ProjectsPage.js';
 import { AssetsPage } from './pages/RecruitmentPage.js';
+import { EnterpriseAssetPage } from './pages/EnterpriseAssetPage.js';
 import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
 import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
@@ -112,7 +113,7 @@ const AppContent: React.FC = () => {
           case 'time-tracking':
             return <EnterpriseTimeTrackingPage />;
           case 'assets':
-            return <EnterpriseAssetsPage />;
+            return <EnterpriseAssetPage />;
           case 'asset-procurement':
             return <EnterpriseAssetProcurementPage />;
           case 'asset-maintenance':
