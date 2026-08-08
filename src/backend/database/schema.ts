@@ -344,6 +344,30 @@ export async function initializeSchema() {
       UNIQUE(employee_id, leave_type_id)
     );
 
+    CREATE TABLE IF NOT EXISTS leave_balance_ledger (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      transaction_type VARCHAR(50) NOT NULL, -- 'ACCRUAL' | 'LEAVE_TAKEN' | 'CANCELLATION' | 'ADJUSTMENT_INCREASE' | 'ADJUSTMENT_DECREASE' | 'EXPIRY' | 'ENCASHMENT'
+      amount NUMERIC(5, 2) NOT NULL,
+      opening_balance NUMERIC(5, 2) NOT NULL,
+      closing_balance NUMERIC(5, 2) NOT NULL,
+      reason TEXT,
+      created_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS leave_encashments (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      requested_days NUMERIC(5, 2) NOT NULL,
+      amount_per_day NUMERIC(10, 2) DEFAULT 0,
+      total_amount NUMERIC(12, 2) DEFAULT 0,
+      status VARCHAR(30) DEFAULT 'PENDING_APPROVAL', -- 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'
+      requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS holiday_regions (
       id SERIAL PRIMARY KEY,
       code VARCHAR(50) UNIQUE NOT NULL,

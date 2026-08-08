@@ -4,6 +4,7 @@ import { employeeController } from '../controllers/employeeController.js';
 import { attendanceController } from '../controllers/attendanceController.js';
 import { regularizationController } from '../controllers/regularizationController.js';
 import { attendanceManagementController } from '../controllers/attendanceManagementController.js';
+import { leaveManagementController } from '../controllers/leaveManagementController.js';
 import { leaveController } from '../controllers/leaveController.js';
 import { payrollController } from '../controllers/payrollController.js';
 import { expenseController } from '../controllers/expenseController.js';
@@ -161,8 +162,14 @@ router.get('/leave/settings', authenticateToken, (req, res) => leavePolicyContro
 router.post('/leave/settings', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leavePolicyController.updateSettings(req, res));
 router.post('/leave/encash', authenticateToken, (req, res) => leavePolicyController.requestEncashment(req, res));
 router.get('/leave/encashments', authenticateToken, (req, res) => leavePolicyController.getEncashments(req, res));
-router.get('/leave/balance', authenticateToken, (req, res) => leaveController.getBalances(req, res));
-router.get('/leave/history', authenticateToken, (req, res) => leaveController.getAllLeaves(req, res));
+router.get('/leave/balance', authenticateToken, (req, res) => leaveManagementController.getBalances(req, res));
+router.get('/leave/history', authenticateToken, (req, res) => leaveManagementController.getApplications(req, res));
+router.post('/leaves/balances/adjust', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leaveManagementController.adjustBalance(req, res));
+router.get('/leaves/ledger', authenticateToken, (req, res) => leaveManagementController.getLedger(req, res));
+router.post('/leaves/apply', authenticateToken, (req, res) => leaveManagementController.applyLeave(req, res));
+router.get('/leaves/applications', authenticateToken, (req, res) => leaveManagementController.getApplications(req, res));
+router.patch('/leaves/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => leaveManagementController.approveLeave(req, res));
+router.patch('/leaves/:id/cancel', authenticateToken, (req, res) => leaveManagementController.cancelLeave(req, res));
 
 // 5b. Leave Request Workflow & Availability Routes
 const leaveMgrRoles = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'];
