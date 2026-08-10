@@ -228,7 +228,6 @@ router.get('/payroll/dashboard/kpis', authenticateToken, authorizeRoles(...payro
 
 // 6h. Enterprise Payroll Automation, Pre-flight Auto-Validation & NEFT Bank Transfer Routes
 router.get('/payroll/validate', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAutomationController.validatePayroll(req, res));
-router.get('/payroll/bank-file', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'PAYROLL_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollAutomationController.downloadBankFile(req, res));
 router.post('/payroll/cron/maintenance', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => payrollAutomationController.runCron(req, res));
 
 router.get('/payrolls', authenticateToken, (req, res) => payrollManagementController.getPayrollRecords(req, res));

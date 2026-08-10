@@ -32,29 +32,6 @@ export class PayslipPortalController {
     }
   }
 
-  // POST /payroll/certificates/request
-  async requestCertificate(req: Request, res: Response) {
-    try {
-      const user = (req as any).user;
-      const data = await payslipPortalService.requestSalaryCertificate(req.body, user?.id || 1);
-      return res.status(201).json(sendSuccess(data, 'Salary certificate issued'));
-    } catch (e: any) {
-      return res.status(400).json(sendError(e.message));
-    }
-  }
-
-  // GET /payroll/certificates
-  async getCertificates(req: Request, res: Response) {
-    try {
-      const user = (req as any).user;
-      const empId = req.query.employeeId ? parseInt(req.query.employeeId as string) : (user?.role === 'EMPLOYEE' ? user?.id : undefined);
-      const data = await payslipPortalService.getSalaryCertificates(empId);
-      return res.json(sendSuccess(data, 'Salary certificates retrieved'));
-    } catch (e: any) {
-      return res.status(500).json(sendError(e.message));
-    }
-  }
-
   // GET /payroll/self-service/feed
   async getSelfServiceFeed(req: Request, res: Response) {
     try {
