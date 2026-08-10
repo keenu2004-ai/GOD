@@ -119,7 +119,8 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
     );
   };
 
-  const isClockedIn = !!(todayRecord && todayRecord.punch_in && !todayRecord.punch_out);
+  const isCheckedIn = !!(todayRecord && todayRecord.punch_in && !todayRecord.punch_out);
+  const isCheckedOut = !!(todayRecord && todayRecord.punch_out);
 
   return (
     <div className="space-y-5 min-h-screen pb-10 font-sans">
@@ -145,14 +146,18 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!isClockedIn ? (
+            {!isCheckedIn && !isCheckedOut ? (
               <button onClick={handleClockIn} disabled={submitting} className="bg-teal-600 hover:bg-teal-700 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
                 <Play className="w-4 h-4 fill-white" /> {submitting ? 'Verifying GPS...' : 'CLOCK IN'}
               </button>
-            ) : (
+            ) : isCheckedIn ? (
               <button onClick={handleClockOut} disabled={submitting} className="bg-rose-600 hover:bg-rose-700 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
                 <Square className="w-4 h-4 fill-white" /> {submitting ? 'Clocking Out...' : 'CLOCK OUT'}
               </button>
+            ) : (
+              <div className="bg-emerald-600/30 text-teal-200 border border-teal-500/30 font-black text-xs px-5 py-2.5 rounded-xl flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> SHIFT COMPLETED FOR TODAY
+              </div>
             )}
           </div>
         </div>

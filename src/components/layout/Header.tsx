@@ -161,11 +161,52 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const isCheckedIn = !!attendanceStatus?.record?.punch_in && !attendanceStatus?.record?.punch_out;
   const isCheckedOut = !!attendanceStatus?.record?.punch_out;
 
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
+  const handleSearch = async (q: string) => {
+    setSearchQuery(q);
+    if (!q.trim()) {
+      setSearchResults([]);
+      setShowSearchModal(false);
+      return;
+    }
+    setShowSearchModal(true);
+    setSearching(true);
+    try {
+      const [empRes, ticketRes] = await Promise.all([
+        apiClient.get(`/employees?search=${encodeURIComponent(q)}`).catch(() => ({ data: { data: [] } })),
+        apiClient.get(`/helpdesk/tickets`).catch(() => ({ data: { data: [] } })),
+      ]);
+      const emps = (empRes.data?.data || []).map((e: any) => ({
+        id: `emp-${e.id}`,
+        title: `${e.first_name} ${e.last_name}`,
+        subtitle: `${e.designation || 'Employee'} • ${e.employee_code}`,
+        type: 'EMPLOYEE',
+      }));
+      const tickets = (ticketRes.data?.data || [])
+        .filter((t: any) => t.subject?.toLowerCase().includes(q.toLowerCase()) || t.ticket_number?.toLowerCase().includes(q.toLowerCase()))
+        .map((t: any) => ({
+          id: `ticket-${t.id}`,
+          title: t.subject,
+          subtitle: `Ticket #${t.ticket_number || t.id} • ${t.status}`,
+          type: 'HELPDESK',
+        }));
+      setSearchResults([...emps, ...tickets]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm text-slate-800">
       {/* Left: Organization & Branch info */}
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Mobile Sidebar Hamburger Toggle */}
         <button
           onClick={onToggleMobileMenu}
           className="md:hidden p-2 bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors shrink-0"
@@ -174,7 +215,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
           <Menu className="w-5 h-5 text-slate-700" />
         </button>
 
-        {/* Mobile Brand Name */}
         <div className="md:hidden flex items-center gap-2 ml-1">
           <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm text-xs">
             T1
@@ -198,24 +238,53 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
         </div>
 
         {/* Global Search Input */}
-        <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-64 text-xs">
-          <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Search employees, payroll, tasks..."
-            className="bg-transparent border-none outline-none w-full text-slate-800 placeholder-slate-400"
-          />
-          <kbd className="hidden xl:inline-block bg-slate-200 text-slate-600 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold">⌘K</kbd>
+        <div className="relative hidden lg:block">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-64 text-xs">
+            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Search employees, tickets..."
+              className="bg-transparent border-none outline-none w-full text-slate-800 placeholder-slate-400 font-medium"
+            />
+            <kbd className="bg-slate-200 text-slate-600 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold">⌘K</kbd>
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showSearchModal && searchQuery.trim() !== '' && (
+            <div className="absolute left-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl p-2 z-50 text-xs text-slate-800">
+              <div className="p-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b">
+                {searching ? 'Searching Data...' : `Results (${searchResults.length})`}
+              </div>
+              <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
+                {searchResults.length === 0 && !searching ? (
+                  <p className="p-3 text-slate-400 text-center">No matching records found</p>
+                ) : (
+                  searchResults.map((res) => (
+                    <div key={res.id} className="p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">{res.title}</span>
+                        <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{res.type}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">{res.subtitle}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Center/Right: Global Attendance Punch Widget */}
+      {/* Right: Attendance Status Badge & Profile Dropdown */}
       <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium">
+        {/* Header Attendance Status Badge (No Competing Punch Action Buttons) */}
+        <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium">
           <div className="flex items-center gap-1.5">
             <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
             <span className="font-bold text-slate-800 uppercase text-[11px]">
-              {isCheckedIn ? 'Checked In' : isCheckedOut ? 'Checked Out' : 'Not Checked In'}
+              {isCheckedIn ? 'Checked In' : isCheckedOut ? 'Shift Completed' : 'Not Checked In'}
             </span>
           </div>
 
@@ -223,42 +292,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <span className="font-mono text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[11px] border border-emerald-200">
               {formatTimer(seconds)}
             </span>
-          )}
-        </div>
-
-        {/* Global Action Buttons */}
-        <div className="hidden md:flex items-center gap-2">
-          {!isCheckedIn && !isCheckedOut && (
-            <button
-              onClick={handlePunchIn}
-              disabled={punching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{punching ? 'PUNCHING...' : 'PUNCH IN'}</span>
-            </button>
-          )}
-
-          {isCheckedIn && (
-            <>
-              <button
-                onClick={handleBreak}
-                disabled={punching}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
-                title="Record 15 Min Break"
-              >
-                <Coffee className="w-3.5 h-3.5" />
-                <span>BREAK</span>
-              </button>
-              <button
-                onClick={handlePunchOut}
-                disabled={punching}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>{punching ? 'PUNCHING...' : 'PUNCH OUT'}</span>
-              </button>
-            </>
           )}
         </div>
 
@@ -276,7 +309,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             )}
           </button>
 
-          {/* Smart Notifications Dropdown */}
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl p-3 z-50 text-slate-800">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -329,7 +361,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
               <p className="text-xs font-bold text-slate-900">
                 {user?.first_name} {user?.last_name}
               </p>
-              <p className="text-[10px] text-slate-500 font-mono">{user?.role || 'ADMIN'}</p>
+              <p className="text-[10px] text-slate-500 font-mono">{user?.role || 'EMPLOYEE'}</p>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
           </button>
@@ -344,6 +376,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
                   <span>Authenticated Session</span>
                 </div>
               </div>
+
+              <div className="py-1 border-b border-slate-100 font-medium space-y-0.5">
+                <div className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer font-bold flex items-center justify-between">
+                  <span>My Profile</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{user?.employee_code || 'EMP-101'}</span>
+                </div>
+              </div>
+
               <button
                 onClick={logout}
                 className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1 font-semibold"

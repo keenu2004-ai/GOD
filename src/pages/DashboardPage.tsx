@@ -498,6 +498,13 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
               <span>{punching ? 'Punching Out...' : 'CLOCK OUT NOW'}</span>
             </button>
           )}
+
+          {isCheckedOut && (
+            <div className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>SHIFT COMPLETED FOR TODAY</span>
+            </div>
+          )}
         </div>
       </div>
 
