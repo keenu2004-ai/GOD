@@ -19,9 +19,10 @@ import { NotificationItem } from '../../types/index.js';
 
 interface HeaderProps {
   onToggleMobileMenu?: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
+export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onNavigate }) => {
   const { user, logout } = useAuth();
   const [time, setTime] = useState<string>('');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -262,7 +263,15 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
                   <p className="p-3 text-slate-400 text-center">No matching records found</p>
                 ) : (
                   searchResults.map((res) => (
-                    <div key={res.id} className="p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer">
+                    <div
+                      key={res.id}
+                      onClick={() => {
+                        if (res.type === 'EMPLOYEE') onNavigate?.('employees');
+                        else if (res.type === 'HELPDESK') onNavigate?.('helpdesk');
+                        setShowSearchModal(false);
+                      }}
+                      className="p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-900">{res.title}</span>
                         <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{res.type}</span>
@@ -378,10 +387,49 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
               </div>
 
               <div className="py-1 border-b border-slate-100 font-medium space-y-0.5">
-                <div className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer font-bold flex items-center justify-between">
+                <button
+                  onClick={() => { onNavigate?.('employees'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer font-bold flex items-center justify-between"
+                >
                   <span>My Profile</span>
                   <span className="text-[10px] text-slate-400 font-mono">{user?.employee_code || 'EMP-101'}</span>
-                </div>
+                </button>
+                <button
+                  onClick={() => { onNavigate?.('attendance'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>My Attendance</span>
+                </button>
+                <button
+                  onClick={() => { onNavigate?.('leave'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>My Leave</span>
+                </button>
+                <button
+                  onClick={() => { onNavigate?.('payslip-portal'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>My Payroll & Payslips</span>
+                </button>
+                <button
+                  onClick={() => { onNavigate?.('daily-standup'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>My Tasks & Standups</span>
+                </button>
+                <button
+                  onClick={() => { onNavigate?.('helpdesk'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>Helpdesk</span>
+                </button>
+                <button
+                  onClick={() => { onNavigate?.('settings'); setShowProfileMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>Settings</span>
+                </button>
               </div>
 
               <button

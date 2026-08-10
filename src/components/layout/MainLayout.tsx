@@ -19,7 +19,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         onCloseMobile={() => setIsOpenMobile(false)}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header onToggleMobileMenu={() => setIsOpenMobile((prev) => !prev)} />
+        <Header
+          onToggleMobileMenu={() => setIsOpenMobile((prev) => !prev)}
+          onNavigate={(tab) => {
+            setActiveTab(tab);
+            setIsOpenMobile(false);
+          }}
+        />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F1F5F9] text-slate-900">
           {children(activeTab, setActiveTab)}
         </main>
