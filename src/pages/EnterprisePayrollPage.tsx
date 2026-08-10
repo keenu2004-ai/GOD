@@ -116,9 +116,6 @@ export const EnterprisePayrollPage: React.FC = () => {
                   <Lock className="w-3.5 h-3.5 inline mr-1" /> Lock Period
                 </button>
               )}
-              <button onClick={() => setShowProcessModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg">
-                <Plus className="w-4 h-4 inline mr-1" /> Run Payroll Wizard
-              </button>
             </div>
           )}
         </div>
@@ -159,12 +156,6 @@ export const EnterprisePayrollPage: React.FC = () => {
             tab === 'payslips' ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-500 hover:text-slate-800'
           }`}>
           <FileText className="w-4 h-4" /> My Payslips ({myPayslips.length})
-        </button>
-        <button onClick={() => setTab('components')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
-            tab === 'components' ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-500 hover:text-slate-800'
-          }`}>
-          <Award className="w-4 h-4" /> Salary Components Structure
         </button>
       </div>
 
@@ -238,65 +229,8 @@ export const EnterprisePayrollPage: React.FC = () => {
         </div>
       )}
 
-      {/* ─── SALARY COMPONENTS STRUCTURE TAB ─────────────────────────────── */}
-      {tab === 'components' && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-          <h4 className="font-bold text-slate-900 text-sm">Configured Enterprise Salary Components (CTC Breakdown)</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
-              <h5 className="font-bold text-emerald-900 uppercase">Earnings Components</h5>
-              <ul className="space-y-1 text-slate-700 font-sans">
-                <li>• Basic Salary (50% of CTC)</li>
-                <li>• House Rent Allowance / HRA (20% of CTC)</li>
-                <li>• Conveyance & Special Allowances (30% of CTC)</li>
-              </ul>
-            </div>
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-2">
-              <h5 className="font-bold text-rose-900 uppercase">Deduction Components</h5>
-              <ul className="space-y-1 text-slate-700 font-sans">
-                <li>• Provident Fund / PF (12% of Basic up to ₹1,800)</li>
-                <li>• Professional Tax / PT (Flat ₹200)</li>
-                <li>• Loss of Pay / LOP (Prorated per day of unapproved leave)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ─── RUN PAYROLL WIZARD MODAL ──────────────────────────────────────── */}
-      {showProcessModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-slate-900">Run Payroll Processing Wizard</h3>
-              <button onClick={() => setShowProcessModal(false)}><X className="w-5 h-5 text-slate-400" /></button>
-            </div>
-            <form onSubmit={handleProcessPayroll} className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700">Payroll Period Name *</label>
-                <input required value={periodForm.period_name} onChange={e => setPeriodForm({...periodForm, period_name: e.target.value})}
-                  className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700">Start Date *</label>
-                  <input required type="date" value={periodForm.start_date} onChange={e => setPeriodForm({...periodForm, start_date: e.target.value})}
-                    className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-mono" />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700">End Date *</label>
-                  <input required type="date" value={periodForm.end_date} onChange={e => setPeriodForm({...periodForm, end_date: e.target.value})}
-                    className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-mono" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t">
-                <button type="button" onClick={() => setShowProcessModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancel</button>
-                <button type="submit" disabled={submitting} className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold shadow">{submitting ? 'Processing...' : 'Run Payroll'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
 
       {/* ─── PAYSLIP VIEW MODAL ───────────────────────────────────────────── */}
       {selectedPayslip && (

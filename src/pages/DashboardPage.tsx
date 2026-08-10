@@ -274,20 +274,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
               </div>
             </button>
 
-            {/* 4. Timesheet */}
-            <button
-              onClick={() => onNavigate('time-tracking')}
-              className="bg-white border border-slate-200/80 rounded-2xl p-4 hover:border-indigo-500 hover:shadow-md transition-all text-left flex flex-col justify-between h-28 shadow-sm group active:scale-98"
-            >
-              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center transition-colors group-hover:bg-indigo-600 group-hover:text-white">
-                <FileSpreadsheet className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 text-xs tracking-tight">Timesheet</h4>
-                <p className="text-[9px] text-slate-400 mt-0.5 font-normal">Weekly Work Logs</p>
-              </div>
-            </button>
-
             {/* 5. Engagement */}
             <button
               onClick={() => onNavigate('engagement')}
@@ -370,7 +356,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
           <p className="text-xs text-slate-300 mt-1">
             {isSuperAdmin ? 'Full organization control, financial disbursements, system health & live headcount metrics.' :
              isHR ? 'HR operations, attendance regularizations, leave balance approvals & candidate ATS.' :
-             isManager ? 'Team deliverables, sprint commitments, attendance logs & expense approvals.' :
+             isManager ? 'Team deliverables, daily standups, attendance logs & expense approvals.' :
              'Personal workspace, geofenced GPS punch widget, leave ledger & weekly commitments.'}
           </p>
         </div>

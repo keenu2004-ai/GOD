@@ -94,7 +94,7 @@ export const EmployeePayrollPortalPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-black text-white tracking-tight">Employee Self-Service Payroll Portal</h2>
-              <p className="text-xs text-blue-300/70 font-mono mt-0.5">Digital Payslips • Compensation Breakdown • Salary Certificates • Tax Deductions</p>
+              <p className="text-xs text-blue-300/70 font-mono mt-0.5">Digital Payslips • Salary Certificates • Tax Deductions</p>
             </div>
           </div>
           <button onClick={() => handleViewPayslip(selectedMonth, selectedYear)}
@@ -360,7 +360,6 @@ export const EmployeePayrollPortalPage: React.FC = () => {
                   className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900">
                   <option value="SALARY_CERTIFICATE">Salary Certificate</option>
                   <option value="EMPLOYMENT_LETTER">Employment Proof Letter</option>
-                  <option value="COMPENSATION_LETTER">Compensation Breakup Letter</option>
                   <option value="INCREMENT_LETTER">Increment / Revision Letter</option>
                 </select>
               </div>

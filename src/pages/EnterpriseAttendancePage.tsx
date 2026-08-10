@@ -140,7 +140,7 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
               <Clock className="w-7 h-7 text-teal-300" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-white tracking-tight">Enterprise Attendance & GPS Geofence Workspace</h2>
+              <h2 className="text-xl font-black text-white tracking-tight">Enterprise Attendance</h2>
               <p className="text-xs text-teal-300/70 font-mono mt-0.5">{gpsStatus}</p>
             </div>
           </div>

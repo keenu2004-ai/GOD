@@ -64,7 +64,7 @@ const AppContent: React.FC = () => {
             return <EnterpriseExpensesPage onNavigate={setActiveTab} />;
           case 'projects':
             return <EnterpriseProjectTaskPage />;
-          case 'tasks-kanban':
+          case 'daily-standup':
             return <EnterpriseTaskBoardPage />;
           case 'assets':
             return <EnterpriseAssetPage />;

@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'payslip-portal', label: 'Employee Payroll Portal', icon: FileText },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
     { id: 'projects', label: 'Projects & Workspaces', icon: FolderGit2 },
-    { id: 'tasks-kanban', label: 'Task & Work Report', icon: CheckSquare },
+    { id: 'daily-standup', label: 'Task & Work Report', icon: CheckSquare },
     { id: 'assets', label: 'Asset Management', icon: Laptop, roles: ['ADMIN', 'HR_MANAGER'] },
     { id: 'helpdesk', label: 'Helpdesk & Announcement', icon: HelpCircle },
     { id: 'orgchart', label: 'Organization Chart', icon: Network },
