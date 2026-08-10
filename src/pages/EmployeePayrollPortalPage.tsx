@@ -26,30 +26,19 @@ export const EmployeePayrollPortalPage: React.FC = () => {
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(MONTHS[now.getMonth()]);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [tab, setTab] = useState<'portal' | 'certificates'>('portal');
 
   const [feed, setFeed] = useState<SelfServiceFeed | null>(null);
   const [payslipData, setPayslipData] = useState<any>(null);
-  const [certificates, setCertificates] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Modals
   const [showPayslipModal, setShowPayslipModal] = useState(false);
-  const [showCertModal, setShowCertModal] = useState(false);
-
-  const [certForm, setCertForm] = useState({
-    certificate_type: 'SALARY_CERTIFICATE', purpose: 'Bank Loan Application',
-  });
 
   const fetchFeed = useCallback(async () => {
     setLoading(true);
     try {
-      const [feedRes, certRes] = await Promise.all([
-        apiClient.get('/payroll/self-service/feed'),
-        apiClient.get('/payroll/certificates').catch(() => ({ data: { data: [] } })),
-      ]);
+      const feedRes = await apiClient.get('/payroll/self-service/feed');
       setFeed(feedRes.data?.data || null);
-      setCertificates(certRes.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -67,20 +56,6 @@ export const EmployeePayrollPortalPage: React.FC = () => {
     } catch (e: any) { alert(e.response?.data?.message || 'Payslip not available'); }
   };
 
-  const handleRequestCertificate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await apiClient.post('/payroll/certificates/request', {
-        employee_id: userId,
-        certificate_type: certForm.certificate_type,
-        purpose: certForm.purpose,
-      });
-      setShowCertModal(false);
-      await fetchFeed();
-      alert('✅ Salary Certificate issued successfully!');
-    } catch (e: any) { alert(e.response?.data?.message || 'Request failed'); }
-  };
-
   const p = payslipData;
 
   return (
@@ -94,7 +69,7 @@ export const EmployeePayrollPortalPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-black text-white tracking-tight">Employee Self-Service Payroll Portal</h2>
-              <p className="text-xs text-blue-300/70 font-mono mt-0.5">Digital Payslips • Salary Certificates • Tax Deductions</p>
+              <p className="text-xs text-blue-300/70 font-mono mt-0.5">Digital Payslips • Salary Structure • Tax & Statutory Deductions</p>
             </div>
           </div>
           <button onClick={() => handleViewPayslip(selectedMonth, selectedYear)}

@@ -117,40 +117,6 @@ export class PayslipPortalRepository {
     );
   }
 
-  // ─── Salary Certificates Engine ───────────────────────────────────────────
-  async requestSalaryCertificate(dto: CertificateRequestDTO, creatorId: number) {
-    const res = await dbService.query(
-      `INSERT INTO salary_certificates (employee_id, certificate_type, issued_date, purpose, status, created_by)
-       VALUES ($1, $2, CURRENT_DATE, $3, 'ISSUED', $4) RETURNING *`,
-      [dto.employee_id, dto.certificate_type, dto.purpose, creatorId]
-    );
-
-    await dbService.query(
-      `INSERT INTO audit_logs (employee_id, action, module, details)
-       VALUES ($1, 'SALARY_CERTIFICATE_ISSUED', 'EMPLOYEE_PAYROLL_PORTAL', $2)`,
-      [creatorId, `Issued ${dto.certificate_type} for Employee #${dto.employee_id}`]
-    );
-
-    return res.rows[0];
-  }
-
-  async getSalaryCertificates(employeeId?: number) {
-    let sql = `
-      SELECT sc.*, e.first_name, e.last_name, e.employee_code
-      FROM salary_certificates sc
-      JOIN employees e ON sc.employee_id = e.id
-    `;
-    const params: any[] = [];
-    if (employeeId) {
-      sql += ` WHERE sc.employee_id = $1`;
-      params.push(employeeId);
-    }
-    sql += ` ORDER BY sc.created_at DESC`;
-
-    const res = await dbService.query(sql, params);
-    return res.rows;
-  }
-
   // ─── Employee Self-Service Payroll Feed ───────────────────────────────────
   async getEmployeeSelfServiceFeed(employeeId: number) {
     const [salRes, payslipRes, loanRes, advRes, revRes] = await Promise.all([
