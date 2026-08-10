@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Clock, MapPin, ShieldCheck, AlertTriangle, Plus, RefreshCw, X,
-  CheckCircle2, ArrowRight, ArrowLeft, Calendar, UserCheck, Play, Square, Award
+  CheckCircle2, ArrowRight, ArrowLeft, Calendar, UserCheck, Play, Square, Award, BarChart2, FileEdit
 } from 'lucide-react';
 import apiClient from '../services/apiClient.js';
 import { useAuth } from '../contexts/AuthContext.js';
+import { AttendanceAnalyticsTab } from './AttendanceAnalyticsTab.js';
+import { AttendanceRegularizationTab } from './AttendanceRegularizationTab.js';
 
 interface AttendanceRecord {
   id: number;
@@ -15,14 +17,6 @@ interface AttendanceRecord {
   is_late: boolean;
   is_overtime: boolean;
   status: string;
-}
-
-interface Correction {
-  id: number;
-  attendance_date: string;
-  requested_punch_in: string;
-  requested_punch_out: string;
-  reason: string;
   status: string;
 }
 
@@ -38,36 +32,24 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [tab, setTab] = useState<'log' | 'corrections' | 'config'>('log');
+  const [tab, setTab] = useState<'log' | 'analysis' | 'regularization'>('log');
 
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
-  const [corrections, setCorrections] = useState<Correction[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<string>('Ready to capture GPS coordinates');
 
-  // Modal
-  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
-  const [correctionForm, setCorrectionForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    requested_punch_in: '09:00',
-    requested_punch_out: '18:00',
-    reason: 'Client site meeting punch delayed',
-  });
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [todayRes, histRes, corrRes] = await Promise.all([
+      const [todayRes, histRes] = await Promise.all([
         apiClient.get('/attendance/today').catch(() => ({ data: { data: null } })),
         apiClient.get('/attendance/my-history').catch(() => ({ data: { data: [] } })),
-        apiClient.get('/attendance/regularizations').catch(() => ({ data: { data: [] } })),
       ]);
       setTodayRecord(todayRes.data?.data || null);
       setHistory(histRes.data?.data || []);
-      setCorrections(corrRes.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -137,26 +119,6 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
     );
   };
 
-  const handleRequestCorrection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await apiClient.post('/attendance/corrections', correctionForm);
-      setShowCorrectionModal(false);
-      await fetchData();
-      alert('✅ Correction Requisition Submitted!');
-    } catch (e: any) { alert('Correction request failed'); }
-    finally { setSubmitting(false); }
-  };
-
-  const handleApproveCorrection = async (id: number) => {
-    try {
-      await apiClient.patch(`/attendance/corrections/${id}/approve`);
-      await fetchData();
-      alert('✅ Correction Approved!');
-    } catch (e) { alert('Approval failed'); }
-  };
-
   const isClockedIn = !!(todayRecord && todayRecord.punch_in && !todayRecord.punch_out);
 
   return (
@@ -183,9 +145,6 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowCorrectionModal(true)} className="bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl border border-white/20">
-              <Plus className="w-3.5 h-3.5 inline mr-1" /> Request Correction
-            </button>
             {!isClockedIn ? (
               <button onClick={handleClockIn} disabled={submitting} className="bg-teal-600 hover:bg-teal-700 text-white font-black text-sm px-6 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
                 <Play className="w-4 h-4 fill-white" /> {submitting ? 'Verifying GPS...' : 'CLOCK IN'}
@@ -219,19 +178,26 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
         </div>
       </div>
 
-      {/* ─── Tabs ──────────────────────────────────────────────────────────── */}
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1.5 border border-slate-200 overflow-x-auto">
         <button onClick={() => setTab('log')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
             tab === 'log' ? 'bg-white text-teal-700 shadow-sm border border-teal-100' : 'text-slate-500 hover:text-slate-800'
           }`}>
-          <Calendar className="w-4 h-4" /> Attendance Log ({history.length})
+          <Calendar className="w-4 h-4" /> My Attendance Log
         </button>
-        <button onClick={() => setTab('corrections')}
+        {isManager && (
+          <button onClick={() => setTab('analysis')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
+              tab === 'analysis' ? 'bg-white text-teal-700 shadow-sm border border-teal-100' : 'text-slate-500 hover:text-slate-800'
+            }`}>
+            <BarChart2 className="w-4 h-4" /> Attendance Analysis
+          </button>
+        )}
+        <button onClick={() => setTab('regularization')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
-            tab === 'corrections' ? 'bg-white text-teal-700 shadow-sm border border-teal-100' : 'text-slate-500 hover:text-slate-800'
+            tab === 'regularization' ? 'bg-white text-teal-700 shadow-sm border border-teal-100' : 'text-slate-500 hover:text-slate-800'
           }`}>
-          <UserCheck className="w-4 h-4" /> Correction Requisitions ({corrections.length})
+          <FileEdit className="w-4 h-4" /> Attendance Regularization
         </button>
       </div>
 
@@ -274,85 +240,14 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
           </table>
         </div>
       )}
-
-      {/* ─── CORRECTION REQUISITIONS TAB ─────────────────────────────────── */}
-      {tab === 'corrections' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
-          <table className="w-full text-xs text-left text-slate-700">
-            <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
-              <tr>
-                <th className="p-3">Attendance Date</th>
-                <th className="p-3">Requested Punch In</th>
-                <th className="p-3">Requested Punch Out</th>
-                <th className="p-3">Reason</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-mono">
-              {corrections.map(c => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="p-3 font-bold text-slate-900">{c.attendance_date}</td>
-                  <td className="p-3 text-teal-700 font-bold">{c.requested_punch_in}</td>
-                  <td className="p-3 text-rose-700 font-bold">{c.requested_punch_out}</td>
-                  <td className="p-3 font-sans text-slate-600">{c.reason}</td>
-                  <td className="p-3 font-sans">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                      c.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-                    }`}>{c.status}</span>
-                  </td>
-                  <td className="p-3 font-sans">
-                    {isManager && c.status !== 'APPROVED' && (
-                      <button onClick={() => handleApproveCorrection(c.id)} className="px-2.5 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded hover:bg-emerald-700">
-                        Approve
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ─── ANALYSIS TAB ─────────────────────────────────────────────────── */}
+      {tab === 'analysis' && isManager && (
+        <AttendanceAnalyticsTab />
       )}
 
-      {/* ─── CORRECTION MODAL ──────────────────────────────────────────────── */}
-      {showCorrectionModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-slate-900">Request Attendance Correction</h3>
-              <button onClick={() => setShowCorrectionModal(false)}><X className="w-5 h-5 text-slate-400" /></button>
-            </div>
-            <form onSubmit={handleRequestCorrection} className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700">Attendance Date *</label>
-                <input required type="date" value={correctionForm.date} onChange={e => setCorrectionForm({...correctionForm, date: e.target.value})}
-                  className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700">Punch In Time *</label>
-                  <input required type="time" value={correctionForm.requested_punch_in} onChange={e => setCorrectionForm({...correctionForm, requested_punch_in: e.target.value})}
-                    className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-mono" />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700">Punch Out Time *</label>
-                  <input required type="time" value={correctionForm.requested_punch_out} onChange={e => setCorrectionForm({...correctionForm, requested_punch_out: e.target.value})}
-                    className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-mono" />
-                </div>
-              </div>
-              <div>
-                <label className="font-semibold text-slate-700">Reason for Correction *</label>
-                <textarea required value={correctionForm.reason} onChange={e => setCorrectionForm({...correctionForm, reason: e.target.value})}
-                  className="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900" rows={2} />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t">
-                <button type="button" onClick={() => setShowCorrectionModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancel</button>
-                <button type="submit" disabled={submitting} className="px-5 py-2 bg-teal-600 text-white rounded-xl font-bold shadow">{submitting ? 'Submitting...' : 'Submit Requisition'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* ─── REGULARIZATION TAB ───────────────────────────────────────────── */}
+      {tab === 'regularization' && (
+        <AttendanceRegularizationTab />
       )}
     </div>
   );

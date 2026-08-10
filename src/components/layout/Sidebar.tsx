@@ -49,8 +49,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
     { id: 'employees', label: 'Employees Directory', icon: Users, roles: ['ADMIN', 'HR_MANAGER'] },
     { id: 'attendance', label: 'Attendance', icon: Clock },
-    { id: 'regularization', label: 'Attendance Regularization', icon: FileEdit },
-    { id: 'attendance-analytics', label: 'Attendance & Leave Analysis', icon: BarChart2, roles: ['ADMIN', 'HR_MANAGER', 'DEPT_HEAD'] },
     { id: 'leave', label: 'Leave Management', icon: CalendarCheck2 },
     { id: 'holidays', label: 'Holidays & Calendar', icon: Calendar },
     { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign, roles: ['ADMIN', 'HR_MANAGER'] },

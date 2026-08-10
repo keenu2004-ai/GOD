@@ -306,7 +306,7 @@ const DetailDrawer: React.FC<{
 };
 
 // ─── Main Page ─────────────────────────────────────────────────────────────
-export const AttendanceRegularizationPage: React.FC = () => {
+export const AttendanceRegularizationTab: React.FC = () => {
   const { user } = useAuth();
   const userRole = (user as any)?.role || 'EMPLOYEE';
   const userId = (user as any)?.id || 0;

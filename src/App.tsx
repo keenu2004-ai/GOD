@@ -16,8 +16,6 @@ import { EnterpriseHelpdeskPage } from './pages/EnterpriseHelpdeskPage.js';
 import { EnterpriseNotificationPage } from './pages/EnterpriseNotificationPage.js';
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
-import { AttendanceRegularizationPage } from './pages/AttendanceRegularizationPage.js';
-import { AttendanceAnalyticsPage } from './pages/AttendanceAnalyticsPage.js';
 import { EnterpriseHolidayPage } from './pages/EnterpriseHolidayPage.js';
 import { PayrollFoundationPage } from './pages/PayrollFoundationPage.js';
 import { EmployeePayrollPortalPage } from './pages/EmployeePayrollPortalPage.js';
@@ -84,10 +82,6 @@ const AppContent: React.FC = () => {
             return <EnterpriseOrganizationPage />;
           case 'planner':
             return <WeeklyPlannerPage />;
-          case 'regularization':
-            return <AttendanceRegularizationPage />;
-          case 'attendance-analytics':
-            return <AttendanceAnalyticsPage />;
           case 'settings':
             return <SettingsPage />;
           default:
