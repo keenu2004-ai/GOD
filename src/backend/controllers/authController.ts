@@ -103,6 +103,42 @@ export class AuthController {
       return res.status(400).json(sendError(error.message));
     }
   }
+
+  async logout(req: Request, res: Response) {
+    try {
+      const { refreshToken } = req.body;
+      const result = await authService.logout(refreshToken);
+      return res.json(sendSuccess(result, 'Logged out successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async forgotPassword(req: Request, res: Response) {
+    try {
+      const { emailOrCode } = req.body;
+      if (!emailOrCode) {
+        return res.status(400).json(sendError('Email address or Employee Code is required'));
+      }
+      const result = await authService.forgotPassword(emailOrCode);
+      return res.json(sendSuccess(result, 'Reset instructions processed'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async resetPasswordByToken(req: Request, res: Response) {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) {
+        return res.status(400).json(sendError('Reset token and new password are required'));
+      }
+      const result = await authService.resetPasswordByToken(token, newPassword);
+      return res.json(sendSuccess(result, 'Password has been reset successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
 }
 
 export const authController = new AuthController();

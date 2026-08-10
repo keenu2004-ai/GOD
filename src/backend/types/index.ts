@@ -13,6 +13,7 @@ export interface UserSession {
   last_name: string;
   branch_id?: number;
   department_id?: number;
+  organization_id?: number;
 }
 
 export interface Employee {

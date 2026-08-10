@@ -101,6 +101,89 @@ export class AuthRepository {
       return false;
     }
   }
+
+  async saveRefreshToken(employeeId: number, token: string, expiresAt: Date): Promise<boolean> {
+    try {
+      await dbService.query(
+        'INSERT INTO user_refresh_tokens (employee_id, token, expires_at) VALUES ($1, $2, $3)',
+        [employeeId, token, expiresAt]
+      );
+      return true;
+    } catch (e) {
+      console.error('Error saving refresh token:', e);
+      return false;
+    }
+  }
+
+  async findRefreshToken(token: string) {
+    try {
+      const res = await dbService.query(
+        'SELECT employee_id, is_revoked, expires_at FROM user_refresh_tokens WHERE token = $1 LIMIT 1',
+        [token]
+      );
+      return res.rows[0] || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async revokeRefreshToken(token: string): Promise<boolean> {
+    try {
+      await dbService.query(
+        'UPDATE user_refresh_tokens SET is_revoked = true WHERE token = $1',
+        [token]
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async revokeAllRefreshTokensForUser(employeeId: number): Promise<boolean> {
+    try {
+      await dbService.query(
+        'UPDATE user_refresh_tokens SET is_revoked = true WHERE employee_id = $1',
+        [employeeId]
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async savePasswordResetToken(employeeId: number, token: string, expiresAt: Date): Promise<boolean> {
+    try {
+      await dbService.query(
+        'INSERT INTO password_reset_tokens (employee_id, token, expires_at) VALUES ($1, $2, $3)',
+        [employeeId, token, expiresAt]
+      );
+      return true;
+    } catch (e) {
+      console.error('Error saving password reset token:', e);
+      return false;
+    }
+  }
+
+  async findPasswordResetToken(token: string) {
+    try {
+      const res = await dbService.query(
+        'SELECT employee_id, expires_at FROM password_reset_tokens WHERE token = $1 LIMIT 1',
+        [token]
+      );
+      return res.rows[0] || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async deletePasswordResetToken(token: string): Promise<boolean> {
+    try {
+      await dbService.query('DELETE FROM password_reset_tokens WHERE token = $1', [token]);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 export const authRepository = new AuthRepository();

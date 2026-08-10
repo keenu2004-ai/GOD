@@ -84,6 +84,45 @@ export class ProjectTaskController {
       return res.status(500).json(sendError(e.message));
     }
   }
+
+  // POST /tasks/daily-standups
+  async submitDailyStandup(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      const { standup_date, yesterday_work, today_plan, blockers, notes } = req.body;
+      if (!standup_date || !yesterday_work || !today_plan) {
+        throw new Error('Date, yesterday\'s work, and today\'s plan are required');
+      }
+      const data = await projectTaskService.submitDailyStandup(
+        user?.id || 1, standup_date, yesterday_work, today_plan, blockers || null, notes || null
+      );
+      return res.status(201).json(sendSuccess(data, 'Daily standup report submitted successfully'));
+    } catch (e: any) {
+      return res.status(400).json(sendError(e.message));
+    }
+  }
+
+  // GET /tasks/daily-standups
+  async getDailyStandups(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      const isManager = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'].includes(user?.role);
+      
+      let employeeId: number | undefined = undefined;
+      
+      if (!isManager) {
+        employeeId = user?.id || 1;
+      } else if (req.query.employeeId) {
+        employeeId = parseInt(req.query.employeeId as string, 10);
+      }
+      
+      const date = req.query.date as string;
+      const data = await projectTaskService.getDailyStandups(employeeId, date);
+      return res.json(sendSuccess(data, 'Daily standups retrieved successfully'));
+    } catch (e: any) {
+      return res.status(500).json(sendError(e.message));
+    }
+  }
 }
 
 export const projectTaskController = new ProjectTaskController();

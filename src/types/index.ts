@@ -25,6 +25,7 @@ export interface UserProfile {
   branch_name?: string;
   manager_first_name?: string;
   manager_last_name?: string;
+  organization_id?: number;
 }
 
 export interface DashboardMetrics {

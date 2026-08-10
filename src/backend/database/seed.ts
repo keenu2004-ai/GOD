@@ -26,35 +26,42 @@ export async function seedDatabase() {
     }
   };
 
+  // 0. Organizations
+  await safeQuery('Organizations', `
+    INSERT INTO organizations (id, name, code, tax_identifier, status) VALUES
+    (1, 'Theiakshi Enterprises', 'THK-ENT', '36AAAAA1111A1Z1', 'ACTIVE')
+    ON CONFLICT (code) DO NOTHING;
+  `);
+
   // 1. Branches
   await safeQuery('Branches', `
-    INSERT INTO branches (id, name, code, city, state, country, timezone, address, latitude, longitude, geofence_radius_meters, is_headquarters) VALUES
-    (1, 'THEIAKSHI HQ - Bengaluru', 'THK-BLR', 'Bengaluru', 'Karnataka', 'India', 'Asia/Kolkata', 'Embassy TechVillage, Outer Ring Road, Bengaluru, Karnataka 560103', 12.9279, 77.6892, 500, true),
-    (2, 'THEIAKSHI Tech Hub - Hyderabad', 'THK-HYD', 'Hyderabad', 'Telangana', 'India', 'Asia/Kolkata', 'HITEC City, Phase II, Madhapur, Hyderabad, Telangana 500081', 17.4483, 78.3741, 500, false),
-    (3, 'THEIAKSHI North Zone - Gurgaon', 'THK-GGN', 'Gurgaon', 'Haryana', 'India', 'Asia/Kolkata', 'Cyber City, DLF Phase 2, Gurgaon, Haryana 122002', 28.4950, 77.0895, 500, false)
+    INSERT INTO branches (id, organization_id, name, code, city, state, country, timezone, address, latitude, longitude, geofence_radius_meters, is_headquarters) VALUES
+    (1, 1, 'THEIAKSHI HQ - Bengaluru', 'THK-BLR', 'Bengaluru', 'Karnataka', 'India', 'Asia/Kolkata', 'Embassy TechVillage, Outer Ring Road, Bengaluru, Karnataka 560103', 12.9279, 77.6892, 500, true),
+    (2, 1, 'THEIAKSHI Tech Hub - Hyderabad', 'THK-HYD', 'Hyderabad', 'Telangana', 'India', 'Asia/Kolkata', 'HITEC City, Phase II, Madhapur, Hyderabad, Telangana 500081', 17.4483, 78.3741, 500, false),
+    (3, 1, 'THEIAKSHI North Zone - Gurgaon', 'THK-GGN', 'Gurgaon', 'Haryana', 'India', 'Asia/Kolkata', 'Cyber City, DLF Phase 2, Gurgaon, Haryana 122002', 28.4950, 77.0895, 500, false)
     ON CONFLICT (code) DO NOTHING;
   `);
 
   // 2. Departments
   await safeQuery('Departments', `
-    INSERT INTO departments (id, name, code) VALUES
-    (1, 'Executive Leadership', 'EXEC'),
-    (2, 'Engineering & Technology', 'ENG'),
-    (3, 'Human Resources', 'HR'),
-    (4, 'Finance & Accounts', 'FIN'),
-    (5, 'Product Management', 'PROD'),
-    (6, 'Sales & Enterprise Marketing', 'SLS'),
-    (7, 'IT Operations & Infrastructure', 'IT')
+    INSERT INTO departments (id, organization_id, name, code) VALUES
+    (1, 1, 'Executive Leadership', 'EXEC'),
+    (2, 1, 'Engineering & Technology', 'ENG'),
+    (3, 1, 'Human Resources', 'HR'),
+    (4, 1, 'Finance & Accounts', 'FIN'),
+    (5, 1, 'Product Management', 'PROD'),
+    (6, 1, 'Sales & Enterprise Marketing', 'SLS'),
+    (7, 1, 'IT Operations & Infrastructure', 'IT')
     ON CONFLICT (code) DO NOTHING;
   `);
 
   // 3. Roles
   await safeQuery('Roles', `
-    INSERT INTO roles (id, name, description) VALUES
-    (1, 'ADMIN', 'System Administrator with full enterprise privileges'),
-    (2, 'HR_MANAGER', 'Human Resource Manager with payroll, recruitment, and employee privileges'),
-    (3, 'DEPT_HEAD', 'Department Head with approval and project management privileges'),
-    (4, 'EMPLOYEE', 'Standard Employee user access')
+    INSERT INTO roles (id, organization_id, name, description) VALUES
+    (1, 1, 'ADMIN', 'System Administrator with full enterprise privileges'),
+    (2, 1, 'HR_MANAGER', 'Human Resource Manager with payroll, recruitment, and employee privileges'),
+    (3, 1, 'DEPT_HEAD', 'Department Head with approval and project management privileges'),
+    (4, 1, 'EMPLOYEE', 'Standard Employee user access')
     ON CONFLICT (name) DO NOTHING;
   `);
 
@@ -71,13 +78,13 @@ export async function seedDatabase() {
 
   // 5. Employees
   await safeQuery('Employees', `
-    INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, password_hash, role, department_id, branch_id, designation, joining_date, salary, bank_account, ifsc_code, pan_number, aadhaar_number, emergency_contact_name, emergency_contact_phone, reporting_manager_id, avatar_url, status) VALUES
-    (1, 'THK001', 'Vaibhav', 'Arya', 'admin@theiakshi.com', '+91 9876543210', $1, 'ADMIN', 1, 1, 'Chief Executive Officer', '2021-01-15', 250000.00, '918237192837', 'HDFC0001234', 'ABCDE1234F', '123456789012', 'Priya Arya', '+91 9876543211', NULL, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
-    (2, 'THK002', 'Ananya', 'Sharma', 'ananya.sharma@theiakshi.com', '+91 9876543212', $1, 'HR_MANAGER', 3, 1, 'Head of Human Resources', '2021-03-01', 140000.00, '918237192838', 'ICIC0005678', 'BCDEF2345G', '234567890123', 'Rajesh Sharma', '+91 9876543213', 1, 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
-    (3, 'THK003', 'Rohan', 'Verma', 'rohan.verma@theiakshi.com', '+91 9876543214', $1, 'DEPT_HEAD', 2, 1, 'VP of Engineering', '2021-06-15', 180000.00, '918237192839', 'SBIN0009101', 'CDEFG3456H', '345678901234', 'Sunita Verma', '+91 9876543215', 1, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
-    (4, 'THK004', 'Kavya', 'Reddy', 'kavya.reddy@theiakshi.com', '+91 9876543216', $1, 'EMPLOYEE', 2, 2, 'Senior Full Stack Engineer', '2022-02-10', 95000.00, '918237192840', 'HDFC0001234', 'DEFGH4567I', '456789012345', 'Venkatesh Reddy', '+91 9876543217', 3, 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
-    (5, 'THK005', 'Vikram', 'Malhotra', 'vikram.m@theiakshi.com', '+91 9876543218', $1, 'EMPLOYEE', 4, 3, 'Senior Finance Lead', '2022-05-20', 110000.00, '918237192841', 'UTIB0003456', 'EFGHI5678J', '567890123456', 'Sanjay Malhotra', '+91 9876543219', 1, 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
-    (6, 'THK006', 'Sneha', 'Gupta', 'sneha.gupta@theiakshi.com', '+91 9876543220', $1, 'EMPLOYEE', 5, 1, 'Lead Product Designer', '2023-01-10', 88000.00, '918237192842', 'HDFC0001234', 'FGHIJ6789K', '678901234567', 'Alok Gupta', '+91 9876543221', 3, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250', 'ACTIVE')
+    INSERT INTO employees (id, organization_id, employee_code, first_name, last_name, email, phone, password_hash, role, department_id, branch_id, designation, joining_date, salary, bank_account, ifsc_code, pan_number, aadhaar_number, emergency_contact_name, emergency_contact_phone, reporting_manager_id, avatar_url, status) VALUES
+    (1, 1, 'THK001', 'Vaibhav', 'Arya', 'admin@theiakshi.com', '+91 9876543210', $1, 'ADMIN', 1, 1, 'Chief Executive Officer', '2021-01-15', 250000.00, '918237192837', 'HDFC0001234', 'ABCDE1234F', '123456789012', 'Priya Arya', '+91 9876543211', NULL, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
+    (2, 1, 'THK002', 'Ananya', 'Sharma', 'ananya.sharma@theiakshi.com', '+91 9876543212', $1, 'HR_MANAGER', 3, 1, 'Head of Human Resources', '2021-03-01', 140000.00, '918237192838', 'ICIC0005678', 'BCDEF2345G', '234567890123', 'Rajesh Sharma', '+91 9876543213', 1, 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
+    (3, 1, 'THK003', 'Rohan', 'Verma', 'rohan.verma@theiakshi.com', '+91 9876543214', $1, 'DEPT_HEAD', 2, 1, 'VP of Engineering', '2021-06-15', 180000.00, '918237192839', 'SBIN0009101', 'CDEFG3456H', '345678901234', 'Sunita Verma', '+91 9876543215', 1, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
+    (4, 1, 'THK004', 'Kavya', 'Reddy', 'kavya.reddy@theiakshi.com', '+91 9876543216', $1, 'EMPLOYEE', 2, 2, 'Senior Full Stack Engineer', '2022-02-10', 95000.00, '918237192840', 'DEFGH4567I', '456789012345', '444455556666', 'Venkatesh Reddy', '+91 9876543217', 3, 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
+    (5, 1, 'THK005', 'Vikram', 'Malhotra', 'vikram.m@theiakshi.com', '+91 9876543218', $1, 'EMPLOYEE', 4, 3, 'Senior Finance Lead', '2022-05-20', 110000.00, '918237192841', 'UTIB0003456', 'EFGHI5678J', '555566667777', 'Sanjay Malhotra', '+91 9876543219', 1, 'https://images.unsplash.com/photo-1500648767791-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250', 'ACTIVE'),
+    (6, 1, 'THK006', 'Sneha', 'Gupta', 'sneha.gupta@theiakshi.com', '+91 9876543220', $1, 'EMPLOYEE', 5, 1, 'Lead Product Designer', '2023-01-10', 88000.00, '918237192842', 'HDFC0001234', 'FGHIJ6789K', '666677778888', 'Alok Gupta', '+91 9876543221', 3, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250', 'ACTIVE')
     ON CONFLICT (employee_code) DO NOTHING;
   `, [passwordHash]);
 
@@ -157,7 +164,7 @@ export async function seedDatabase() {
     (3, 'OmniHealth AI Telemedicine Suite', 'PRJ-OmniHealth', 'HIPAA-compliant telemedicine app integrated with AI diagnostics.', 'OmniHealth Care', '2026-05-01', '2026-11-15', 8500000.00, 'PLANNING', 25)
     ON CONFLICT (code) DO NOTHING;
 
-    INSERT INTO project_members (project_id, employee_id, role) VALUES
+    INSERT INTO project_members (project_id, employee_id, role_in_project) VALUES
     (1, 3, 'PROJECT_LEAD'), (1, 4, 'SENIOR_ENGINEER'), (1, 6, 'UI_UX_DESIGNER'),
     (2, 3, 'TECH_ARCHITECT'), (2, 4, 'FULL_STACK_DEV')
     ON CONFLICT (project_id, employee_id) DO NOTHING;
@@ -221,22 +228,7 @@ export async function seedDatabase() {
     ON CONFLICT (ticket_code) DO NOTHING;
   `);
 
-  // 19. Performance Reviews
-  await safeQuery('Performance Reviews', `
-    INSERT INTO performance_reviews (employee_id, reviewer_id, review_period, rating, feedback, goals) VALUES
-    (4, 3, 'H1 2026', 4.8, 'Kavya has shown outstanding technical execution in delivery of backend microservices and architecture lead.', 'Lead mobile app modularization and mentor junior engineers.'),
-    (6, 3, 'H1 2026', 4.6, 'Sneha delivered pristine UI design systems for THEIAKSHI ONE product experience.', 'Create unified design system documentation and accessibility standards.');
-  `);
-
-  // 20. Weekly Planners
-  await safeQuery('Weekly Planners', `
-    INSERT INTO weekly_planners (employee_id, week_start_date, title, description, priority, status) VALUES
-    (1, '2026-08-03', 'Finalize Q3 Strategic Growth Plan', 'Review branch performance and authorize new tech hiring budgets', 'HIGH', 'IN_PROGRESS'),
-    (2, '2026-08-03', 'Complete Monthly Payroll Audit', 'Verify TDS compliance and disburse August salary slips', 'HIGH', 'IN_PROGRESS'),
-    (4, '2026-08-03', 'Ship Geofence Punch & Leave APIs', 'Test end-to-end REST endpoints with unit validation', 'CRITICAL', 'DONE');
-  `);
-
-  // 21. System Config & Geofence Settings
+  // 19. System Config & Geofence Settings
   await safeQuery('System Config', `
     INSERT INTO system_config (id, company_name, shift_start_time, shift_end_time, grace_minutes, half_day_threshold_time, auto_deduct_leave_for_two_half_days, currency) VALUES
     ('MAIN', 'THEIAKSHI ENTERPRISES', '09:00', '18:00', 15, '11:30', true, 'INR')
@@ -255,20 +247,20 @@ export async function seedDatabase() {
     (2, 'LEAVE_APPROVAL', 'LEAVE', 'Approved 1 day casual leave for Sneha Gupta', '192.168.1.105');
   `);
 
-  // 22. Enterprise Granular Permissions
+  // 20. Enterprise Granular Permissions
   await safeQuery('Permissions', `
-    INSERT INTO permissions (code, name, module, description) VALUES
-    ('EMP_VIEW', 'View Employees', 'EMPLOYEE', 'Can view employee directory'),
-    ('EMP_MANAGE', 'Manage Employees', 'EMPLOYEE', 'Can create, edit, deactivate employees'),
-    ('ATT_PUNCH', 'GPS Attendance Punch', 'ATTENDANCE', 'Can mark GPS clock in/out'),
-    ('ATT_REGULARIZE', 'Regularize Attendance', 'ATTENDANCE', 'Can apply/approve missed punches'),
-    ('LEAVE_APPLY', 'Apply Leave', 'LEAVE', 'Can apply for leave requests'),
-    ('LEAVE_APPROVE', 'Approve Leaves', 'LEAVE', 'Can approve team leave applications'),
-    ('PAYROLL_VIEW', 'View Payroll', 'PAYROLL', 'Can view monthly salary slips'),
-    ('PAYROLL_MANAGE', 'Manage Payroll', 'PAYROLL', 'Can process monthly payroll runs'),
-    ('EXPENSE_SUBMIT', 'Submit Expenses', 'EXPENSE', 'Can submit reimbursement claims'),
-    ('EXPENSE_APPROVE', 'Approve Expenses', 'EXPENSE', 'Can approve reimbursement claims'),
-    ('SETTINGS_MANAGE', 'Manage Company Settings', 'SETTINGS', 'Can configure shift rules, grace periods, and audit logs')
+    INSERT INTO permissions (permission_code, code, name, category, module, description) VALUES
+    ('EMP_VIEW', 'EMP_VIEW', 'View Employees', 'EMPLOYEE', 'EMPLOYEE', 'Can view employee directory'),
+    ('EMP_MANAGE', 'EMP_MANAGE', 'Manage Employees', 'EMPLOYEE', 'EMPLOYEE', 'Can create, edit, deactivate employees'),
+    ('ATT_PUNCH', 'ATT_PUNCH', 'GPS Attendance Punch', 'ATTENDANCE', 'ATTENDANCE', 'Can mark GPS clock in/out'),
+    ('ATT_REGULARIZE', 'ATT_REGULARIZE', 'Regularize Attendance', 'ATTENDANCE', 'ATTENDANCE', 'Can apply/approve missed punches'),
+    ('LEAVE_APPLY', 'LEAVE_APPLY', 'Apply Leave', 'LEAVE', 'LEAVE', 'Can apply for leave requests'),
+    ('LEAVE_APPROVE', 'LEAVE_APPROVE', 'Approve Leaves', 'LEAVE', 'LEAVE', 'Can approve team leave applications'),
+    ('PAYROLL_VIEW', 'PAYROLL_VIEW', 'View Payroll', 'PAYROLL', 'PAYROLL', 'Can view monthly salary slips'),
+    ('PAYROLL_MANAGE', 'PAYROLL_MANAGE', 'Manage Payroll', 'PAYROLL', 'PAYROLL', 'Can process monthly payroll runs'),
+    ('EXPENSE_SUBMIT', 'EXPENSE_SUBMIT', 'Submit Expenses', 'EXPENSE', 'EXPENSE', 'Can submit reimbursement claims'),
+    ('EXPENSE_APPROVE', 'EXPENSE_APPROVE', 'Approve Expenses', 'EXPENSE', 'EXPENSE', 'Can approve reimbursement claims'),
+    ('SETTINGS_MANAGE', 'SETTINGS_MANAGE', 'Manage Company Settings', 'SETTINGS', 'SETTINGS', 'Can configure shift rules, grace periods, and audit logs')
     ON CONFLICT (code) DO NOTHING;
   `);
 
@@ -278,14 +270,17 @@ export async function seedDatabase() {
     ('Employee Health & Wellness Benefits Guide', 'BENEFITS', 'https://example.com/docs/health-guide.pdf', '1.2');
   `);
 
-  // 23. Reset PostgreSQL Serial Sequences
+  // 21. Reset PostgreSQL Serial Sequences
   await safeQuery('Reset Sequences', `
+    SELECT setval(pg_get_serial_sequence('organizations', 'id'), COALESCE((SELECT MAX(id) FROM organizations), 1));
     SELECT setval(pg_get_serial_sequence('branches', 'id'), COALESCE((SELECT MAX(id) FROM branches), 1));
     SELECT setval(pg_get_serial_sequence('departments', 'id'), COALESCE((SELECT MAX(id) FROM departments), 1));
     SELECT setval(pg_get_serial_sequence('roles', 'id'), COALESCE((SELECT MAX(id) FROM roles), 1));
     SELECT setval(pg_get_serial_sequence('leave_types', 'id'), COALESCE((SELECT MAX(id) FROM leave_types), 1));
     SELECT setval(pg_get_serial_sequence('employees', 'id'), COALESCE((SELECT MAX(id) FROM employees), 1));
     SELECT setval(pg_get_serial_sequence('projects', 'id'), COALESCE((SELECT MAX(id) FROM projects), 1));
+    SELECT setval(pg_get_serial_sequence('education', 'id'), COALESCE((SELECT MAX(id) FROM education), 1));
+    SELECT setval(pg_get_serial_sequence('experience', 'id'), COALESCE((SELECT MAX(id) FROM experience), 1));
   `);
 
   console.log('[PostgreSQL Seed] Seeding completed successfully.');

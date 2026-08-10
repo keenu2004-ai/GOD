@@ -2,6 +2,16 @@ import dbService from './db.js';
 
 export async function initializeSchema() {
   await dbService.query(`
+    CREATE TABLE IF NOT EXISTS organizations (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      tax_identifier VARCHAR(50),
+      status VARCHAR(20) DEFAULT 'ACTIVE',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS regions (
       id SERIAL PRIMARY KEY,
       name VARCHAR(100) NOT NULL UNIQUE,
@@ -12,6 +22,7 @@ export async function initializeSchema() {
 
     CREATE TABLE IF NOT EXISTS branches (
       id SERIAL PRIMARY KEY,
+      organization_id INTEGER DEFAULT 1 REFERENCES organizations(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
       code VARCHAR(50) NOT NULL UNIQUE,
       region_id INTEGER REFERENCES regions(id),
@@ -29,57 +40,46 @@ export async function initializeSchema() {
 
     CREATE TABLE IF NOT EXISTS roles (
       id SERIAL PRIMARY KEY,
-      role_name VARCHAR(50) NOT NULL UNIQUE,
-      display_name VARCHAR(100) NOT NULL,
+      organization_id INTEGER DEFAULT 1 REFERENCES organizations(id) ON DELETE CASCADE,
+      name VARCHAR(50) NOT NULL UNIQUE,
       description TEXT,
-      is_system_role BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS permissions (
       id SERIAL PRIMARY KEY,
-      permission_code VARCHAR(100) NOT NULL UNIQUE,
-      category VARCHAR(50) NOT NULL,
+      permission_code VARCHAR(100) UNIQUE NOT NULL,
+      code VARCHAR(100) UNIQUE,
+      name VARCHAR(255),
+      category VARCHAR(100) NOT NULL,
+      module VARCHAR(50),
       description TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS role_permissions (
       id SERIAL PRIMARY KEY,
-      role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-      permission_id INTEGER NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
-      scope VARCHAR(30) DEFAULT 'ORGANIZATION', -- 'ORGANIZATION' | 'BRANCH' | 'DEPARTMENT' | 'SELF'
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_branch_transfers (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-      from_branch_id INTEGER REFERENCES branches(id),
-      to_branch_id INTEGER NOT NULL REFERENCES branches(id),
-      transfer_date DATE NOT NULL DEFAULT CURRENT_DATE,
-      reason TEXT NOT NULL,
-      transferred_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+      permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
+      role VARCHAR(50),
+      permission_code VARCHAR(100),
+      scope VARCHAR(30) DEFAULT 'ORGANIZATION',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(role, permission_code)
     );
 
     CREATE TABLE IF NOT EXISTS departments (
       id SERIAL PRIMARY KEY,
+      organization_id INTEGER DEFAULT 1 REFERENCES organizations(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
       code VARCHAR(50) NOT NULL UNIQUE,
       head_employee_id INTEGER,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS roles (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(50) NOT NULL UNIQUE,
-      description TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
     CREATE TABLE IF NOT EXISTS employees (
       id SERIAL PRIMARY KEY,
+      organization_id INTEGER DEFAULT 1 REFERENCES organizations(id) ON DELETE CASCADE,
       employee_code VARCHAR(50) NOT NULL UNIQUE,
       first_name VARCHAR(100) NOT NULL,
       last_name VARCHAR(100) NOT NULL,
@@ -102,23 +102,36 @@ export async function initializeSchema() {
       avatar_url TEXT,
       status VARCHAR(20) DEFAULT 'ACTIVE',
       is_deleted BOOLEAN DEFAULT false,
+      deleted_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_branch_transfers (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      from_branch_id INTEGER REFERENCES branches(id),
+      to_branch_id INTEGER NOT NULL REFERENCES branches(id),
+      transfer_date DATE NOT NULL,
+      reason TEXT,
+      status VARCHAR(20) DEFAULT 'PENDING',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS employee_documents (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-      title VARCHAR(255) NOT NULL,
-      category VARCHAR(50) NOT NULL,
+      document_type VARCHAR(100) NOT NULL,
+      document_number VARCHAR(100),
       file_url TEXT NOT NULL,
-      uploaded_by INTEGER REFERENCES employees(id),
+      status VARCHAR(30) DEFAULT 'PENDING_VERIFICATION',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS employee_onboarding_checklists (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-      step_name VARCHAR(255) NOT NULL,
+      task_name VARCHAR(150) NOT NULL,
       is_completed BOOLEAN DEFAULT false,
       completed_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -126,313 +139,248 @@ export async function initializeSchema() {
 
     CREATE TABLE IF NOT EXISTS attendance (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       date DATE NOT NULL,
-      punch_in TIMESTAMP,
+      punch_in TIMESTAMP NOT NULL,
       punch_out TIMESTAMP,
       punch_in_lat NUMERIC(10, 6),
       punch_in_lng NUMERIC(10, 6),
       punch_out_lat NUMERIC(10, 6),
       punch_out_lng NUMERIC(10, 6),
-      work_hours NUMERIC(4, 2) DEFAULT 0.0,
+      work_hours NUMERIC(4, 2) DEFAULT 0.00,
       break_duration_mins INTEGER DEFAULT 0,
-      shift_name VARCHAR(50) DEFAULT 'General Shift (9 AM - 6 PM)',
+      shift_name VARCHAR(100) DEFAULT 'General Shift',
       is_late BOOLEAN DEFAULT false,
       is_overtime BOOLEAN DEFAULT false,
       status VARCHAR(20) DEFAULT 'PRESENT',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, date)
+    );
+
+    CREATE TABLE IF NOT EXISTS attendance_regularizations (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      attendance_date DATE NOT NULL,
+      requested_punch_in TIMESTAMP,
+      requested_punch_out TIMESTAMP,
+      reason TEXT NOT NULL,
+      status VARCHAR(20) DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      approved_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS regularization_comments (
+      id SERIAL PRIMARY KEY,
+      regularization_id INTEGER NOT NULL REFERENCES attendance_regularizations(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      comment TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS regularization_audit (
+      id SERIAL PRIMARY KEY,
+      regularization_id INTEGER NOT NULL REFERENCES attendance_regularizations(id) ON DELETE CASCADE,
+      action_taken VARCHAR(50) NOT NULL,
+      actor_id INTEGER NOT NULL REFERENCES employees(id),
+      details TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_types (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(100) NOT NULL,
-      code VARCHAR(50) NOT NULL UNIQUE,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      code VARCHAR(30) NOT NULL UNIQUE,
       color VARCHAR(20) DEFAULT '#3B82F6',
       days_allowed INTEGER NOT NULL DEFAULT 12,
-      is_carry_forward BOOLEAN DEFAULT true,
       is_paid BOOLEAN DEFAULT true,
+      is_carry_forward BOOLEAN DEFAULT false,
       is_encashable BOOLEAN DEFAULT false,
-      max_consecutive_days INTEGER DEFAULT 14,
+      max_consecutive_days INTEGER DEFAULT 10,
       requires_attachment BOOLEAN DEFAULT false,
       description TEXT,
-      is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_policies (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      code VARCHAR(50) NOT NULL UNIQUE,
+      name VARCHAR(150) NOT NULL UNIQUE,
       description TEXT,
-      leave_type_id INTEGER REFERENCES leave_types(id),
-      annual_allocation NUMERIC(5, 1) NOT NULL DEFAULT 12.0,
-      monthly_accrual NUMERIC(4, 2) NOT NULL DEFAULT 1.0,
-      max_balance NUMERIC(5, 1) DEFAULT 30.0,
-      carry_forward_limit NUMERIC(5, 1) DEFAULT 6.0,
-      encashment_limit NUMERIC(5, 1) DEFAULT 0.0,
-      half_day_allowed BOOLEAN DEFAULT true,
-      hourly_leave_allowed BOOLEAN DEFAULT false,
-      negative_balance_allowed BOOLEAN DEFAULT false,
-      probation_applicable BOOLEAN DEFAULT true,
-      min_notice_days INTEGER DEFAULT 0,
-      max_consecutive_days INTEGER DEFAULT 14,
-      attachment_required BOOLEAN DEFAULT false,
-      is_active BOOLEAN DEFAULT true,
-      branch_id INTEGER REFERENCES branches(id),
-      department_id INTEGER REFERENCES departments(id),
-      deleted_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      probation_days_before_apply INTEGER DEFAULT 0,
+      notice_period_days_before_apply INTEGER DEFAULT 0,
+      max_continuous_days INTEGER DEFAULT 10,
+      allow_advance_leave BOOLEAN DEFAULT false,
+      encashment_allowed BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_policy_assignments (
       id SERIAL PRIMARY KEY,
-      policy_id INTEGER NOT NULL REFERENCES leave_policies(id),
-      employee_id INTEGER REFERENCES employees(id),
-      department_id INTEGER REFERENCES departments(id),
-      branch_id INTEGER REFERENCES branches(id),
-      role VARCHAR(50),
-      employment_type VARCHAR(50),
-      effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
-      expiry_date DATE,
-      is_active BOOLEAN DEFAULT true,
-      deleted_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS leave_encashments (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      days_encashed NUMERIC(5, 1) NOT NULL,
-      amount_per_day NUMERIC(10, 2) NOT NULL,
-      total_amount NUMERIC(12, 2) NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING',
-      approved_by INTEGER REFERENCES employees(id),
-      rejection_reason TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      policy_id INTEGER NOT NULL REFERENCES leave_policies(id) ON DELETE CASCADE,
+      role VARCHAR(50) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_settings (
       id SERIAL PRIMARY KEY,
-      leave_year_start_month INTEGER DEFAULT 1,
-      auto_carry_forward BOOLEAN DEFAULT true,
-      max_negative_days NUMERIC(4, 1) DEFAULT 0,
-      sandwich_rule_enabled BOOLEAN DEFAULT false,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      company_name VARCHAR(255) NOT NULL,
+      financial_year_start DATE NOT NULL,
+      financial_year_end DATE NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_applications (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
       start_date DATE NOT NULL,
       end_date DATE NOT NULL,
       total_days NUMERIC(4, 1) NOT NULL,
-      is_half_day BOOLEAN DEFAULT false,
-      half_day_session VARCHAR(20),
-      is_hourly BOOLEAN DEFAULT false,
-      hours_requested NUMERIC(4, 2),
       reason TEXT NOT NULL,
-      emergency_contact VARCHAR(50),
-      contact_during_leave VARCHAR(100),
-      work_handover TEXT,
-      replacement_employee_id INTEGER REFERENCES employees(id),
-      attachment_url TEXT,
       status VARCHAR(30) DEFAULT 'MANAGER_PENDING',
-      manager_id INTEGER REFERENCES employees(id),
-      manager_action VARCHAR(20),
-      manager_comment TEXT,
-      manager_actioned_at TIMESTAMP,
-      hr_id INTEGER REFERENCES employees(id),
-      hr_action VARCHAR(20),
-      hr_comment TEXT,
-      hr_actioned_at TIMESTAMP,
       approver_id INTEGER REFERENCES employees(id),
-      rejection_reason TEXT,
-      attendance_synced BOOLEAN DEFAULT false,
-      payroll_synced BOOLEAN DEFAULT false,
-      deleted_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_approvals (
       id SERIAL PRIMARY KEY,
-      leave_id INTEGER NOT NULL REFERENCES leave_applications(id),
+      leave_id INTEGER NOT NULL REFERENCES leave_applications(id) ON DELETE CASCADE,
       approver_id INTEGER NOT NULL REFERENCES employees(id),
-      level VARCHAR(20) NOT NULL DEFAULT 'MANAGER',
-      action VARCHAR(20) NOT NULL,
-      comment TEXT,
+      stage VARCHAR(30) NOT NULL,
+      status VARCHAR(30) NOT NULL,
+      comments TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_request_comments (
       id SERIAL PRIMARY KEY,
-      leave_id INTEGER NOT NULL REFERENCES leave_applications(id),
-      commenter_id INTEGER NOT NULL REFERENCES employees(id),
+      leave_id INTEGER NOT NULL REFERENCES leave_applications(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       comment TEXT NOT NULL,
-      is_internal BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_conflicts (
       id SERIAL PRIMARY KEY,
-      leave_id INTEGER NOT NULL REFERENCES leave_applications(id),
-      conflict_type VARCHAR(50) NOT NULL,
-      conflict_description TEXT NOT NULL,
-      severity VARCHAR(20) DEFAULT 'WARNING',
+      leave_id INTEGER NOT NULL REFERENCES leave_applications(id) ON DELETE CASCADE,
+      conflict_with_employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      conflict_date DATE NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_balance_transactions (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      transaction_type VARCHAR(50) NOT NULL,
-      days_changed NUMERIC(5, 1) NOT NULL,
-      opening_balance NUMERIC(5, 1) NOT NULL,
-      closing_balance NUMERIC(5, 1) NOT NULL,
-      reference_type VARCHAR(50),
-      reference_id INTEGER,
-      description TEXT NOT NULL,
-      created_by INTEGER REFERENCES employees(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      amount NUMERIC(4, 1) NOT NULL,
+      transaction_type VARCHAR(30) NOT NULL,
+      description TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_adjustments (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      adjustment_type VARCHAR(30) NOT NULL,
-      days NUMERIC(5, 1) NOT NULL,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      days_adjusted NUMERIC(4, 1) NOT NULL,
       reason TEXT NOT NULL,
-      approved_by INTEGER NOT NULL REFERENCES employees(id),
+      adjusted_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_comp_offs (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      date_worked DATE NOT NULL,
-      days_granted NUMERIC(4, 1) NOT NULL DEFAULT 1.0,
-      expiry_date DATE NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING',
-      reason TEXT NOT NULL,
-      approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      worked_date DATE NOT NULL,
+      expires_at DATE NOT NULL,
+      status VARCHAR(30) DEFAULT 'AVAILABLE',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_accrual_history (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      accrual_period VARCHAR(20) NOT NULL,
-      days_accrued NUMERIC(5, 1) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      accrued_days NUMERIC(4, 2) NOT NULL,
+      accrued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_carry_forward_history (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      year INTEGER NOT NULL,
-      days_carried NUMERIC(5, 1) NOT NULL,
-      days_expired NUMERIC(5, 1) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      days_carried_forward NUMERIC(4, 1) NOT NULL,
+      processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_balances (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      total_allocated NUMERIC(5, 1) NOT NULL DEFAULT 12,
-      used_days NUMERIC(5, 1) DEFAULT 0,
-      remaining_days NUMERIC(5, 1) NOT NULL DEFAULT 12,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      total_allocated NUMERIC(4, 1) NOT NULL DEFAULT 12,
+      used_days NUMERIC(4, 1) NOT NULL DEFAULT 0,
+      remaining_days NUMERIC(4, 1) NOT NULL DEFAULT 12,
       UNIQUE(employee_id, leave_type_id)
     );
 
     CREATE TABLE IF NOT EXISTS leave_balance_ledger (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      transaction_type VARCHAR(50) NOT NULL, -- 'ACCRUAL' | 'LEAVE_TAKEN' | 'CANCELLATION' | 'ADJUSTMENT_INCREASE' | 'ADJUSTMENT_DECREASE' | 'EXPIRY' | 'ENCASHMENT'
-      amount NUMERIC(5, 2) NOT NULL,
-      opening_balance NUMERIC(5, 2) NOT NULL,
-      closing_balance NUMERIC(5, 2) NOT NULL,
-      reason TEXT,
-      created_by INTEGER REFERENCES employees(id),
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      transaction_date DATE NOT NULL,
+      opening_balance NUMERIC(4, 1) NOT NULL,
+      change_amount NUMERIC(4, 1) NOT NULL,
+      closing_balance NUMERIC(4, 1) NOT NULL,
+      reference_type VARCHAR(50),
+      reference_id INTEGER,
+      notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leave_encashments (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id),
-      requested_days NUMERIC(5, 2) NOT NULL,
-      amount_per_day NUMERIC(10, 2) DEFAULT 0,
-      total_amount NUMERIC(12, 2) DEFAULT 0,
-      status VARCHAR(30) DEFAULT 'PENDING_APPROVAL', -- 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'
-      requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      leave_type_id INTEGER NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+      days_encashed INTEGER NOT NULL,
+      amount_paid NUMERIC(12, 2) NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING',
+      approved_by INTEGER REFERENCES employees(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS holiday_regions (
       id SERIAL PRIMARY KEY,
-      code VARCHAR(50) UNIQUE NOT NULL,
-      name VARCHAR(100) NOT NULL,
-      description TEXT
+      name VARCHAR(100) NOT NULL UNIQUE
     );
 
     CREATE TABLE IF NOT EXISTS holidays (
       id SERIAL PRIMARY KEY,
-      branch_id INTEGER REFERENCES branches(id),
-      region_code VARCHAR(50) DEFAULT 'COMMON',
-      name VARCHAR(255) NOT NULL,
+      branch_id INTEGER REFERENCES branches(id) ON DELETE CASCADE,
+      name VARCHAR(150) NOT NULL,
       date DATE NOT NULL,
-      type VARCHAR(50) DEFAULT 'NATIONAL',
-      is_optional BOOLEAN DEFAULT false,
-      description TEXT,
+      type VARCHAR(30) DEFAULT 'PUBLIC',
       is_active BOOLEAN DEFAULT true,
-      created_by INTEGER,
-      updated_by INTEGER,
-      deleted_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS company_events (
       id SERIAL PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
+      title VARCHAR(200) NOT NULL,
       description TEXT,
-      event_date DATE NOT NULL,
-      event_type VARCHAR(50) DEFAULT 'TOWNHALL',
+      start_date TIMESTAMP NOT NULL,
+      end_date TIMESTAMP NOT NULL,
       branch_id INTEGER REFERENCES branches(id),
-      department_id INTEGER REFERENCES departments(id),
-      is_active BOOLEAN DEFAULT true,
-      created_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS optional_holiday_selections (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      holiday_id INTEGER NOT NULL REFERENCES holidays(id),
-      year INTEGER NOT NULL,
-      status VARCHAR(30) DEFAULT 'APPROVED',
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      holiday_id INTEGER NOT NULL REFERENCES holidays(id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(employee_id, holiday_id, year)
+      UNIQUE(employee_id, holiday_id)
     );
 
     CREATE TABLE IF NOT EXISTS audit_logs (
@@ -441,12 +389,13 @@ export async function initializeSchema() {
       action VARCHAR(100) NOT NULL,
       module VARCHAR(50) NOT NULL,
       details TEXT,
+      ip_address VARCHAR(50),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payrolls (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       month VARCHAR(20) NOT NULL,
       year INTEGER NOT NULL,
       basic_salary NUMERIC(12, 2) NOT NULL,
@@ -458,202 +407,93 @@ export async function initializeSchema() {
       esi_deduction NUMERIC(12, 2) NOT NULL,
       tds_deduction NUMERIC(12, 2) NOT NULL,
       net_salary NUMERIC(12, 2) NOT NULL,
-      payment_status VARCHAR(20) DEFAULT 'PAID',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS payroll_runs (
-      id SERIAL PRIMARY KEY,
-      period_name VARCHAR(50) NOT NULL UNIQUE,
-      start_date DATE NOT NULL,
-      end_date DATE NOT NULL,
-      status VARCHAR(30) DEFAULT 'DRAFT', -- 'DRAFT' | 'APPROVED' | 'LOCKED'
-      gross_payroll NUMERIC(14, 2) DEFAULT 0,
-      total_deductions NUMERIC(14, 2) DEFAULT 0,
-      net_payroll NUMERIC(14, 2) DEFAULT 0,
-      locked_by INTEGER REFERENCES employees(id),
-      locked_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      payment_status VARCHAR(30) DEFAULT 'PENDING',
+      payment_date DATE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, month, year)
     );
 
     CREATE TABLE IF NOT EXISTS salary_components (
       id SERIAL PRIMARY KEY,
       code VARCHAR(50) UNIQUE NOT NULL,
-      name VARCHAR(100) NOT NULL,
-      type VARCHAR(20) NOT NULL, -- 'EARNING' | 'DEDUCTION'
-      calculation_type VARCHAR(30) DEFAULT 'PERCENTAGE_OF_BASIC', -- 'FLAT' | 'PERCENTAGE_OF_BASIC' | 'PERCENTAGE_OF_CTC'
-      default_value NUMERIC(10, 2) DEFAULT 0,
+      name VARCHAR(150) NOT NULL,
+      type VARCHAR(30) NOT NULL, -- 'EARNING' | 'DEDUCTION'
+      calculation_type VARCHAR(30) NOT NULL, -- 'FIXED' | 'PERCENTAGE'
+      default_value NUMERIC(12, 2) DEFAULT 0.00,
       is_taxable BOOLEAN DEFAULT true,
       is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS salary_templates (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(150) NOT NULL,
+      name VARCHAR(150) UNIQUE NOT NULL,
       description TEXT,
-      annual_ctc NUMERIC(14, 2) NOT NULL,
-      employment_type VARCHAR(30) DEFAULT 'PERMANENT',
-      branch_id INTEGER REFERENCES branches(id),
-      department_id INTEGER REFERENCES departments(id),
       is_active BOOLEAN DEFAULT true,
-      created_by INTEGER REFERENCES employees(id),
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS salary_template_components (
       id SERIAL PRIMARY KEY,
       template_id INTEGER NOT NULL REFERENCES salary_templates(id) ON DELETE CASCADE,
-      component_id INTEGER NOT NULL REFERENCES salary_components(id),
-      amount NUMERIC(12, 2) DEFAULT 0,
-      percentage NUMERIC(5, 2) DEFAULT 0,
+      component_id INTEGER NOT NULL REFERENCES salary_components(id) ON DELETE CASCADE,
+      formula_or_percentage TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS employee_salary_assignments (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
-      template_id INTEGER REFERENCES salary_templates(id),
-      annual_ctc NUMERIC(14, 2) NOT NULL,
-      monthly_gross NUMERIC(12, 2) NOT NULL,
-      monthly_net NUMERIC(12, 2) NOT NULL,
-      basic_salary NUMERIC(12, 2) NOT NULL,
-      hra NUMERIC(12, 2) NOT NULL,
-      special_allowance NUMERIC(12, 2) NOT NULL,
-      pf_deduction NUMERIC(12, 2) DEFAULT 0,
-      esi_deduction NUMERIC(12, 2) DEFAULT 0,
-      pt_deduction NUMERIC(12, 2) DEFAULT 200,
-      tds_deduction NUMERIC(12, 2) DEFAULT 0,
-      effective_date DATE NOT NULL,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      template_id INTEGER REFERENCES salary_templates(id) ON DELETE SET NULL,
+      ctc_amount NUMERIC(12, 2) NOT NULL,
+      effective_from DATE NOT NULL,
       is_active BOOLEAN DEFAULT true,
-      created_by INTEGER REFERENCES employees(id),
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS salary_revisions (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      old_ctc NUMERIC(14, 2) NOT NULL,
-      new_ctc NUMERIC(14, 2) NOT NULL,
-      revision_type VARCHAR(50) NOT NULL, -- 'ANNUAL_INCREMENT' | 'PROMOTION' | 'MARKET_CORRECTION' | 'TRANSFER' | 'MANUAL'
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      previous_ctc NUMERIC(12, 2) NOT NULL,
+      revised_ctc NUMERIC(12, 2) NOT NULL,
+      increment_percentage NUMERIC(5, 2) NOT NULL,
       effective_date DATE NOT NULL,
-      reason TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'APPROVED', -- 'PENDING' | 'APPROVED' | 'REJECTED'
       approved_by INTEGER REFERENCES employees(id),
-      created_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS salary_component_master (
-      id SERIAL PRIMARY KEY,
-      code VARCHAR(50) UNIQUE NOT NULL,
-      name VARCHAR(150) NOT NULL,
-      category VARCHAR(30) NOT NULL, -- 'EARNING' | 'DEDUCTION' | 'REIMBURSEMENT' | 'BENEFIT' | 'TAX'
-      calculation_mode VARCHAR(30) DEFAULT 'PERCENTAGE', -- 'FLAT' | 'PERCENTAGE' | 'FORMULA'
-      formula_expression TEXT,
-      min_value NUMERIC(10, 2) DEFAULT 0,
-      max_value NUMERIC(12, 2),
-      is_taxable BOOLEAN DEFAULT true,
-      is_active BOOLEAN DEFAULT true,
-      created_by INTEGER REFERENCES employees(id),
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_loans (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      loan_amount NUMERIC(12, 2) NOT NULL,
-      interest_rate NUMERIC(5, 2) DEFAULT 0,
-      tenure_months INTEGER NOT NULL,
-      emi_amount NUMERIC(10, 2) NOT NULL,
-      total_repaid NUMERIC(12, 2) DEFAULT 0,
-      outstanding_balance NUMERIC(12, 2) NOT NULL,
-      reason TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED'
-      approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_salary_advances (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      advance_amount NUMERIC(12, 2) NOT NULL,
-      monthly_deduction NUMERIC(10, 2) NOT NULL,
-      total_recovered NUMERIC(12, 2) DEFAULT 0,
-      outstanding_balance NUMERIC(12, 2) NOT NULL,
-      reason TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED'
-      approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS employee_bank_details (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
-      account_holder_name VARCHAR(150) NOT NULL,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE UNIQUE,
+      bank_name VARCHAR(150) NOT NULL,
       account_number VARCHAR(50) NOT NULL,
-      bank_name VARCHAR(100) NOT NULL,
       ifsc_code VARCHAR(30) NOT NULL,
-      branch_name VARCHAR(100),
-      payment_mode VARCHAR(30) DEFAULT 'BANK_TRANSFER',
-      is_verified BOOLEAN DEFAULT true,
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      branch_name VARCHAR(150) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payroll_runs (
       id SERIAL PRIMARY KEY,
+      run_code VARCHAR(50) UNIQUE NOT NULL,
       month VARCHAR(20) NOT NULL,
       year INTEGER NOT NULL,
-      status VARCHAR(30) DEFAULT 'PREVIEW', -- 'PREVIEW' | 'SUBMITTED' | 'APPROVED' | 'LOCKED'
-      total_gross NUMERIC(14, 2) DEFAULT 0,
-      total_deductions NUMERIC(14, 2) DEFAULT 0,
-      total_net NUMERIC(14, 2) DEFAULT 0,
       total_employees INTEGER DEFAULT 0,
-      created_by INTEGER REFERENCES employees(id),
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(month, year)
+      total_gross NUMERIC(12, 2) DEFAULT 0.00,
+      total_net NUMERIC(12, 2) DEFAULT 0.00,
+      status VARCHAR(30) DEFAULT 'DRAFT', -- 'DRAFT' | 'PREVIEW' | 'APPROVED' | 'PAID'
+      processed_by INTEGER REFERENCES employees(id),
+      processed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payroll_run_items (
       id SERIAL PRIMARY KEY,
       run_id INTEGER NOT NULL REFERENCES payroll_runs(id) ON DELETE CASCADE,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
-      basic_salary NUMERIC(12, 2) DEFAULT 0,
-      hra NUMERIC(12, 2) DEFAULT 0,
-      special_allowance NUMERIC(12, 2) DEFAULT 0,
-      overtime_pay NUMERIC(12, 2) DEFAULT 0,
-      night_shift_pay NUMERIC(12, 2) DEFAULT 0,
-      bonus NUMERIC(12, 2) DEFAULT 0,
-      reimbursements NUMERIC(12, 2) DEFAULT 0,
-      gross_salary NUMERIC(12, 2) DEFAULT 0,
-      pf_deduction NUMERIC(12, 2) DEFAULT 0,
-      pt_deduction NUMERIC(12, 2) DEFAULT 0,
-      esi_deduction NUMERIC(12, 2) DEFAULT 0,
-      tds_deduction NUMERIC(12, 2) DEFAULT 0,
-      loan_deduction NUMERIC(12, 2) DEFAULT 0,
-      advance_deduction NUMERIC(12, 2) DEFAULT 0,
-      lop_deduction NUMERIC(12, 2) DEFAULT 0,
-      arrears NUMERIC(12, 2) DEFAULT 0,
-      net_salary NUMERIC(12, 2) DEFAULT 0,
-      working_days INTEGER DEFAULT 22,
-      present_days INTEGER DEFAULT 22,
-      absent_days INTEGER DEFAULT 0,
-      lop_days NUMERIC(5, 1) DEFAULT 0,
-      ot_hours NUMERIC(5, 1) DEFAULT 0,
-      warning_flags TEXT,
+      gross_earnings NUMERIC(12, 2) NOT NULL,
+      total_deductions NUMERIC(12, 2) NOT NULL,
+      net_salary NUMERIC(12, 2) NOT NULL,
+      payslip_json TEXT, -- detailed component breakdown
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -661,17 +501,17 @@ export async function initializeSchema() {
       id SERIAL PRIMARY KEY,
       run_id INTEGER NOT NULL REFERENCES payroll_runs(id) ON DELETE CASCADE,
       approver_id INTEGER NOT NULL REFERENCES employees(id),
-      level VARCHAR(30) NOT NULL, -- 'PAYROLL_MANAGER' | 'FINANCE_MANAGER' | 'HR_MANAGER' | 'SUPER_ADMIN'
-      status VARCHAR(20) DEFAULT 'APPROVED',
-      comment TEXT,
+      status VARCHAR(30) NOT NULL,
+      comments TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS payslip_documents (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       month VARCHAR(20) NOT NULL,
       year INTEGER NOT NULL,
+      file_url TEXT NOT NULL,
       gross_salary NUMERIC(12, 2) NOT NULL,
       net_salary NUMERIC(12, 2) NOT NULL,
       total_deductions NUMERIC(12, 2) NOT NULL,
@@ -691,94 +531,6 @@ export async function initializeSchema() {
       downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS salary_certificates (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      certificate_type VARCHAR(50) NOT NULL, -- 'SALARY_CERTIFICATE' | 'EMPLOYMENT_LETTER' | 'COMPENSATION_LETTER' | 'INCREMENT_LETTER'
-      issued_date DATE NOT NULL,
-      purpose TEXT NOT NULL,
-      status VARCHAR(20) DEFAULT 'ISSUED',
-      created_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS bonus_master (
-      id SERIAL PRIMARY KEY,
-      bonus_name VARCHAR(150) NOT NULL,
-      bonus_type VARCHAR(50) NOT NULL, -- 'PERFORMANCE' | 'FESTIVAL' | 'ANNUAL' | 'RETENTION' | 'REFERRAL' | 'JOINING' | 'PROJECT_COMPLETION' | 'SALES' | 'SPOT_AWARD'
-      calculation_mode VARCHAR(30) DEFAULT 'FIXED', -- 'FIXED' | 'PERCENTAGE'
-      formula_expression TEXT,
-      is_active BOOLEAN DEFAULT true,
-      created_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_bonuses (
-      id SERIAL PRIMARY KEY,
-      bonus_id INTEGER REFERENCES bonus_master(id),
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      bonus_amount NUMERIC(12, 2) NOT NULL,
-      payout_month VARCHAR(20) NOT NULL,
-      payout_year INTEGER NOT NULL,
-      reason TEXT,
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID'
-      approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_incentives (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      incentive_type VARCHAR(50) NOT NULL, -- 'SALES' | 'PROJECT' | 'PERFORMANCE' | 'ATTENDANCE' | 'TARGET_ACHIEVEMENT'
-      amount NUMERIC(12, 2) NOT NULL,
-      payout_month VARCHAR(20) NOT NULL,
-      payout_year INTEGER NOT NULL,
-      reason TEXT,
-      status VARCHAR(30) DEFAULT 'APPROVED',
-      approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS payroll_budgets (
-      id SERIAL PRIMARY KEY,
-      department_id INTEGER NOT NULL REFERENCES departments(id) UNIQUE,
-      year INTEGER NOT NULL,
-      annual_budget NUMERIC(14, 2) NOT NULL,
-      spent_amount NUMERIC(14, 2) DEFAULT 0,
-      created_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_resignations (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      resignation_date DATE NOT NULL,
-      last_working_day DATE NOT NULL,
-      notice_period_days INTEGER DEFAULT 30,
-      reason TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
-      manager_approved BOOLEAN DEFAULT false,
-      hr_approved BOOLEAN DEFAULT false,
-      approved_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS exit_department_clearances (
-      id SERIAL PRIMARY KEY,
-      resignation_id INTEGER NOT NULL REFERENCES employee_resignations(id) ON DELETE CASCADE,
-      department VARCHAR(30) NOT NULL, -- 'HR' | 'FINANCE' | 'IT' | 'ADMIN' | 'MANAGER'
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'CLEARED' | 'REJECTED'
-      comments TEXT,
-      cleared_by INTEGER REFERENCES employees(id),
-      cleared_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(resignation_id, department)
-    );
-
     CREATE TABLE IF NOT EXISTS project_categories (
       id SERIAL PRIMARY KEY,
       name VARCHAR(100) UNIQUE NOT NULL,
@@ -786,371 +538,6 @@ export async function initializeSchema() {
       description TEXT,
       is_active BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS project_clients (
-      id SERIAL PRIMARY KEY,
-      client_name VARCHAR(150) NOT NULL,
-      company_name VARCHAR(150),
-      email VARCHAR(150),
-      phone VARCHAR(30),
-      address TEXT,
-      status VARCHAR(30) DEFAULT 'ACTIVE',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS project_members (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      role_in_project VARCHAR(50) DEFAULT 'MEMBER', -- 'PROJECT_MANAGER' | 'TEAM_LEAD' | 'DEVELOPER' | 'QA' | 'MEMBER'
-      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(project_id, employee_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS project_documents (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      document_name VARCHAR(200) NOT NULL,
-      file_url TEXT NOT NULL,
-      file_type VARCHAR(50),
-      uploaded_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS project_sprints (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      sprint_name VARCHAR(100) NOT NULL,
-      sprint_goal TEXT,
-      start_date DATE,
-      end_date DATE,
-      status VARCHAR(30) DEFAULT 'ACTIVE', -- 'PLANNING' | 'ACTIVE' | 'CLOSED'
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS project_tasks (
-      id SERIAL PRIMARY KEY,
-      task_number VARCHAR(50) UNIQUE NOT NULL,
-      title VARCHAR(200) NOT NULL,
-      description TEXT,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      sprint_id INTEGER REFERENCES project_sprints(id),
-      task_type VARCHAR(50) DEFAULT 'FEATURE', -- 'BUG' | 'FEATURE' | 'ENHANCEMENT' | 'DOCUMENTATION' | 'TASK'
-      priority VARCHAR(30) DEFAULT 'MEDIUM', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-      status VARCHAR(30) DEFAULT 'TO_DO', -- 'TO_DO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED' | 'BLOCKED'
-      assignee_id INTEGER REFERENCES employees(id),
-      reporter_id INTEGER REFERENCES employees(id),
-      estimated_hours INTEGER DEFAULT 0,
-      actual_hours INTEGER DEFAULT 0,
-      story_points INTEGER DEFAULT 3,
-      progress_percentage INTEGER DEFAULT 0,
-      due_date DATE,
-      created_by INTEGER REFERENCES employees(id),
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS task_checklists (
-      id SERIAL PRIMARY KEY,
-      task_id INTEGER NOT NULL REFERENCES project_tasks(id) ON DELETE CASCADE,
-      item_text VARCHAR(200) NOT NULL,
-      is_completed BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS task_daily_reports (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      report_date DATE NOT NULL,
-      completed_work TEXT NOT NULL,
-      upcoming_plan TEXT,
-      blockers TEXT,
-      hours_worked NUMERIC(4, 2) DEFAULT 8.0,
-      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'APPROVED' | 'REJECTED'
-      manager_feedback TEXT,
-      reviewed_by INTEGER REFERENCES employees(id),
-      reviewed_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS task_comments (
-      id SERIAL PRIMARY KEY,
-      task_id INTEGER NOT NULL REFERENCES project_tasks(id) ON DELETE CASCADE,
-      author_id INTEGER NOT NULL REFERENCES employees(id),
-      comment_text TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS task_activity_feed (
-      id SERIAL PRIMARY KEY,
-      task_id INTEGER NOT NULL REFERENCES project_tasks(id) ON DELETE CASCADE,
-      actor_id INTEGER REFERENCES employees(id),
-      action_type VARCHAR(50) NOT NULL,
-      details TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS weekly_plans (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      week_number INTEGER NOT NULL,
-      year INTEGER NOT NULL,
-      status VARCHAR(30) DEFAULT 'ACTIVE', -- 'ACTIVE' | 'SUBMITTED' | 'APPROVED'
-      assigned_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(employee_id, week_number, year)
-    );
-
-    CREATE TABLE IF NOT EXISTS weekly_plan_items (
-      id SERIAL PRIMARY KEY,
-      plan_id INTEGER NOT NULL REFERENCES weekly_plans(id) ON DELETE CASCADE,
-      day_of_week VARCHAR(20) NOT NULL, -- 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY'
-      task_name VARCHAR(200) NOT NULL,
-      planned_hours NUMERIC(4, 2) DEFAULT 8.0,
-      actual_hours NUMERIC(4, 2) DEFAULT 0,
-      status VARCHAR(30) DEFAULT 'PLANNED', -- 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED'
-      project_id INTEGER REFERENCES projects(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS active_work_timers (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
-      project_id INTEGER REFERENCES projects(id),
-      task_id INTEGER REFERENCES project_tasks(id),
-      start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      is_paused BOOLEAN DEFAULT false,
-      accum_seconds INTEGER DEFAULT 0
-    );
-
-    CREATE TABLE IF NOT EXISTS time_entries (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      project_id INTEGER REFERENCES projects(id),
-      task_id INTEGER REFERENCES project_tasks(id),
-      entry_date DATE NOT NULL,
-      hours_worked NUMERIC(4, 2) NOT NULL,
-      is_billable BOOLEAN DEFAULT true,
-      is_overtime BOOLEAN DEFAULT false,
-      description TEXT,
-      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'APPROVED' | 'REJECTED'
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS timesheet_approvals (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      week_number INTEGER NOT NULL,
-      year INTEGER NOT NULL,
-      total_hours NUMERIC(5, 2) NOT NULL,
-      billable_hours NUMERIC(5, 2) DEFAULT 0,
-      status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'APPROVED' | 'REJECTED'
-      approved_by INTEGER REFERENCES employees(id),
-      approved_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(employee_id, week_number, year)
-    );
-
-    CREATE TABLE IF NOT EXISTS project_milestones (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      milestone_name VARCHAR(200) NOT NULL,
-      planned_date DATE NOT NULL,
-      actual_date DATE,
-      status VARCHAR(30) DEFAULT 'PLANNED', -- 'PLANNED' | 'ACHIEVED' | 'DELAYED'
-      owner_id INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS project_risks (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      risk_description TEXT NOT NULL,
-      severity VARCHAR(30) DEFAULT 'MEDIUM', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-      probability VARCHAR(30) DEFAULT 'MEDIUM', -- 'HIGH' | 'MEDIUM' | 'LOW'
-      mitigation_plan TEXT,
-      status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN' | 'MITIGATED' | 'CLOSED'
-      owner_id INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS client_organizations (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(200) NOT NULL,
-      company_name VARCHAR(200) NOT NULL,
-      contact_person VARCHAR(150),
-      email VARCHAR(150) UNIQUE NOT NULL,
-      phone VARCHAR(50),
-      address TEXT,
-      industry VARCHAR(100),
-      status VARCHAR(30) DEFAULT 'ACTIVE', -- 'ACTIVE' | 'INACTIVE'
-      account_manager_id INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS client_users (
-      id SERIAL PRIMARY KEY,
-      client_org_id INTEGER NOT NULL REFERENCES client_organizations(id) ON DELETE CASCADE,
-      first_name VARCHAR(100) NOT NULL,
-      last_name VARCHAR(100) NOT NULL,
-      email VARCHAR(150) UNIQUE NOT NULL,
-      password_hash VARCHAR(255) NOT NULL,
-      role VARCHAR(30) DEFAULT 'CLIENT_ADMIN', -- 'CLIENT_ADMIN' | 'CLIENT_APPROVER' | 'CLIENT_VIEWER'
-      status VARCHAR(30) DEFAULT 'ACTIVE',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS client_project_access (
-      id SERIAL PRIMARY KEY,
-      client_org_id INTEGER NOT NULL REFERENCES client_organizations(id) ON DELETE CASCADE,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      access_level VARCHAR(30) DEFAULT 'FULL', -- 'FULL' | 'READ_ONLY' | 'LIMITED'
-      granted_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(client_org_id, project_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS project_deliverables (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      title VARCHAR(200) NOT NULL,
-      description TEXT,
-      due_date DATE,
-      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED'
-      version VARCHAR(20) DEFAULT 'v1.0',
-      approval_status VARCHAR(30) DEFAULT 'UNDER_REVIEW',
-      client_comments TEXT,
-      reviewed_by INTEGER REFERENCES client_users(id),
-      reviewed_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS project_change_requests (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      client_user_id INTEGER REFERENCES client_users(id),
-      title VARCHAR(200) NOT NULL,
-      description TEXT NOT NULL,
-      reason TEXT,
-      priority VARCHAR(30) DEFAULT 'MEDIUM', -- 'HIGH' | 'MEDIUM' | 'LOW'
-      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'
-      manager_response TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS payroll_settings (
-      id SERIAL PRIMARY KEY,
-      payroll_cycle VARCHAR(20) DEFAULT 'MONTHLY',
-      cutoff_day INTEGER DEFAULT 25,
-      pay_day INTEGER DEFAULT 1,
-      working_days_month INTEGER DEFAULT 22,
-      pf_rate NUMERIC(5, 2) DEFAULT 12.00,
-      esi_rate NUMERIC(5, 2) DEFAULT 0.75,
-      pt_amount NUMERIC(10, 2) DEFAULT 200.00,
-      updated_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expenses (
-      id SERIAL PRIMARY KEY,
-      expense_number VARCHAR(50) UNIQUE,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      title VARCHAR(255) NOT NULL,
-      category VARCHAR(50) NOT NULL,
-      amount NUMERIC(12, 2) NOT NULL,
-      currency VARCHAR(10) DEFAULT 'INR',
-      merchant_name VARCHAR(150),
-      date DATE NOT NULL,
-      description TEXT,
-      receipt_url TEXT,
-      project_id INTEGER REFERENCES projects(id),
-      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'MANAGER_APPROVED' | 'FINANCE_APPROVED' | 'REJECTED' | 'REIMBURSED'
-      approved_by INTEGER REFERENCES employees(id),
-      reimbursed_amount NUMERIC(12, 2),
-      payment_status VARCHAR(30) DEFAULT 'PENDING', -- 'PENDING' | 'PAID' | 'FAILED'
-      payment_reference VARCHAR(100),
-      policy_warning TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expense_advances (
-      id SERIAL PRIMARY KEY,
-      advance_number VARCHAR(50) NOT NULL UNIQUE,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      advance_amount NUMERIC(12, 2) NOT NULL,
-      purpose TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING_APPROVAL', -- 'PENDING_APPROVAL' | 'APPROVED' | 'SETTLED'
-      settled_amount NUMERIC(12, 2) DEFAULT 0,
-      is_settled BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expense_policy_rules (
-      id SERIAL PRIMARY KEY,
-      category VARCHAR(50) NOT NULL UNIQUE,
-      max_limit_amount NUMERIC(12, 2) DEFAULT 25000,
-      receipt_required BOOLEAN DEFAULT true,
-      manager_approval_required BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expense_risk_flags (
-      id SERIAL PRIMARY KEY,
-      expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
-      risk_level VARCHAR(30) DEFAULT 'LOW', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-      risk_reason TEXT NOT NULL,
-      is_duplicate BOOLEAN DEFAULT false,
-      is_cleared BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expense_budgets (
-      id SERIAL PRIMARY KEY,
-      cost_center_name VARCHAR(100) NOT NULL,
-      department_id INTEGER REFERENCES departments(id),
-      total_budget_amount NUMERIC(14, 2) NOT NULL,
-      committed_amount NUMERIC(14, 2) DEFAULT 0,
-      paid_amount NUMERIC(14, 2) DEFAULT 0,
-      financial_year VARCHAR(20) DEFAULT '2026-2027',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expense_reconciliations (
-      id SERIAL PRIMARY KEY,
-      expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
-      approved_amount NUMERIC(12, 2) NOT NULL,
-      paid_amount NUMERIC(12, 2) NOT NULL,
-      status VARCHAR(30) DEFAULT 'MATCHED', -- 'MATCHED' | 'MISMATCH'
-      payment_reference VARCHAR(100),
-      reconciled_by INTEGER REFERENCES employees(id),
-      reconciled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expense_period_locks (
-      id SERIAL PRIMARY KEY,
-      period_name VARCHAR(50) NOT NULL UNIQUE,
-      start_date DATE NOT NULL,
-      end_date DATE NOT NULL,
-      is_locked BOOLEAN DEFAULT false,
-      locked_by INTEGER REFERENCES employees(id),
-      locked_at TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS projects (
@@ -1168,6 +555,15 @@ export async function initializeSchema() {
     );
 
     CREATE TABLE IF NOT EXISTS project_members (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      role_in_project VARCHAR(50) DEFAULT 'MEMBER',
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(project_id, employee_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS project_members_v2 (
       id SERIAL PRIMARY KEY,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
@@ -1199,14 +595,27 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS daily_standups (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      standup_date DATE NOT NULL,
+      yesterday_work TEXT NOT NULL,
+      today_plan TEXT NOT NULL,
+      blockers TEXT,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, standup_date)
+    );
+
     CREATE TABLE IF NOT EXISTS recruitments (
       id SERIAL PRIMARY KEY,
       job_title VARCHAR(255) NOT NULL,
       department_id INTEGER REFERENCES departments(id),
       openings INTEGER NOT NULL DEFAULT 1,
-      experience_required VARCHAR(50) NOT NULL,
-      salary_range VARCHAR(100) NOT NULL,
-      status VARCHAR(20) DEFAULT 'OPEN',
+      experience_required VARCHAR(100),
+      salary_range VARCHAR(100),
+      status VARCHAR(50) DEFAULT 'OPEN',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1245,7 +654,7 @@ export async function initializeSchema() {
       return_date DATE,
       condition_at_assignment VARCHAR(30) DEFAULT 'EXCELLENT',
       condition_at_return VARCHAR(30),
-      status VARCHAR(30) DEFAULT 'ASSIGNED', -- 'ASSIGNED' | 'RETURNED'
+      status VARCHAR(30) DEFAULT 'ASSIGNED',
       is_acknowledged BOOLEAN DEFAULT false,
       acknowledged_at TIMESTAMP,
       notes TEXT,
@@ -1263,26 +672,14 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS asset_maintenance (
-      id SERIAL PRIMARY KEY,
-      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-      maintenance_type VARCHAR(50) DEFAULT 'PREVENTIVE', -- 'PREVENTIVE' | 'REPAIR' | 'INSPECTION'
-      description TEXT NOT NULL,
-      cost NUMERIC(10, 2) DEFAULT 0,
-      start_date DATE NOT NULL,
-      end_date DATE,
-      status VARCHAR(30) DEFAULT 'SCHEDULED', -- 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED'
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
     CREATE TABLE IF NOT EXISTS asset_issues (
       id SERIAL PRIMARY KEY,
       asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
       reported_by INTEGER NOT NULL REFERENCES employees(id),
-      issue_type VARCHAR(50) DEFAULT 'DAMAGE', -- 'DAMAGE' | 'LOSS' | 'FUNCTIONAL' | 'WRONG_ITEM'
+      issue_type VARCHAR(50) DEFAULT 'DAMAGE',
       description TEXT NOT NULL,
-      severity VARCHAR(30) DEFAULT 'MEDIUM', -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-      status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN' | 'IN_REPAIR' | 'RESOLVED'
+      severity VARCHAR(30) DEFAULT 'MEDIUM',
+      status VARCHAR(30) DEFAULT 'OPEN',
       resolution_notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -1292,11 +689,11 @@ export async function initializeSchema() {
       request_number VARCHAR(50) UNIQUE NOT NULL,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
       category VARCHAR(100) NOT NULL,
-      request_type VARCHAR(50) DEFAULT 'NEW_ASSET', -- 'NEW_ASSET' | 'REPLACEMENT' | 'UPGRADE'
+      request_type VARCHAR(50) DEFAULT 'NEW_ASSET',
       reason TEXT NOT NULL,
-      priority VARCHAR(30) DEFAULT 'NORMAL', -- 'URGENT' | 'NORMAL' | 'LOW'
+      priority VARCHAR(30) DEFAULT 'NORMAL',
       required_date DATE,
-      status VARCHAR(30) DEFAULT 'SUBMITTED', -- 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'IN_PROCUREMENT' | 'COMPLETED'
+      status VARCHAR(30) DEFAULT 'SUBMITTED',
       estimated_cost NUMERIC(10, 2) DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -1308,7 +705,7 @@ export async function initializeSchema() {
       request_id INTEGER REFERENCES asset_requests(id),
       vendor_name VARCHAR(150) NOT NULL,
       total_amount NUMERIC(12, 2) NOT NULL,
-      status VARCHAR(30) DEFAULT 'APPROVED', -- 'APPROVED' | 'ORDERED' | 'RECEIVED' | 'CANCELLED'
+      status VARCHAR(30) DEFAULT 'APPROVED',
       expected_delivery DATE,
       created_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1325,76 +722,45 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS asset_warranty_claims (
+    CREATE TABLE IF NOT EXISTS payroll_settings (
       id SERIAL PRIMARY KEY,
-      claim_number VARCHAR(50) UNIQUE NOT NULL,
-      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-      vendor_name VARCHAR(150),
-      claim_date DATE NOT NULL DEFAULT CURRENT_DATE,
-      issue_description TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'CLAIM_SUBMITTED', -- 'CLAIM_SUBMITTED' | 'CLAIM_APPROVED' | 'RESOLVED' | 'REJECTED'
-      resolution_notes TEXT,
+      pay_cycle_start_day INTEGER NOT NULL DEFAULT 1,
+      pay_disbursement_day INTEGER NOT NULL DEFAULT 30,
+      tax_regime VARCHAR(30) DEFAULT 'NEW',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS asset_damage_investigations (
+    CREATE TABLE IF NOT EXISTS expenses (
       id SERIAL PRIMARY KEY,
-      issue_id INTEGER REFERENCES asset_issues(id) ON DELETE CASCADE,
-      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-      employee_id INTEGER REFERENCES employees(id),
-      damage_severity VARCHAR(30) DEFAULT 'MODERATE', -- 'CRITICAL' | 'MODERATE' | 'MINOR'
-      estimated_cost NUMERIC(10, 2) DEFAULT 0,
-      responsibility VARCHAR(30) DEFAULT 'COMPANY', -- 'COMPANY' | 'EMPLOYEE' | 'SHARED'
-      status VARCHAR(30) DEFAULT 'UNDER_INVESTIGATION', -- 'UNDER_INVESTIGATION' | 'RESOLVED' | 'RECOVERY_APPROVED'
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS asset_payroll_recoveries (
-      id SERIAL PRIMARY KEY,
-      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+      expense_number VARCHAR(50) UNIQUE,
       employee_id INTEGER NOT NULL REFERENCES employees(id),
-      recovery_amount NUMERIC(10, 2) NOT NULL,
-      reason TEXT NOT NULL,
-      status VARCHAR(30) DEFAULT 'PENDING_FINANCE_APPROVAL', -- 'PENDING_FINANCE_APPROVAL' | 'PAYROLL_APPROVED' | 'COMPLETED'
-      payroll_deducted BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS asset_depreciation_schedules (
-      id SERIAL PRIMARY KEY,
-      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-      purchase_cost NUMERIC(12, 2) NOT NULL,
-      residual_value NUMERIC(12, 2) DEFAULT 0,
-      useful_life_years INTEGER DEFAULT 3,
-      method VARCHAR(30) DEFAULT 'STRAIGHT_LINE',
-      annual_depreciation NUMERIC(12, 2) NOT NULL,
-      monthly_depreciation NUMERIC(12, 2) NOT NULL,
-      current_book_value NUMERIC(12, 2) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS asset_inventory_audits (
-      id SERIAL PRIMARY KEY,
-      audit_name VARCHAR(150) NOT NULL,
-      auditor_id INTEGER REFERENCES employees(id),
-      total_expected INTEGER DEFAULT 0,
-      total_scanned INTEGER DEFAULT 0,
-      missing_count INTEGER DEFAULT 0,
-      status VARCHAR(30) DEFAULT 'IN_PROGRESS', -- 'IN_PROGRESS' | 'COMPLETED'
+      title VARCHAR(255) NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      amount NUMERIC(12, 2) NOT NULL,
+      currency VARCHAR(10) DEFAULT 'INR',
+      merchant_name VARCHAR(150),
+      date DATE NOT NULL,
+      description TEXT,
+      receipt_url TEXT,
+      project_id INTEGER REFERENCES projects(id),
+      status VARCHAR(30) DEFAULT 'SUBMITTED',
+      approved_by INTEGER REFERENCES employees(id),
+      reimbursed_amount NUMERIC(12, 2),
+      payment_status VARCHAR(30) DEFAULT 'PENDING',
+      payment_reference VARCHAR(100),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS asset_audit_findings (
+    CREATE TABLE IF NOT EXISTS expense_advances (
       id SERIAL PRIMARY KEY,
-      audit_id INTEGER NOT NULL REFERENCES asset_inventory_audits(id) ON DELETE CASCADE,
-      asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-      expected_location VARCHAR(100),
-      actual_location VARCHAR(100),
-      discrepancy_type VARCHAR(50) DEFAULT 'MISSING', -- 'MISSING' | 'LOCATION_MISMATCH' | 'DAMAGED'
-      status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN' | 'RECONCILED'
-      reconciliation_action TEXT,
+      advance_number VARCHAR(50) NOT NULL UNIQUE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      advance_amount NUMERIC(12, 2) NOT NULL,
+      purpose TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'PENDING_APPROVAL',
+      settled_amount NUMERIC(12, 2) DEFAULT 0,
+      is_settled BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1403,10 +769,7 @@ export async function initializeSchema() {
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       message TEXT NOT NULL,
-      type VARCHAR(50) DEFAULT 'INFO',
-      channel VARCHAR(20) DEFAULT 'IN_APP',
-      priority VARCHAR(20) DEFAULT 'NORMAL',
-      deep_link TEXT,
+      type VARCHAR(30) DEFAULT 'INFO', -- 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
       is_read BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -1415,68 +778,45 @@ export async function initializeSchema() {
       id SERIAL PRIMARY KEY,
       employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       device_token TEXT NOT NULL,
-      platform VARCHAR(30) DEFAULT 'ANDROID',
+      device_type VARCHAR(20) NOT NULL,
       is_active BOOLEAN DEFAULT true,
-      last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(employee_id, device_token)
     );
 
     CREATE TABLE IF NOT EXISTS notification_preferences (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-      module VARCHAR(50) NOT NULL,
-      enable_in_app BOOLEAN DEFAULT true,
-      enable_push BOOLEAN DEFAULT true,
-      enable_email BOOLEAN DEFAULT true,
-      UNIQUE(employee_id, module)
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE UNIQUE,
+      email_leaves BOOLEAN DEFAULT true,
+      email_payroll BOOLEAN DEFAULT true,
+      email_expenses BOOLEAN DEFAULT true,
+      push_announcements BOOLEAN DEFAULT true,
+      push_tickets BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS system_config (
       id VARCHAR(50) PRIMARY KEY DEFAULT 'MAIN',
-      company_name VARCHAR(255) DEFAULT 'THEIAKSHI ENTERPRISES',
-      shift_start_time VARCHAR(10) DEFAULT '09:00',
-      shift_end_time VARCHAR(10) DEFAULT '18:00',
-      grace_minutes INT DEFAULT 15,
-      half_day_threshold_time VARCHAR(10) DEFAULT '11:30',
-      auto_deduct_leave_for_two_half_days BOOLEAN DEFAULT TRUE,
-      require_gps_clock_in BOOLEAN DEFAULT TRUE,
+      company_name VARCHAR(255) NOT NULL,
+      shift_start_time VARCHAR(5) DEFAULT '09:00',
+      shift_end_time VARCHAR(5) DEFAULT '18:00',
+      grace_minutes INTEGER DEFAULT 15,
+      half_day_threshold_time VARCHAR(5) DEFAULT '13:00',
+      auto_deduct_leave_for_two_half_days BOOLEAN DEFAULT true,
       currency VARCHAR(10) DEFAULT 'INR',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS geofence_settings (
       id VARCHAR(50) PRIMARY KEY DEFAULT 'HQ',
-      office_name VARCHAR(255) DEFAULT 'THEIAKSHI HQ - Bengaluru',
-      latitude DECIMAL(10, 6) DEFAULT 12.9716,
-      longitude DECIMAL(10, 6) DEFAULT 77.5946,
-      radius_meters INT DEFAULT 500,
-      enforce_strict_geofence BOOLEAN DEFAULT TRUE,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS attendance_shifts (
-      id SERIAL PRIMARY KEY,
-      shift_name VARCHAR(100) NOT NULL UNIQUE,
-      start_time TIME NOT NULL,
-      end_time TIME NOT NULL,
-      grace_period_minutes INTEGER DEFAULT 15,
-      break_duration_minutes INTEGER DEFAULT 60,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS permissions (
-      id SERIAL PRIMARY KEY,
-      code VARCHAR(100) UNIQUE NOT NULL,
-      name VARCHAR(255) NOT NULL,
-      module VARCHAR(50) NOT NULL,
-      description TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS role_permissions (
-      id SERIAL PRIMARY KEY,
-      role VARCHAR(50) NOT NULL,
-      permission_code VARCHAR(100) NOT NULL,
+      office_name VARCHAR(150) NOT NULL,
+      latitude NUMERIC(10, 6) NOT NULL,
+      longitude NUMERIC(10, 6) NOT NULL,
+      radius_meters INTEGER NOT NULL DEFAULT 500,
+      enforce_strict_geofence BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(role, permission_code)
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS company_documents (
@@ -1484,87 +824,10 @@ export async function initializeSchema() {
       title VARCHAR(255) NOT NULL,
       category VARCHAR(100) NOT NULL,
       file_url TEXT NOT NULL,
-      version VARCHAR(20) DEFAULT '1.0',
-      expiry_date DATE,
+      version VARCHAR(50) DEFAULT '1.0',
       uploaded_by INTEGER REFERENCES employees(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-
-    CREATE TABLE IF NOT EXISTS audit_logs (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER REFERENCES employees(id),
-      action VARCHAR(100) NOT NULL,
-      module VARCHAR(100) NOT NULL,
-      details TEXT,
-      ip_address VARCHAR(50),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS attendance_regularizations (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      attendance_date DATE NOT NULL,
-      request_type VARCHAR(50) NOT NULL DEFAULT 'MISSED_PUNCH',
-      requested_punch_in TIMESTAMP,
-      requested_punch_out TIMESTAMP,
-      requested_break_start TIMESTAMP,
-      requested_break_end TIMESTAMP,
-      reason TEXT NOT NULL,
-      supporting_notes TEXT,
-      attachment_url TEXT,
-      status VARCHAR(30) NOT NULL DEFAULT 'PENDING_MANAGER',
-      manager_id INTEGER REFERENCES employees(id),
-      manager_action VARCHAR(20),
-      manager_comment TEXT,
-      manager_actioned_at TIMESTAMP,
-      hr_id INTEGER REFERENCES employees(id),
-      hr_action VARCHAR(20),
-      hr_comment TEXT,
-      hr_actioned_at TIMESTAMP,
-      admin_id INTEGER REFERENCES employees(id),
-      admin_action VARCHAR(20),
-      admin_comment TEXT,
-      admin_actioned_at TIMESTAMP,
-      approved_by INTEGER REFERENCES employees(id),
-      approved_at TIMESTAMP,
-      rejection_reason TEXT,
-      attendance_updated BOOLEAN NOT NULL DEFAULT false,
-      payroll_recalculated BOOLEAN NOT NULL DEFAULT false,
-      deleted_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS regularization_comments (
-      id SERIAL PRIMARY KEY,
-      regularization_id INTEGER NOT NULL REFERENCES attendance_regularizations(id),
-      commenter_id INTEGER NOT NULL REFERENCES employees(id),
-      comment TEXT NOT NULL,
-      is_internal BOOLEAN NOT NULL DEFAULT false,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS regularization_audit (
-      id SERIAL PRIMARY KEY,
-      regularization_id INTEGER NOT NULL REFERENCES attendance_regularizations(id),
-      actor_id INTEGER NOT NULL REFERENCES employees(id),
-      action VARCHAR(50) NOT NULL,
-      from_status VARCHAR(30),
-      to_status VARCHAR(30),
-      notes TEXT,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Indexes for regularization queries
-    CREATE INDEX IF NOT EXISTS idx_reg_emp ON attendance_regularizations(employee_id);
-    CREATE INDEX IF NOT EXISTS idx_reg_date ON attendance_regularizations(attendance_date);
-    CREATE INDEX IF NOT EXISTS idx_reg_status ON attendance_regularizations(status);
-    CREATE INDEX IF NOT EXISTS idx_reg_manager ON attendance_regularizations(manager_id);
-    CREATE INDEX IF NOT EXISTS idx_reg_comment ON regularization_comments(regularization_id);
-    CREATE INDEX IF NOT EXISTS idx_reg_audit ON regularization_audit(regularization_id);
-
 
     CREATE TABLE IF NOT EXISTS documents (
       id SERIAL PRIMARY KEY,
@@ -1576,15 +839,15 @@ export async function initializeSchema() {
       uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS timesheets (
+    CREATE TABLE IF NOT EXISTS helpdesk_categories (
       id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      task_id INTEGER REFERENCES tasks(id),
-      date DATE NOT NULL,
-      hours_spent NUMERIC(4, 2) NOT NULL,
-      description TEXT NOT NULL,
-      status VARCHAR(20) DEFAULT 'APPROVED',
+      name VARCHAR(100) NOT NULL UNIQUE,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      description TEXT,
+      department_id INTEGER REFERENCES departments(id),
+      default_assignee_id INTEGER REFERENCES employees(id),
+      default_priority VARCHAR(20) DEFAULT 'MEDIUM',
+      is_active BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1598,9 +861,6 @@ export async function initializeSchema() {
       priority VARCHAR(20) DEFAULT 'MEDIUM',
       status VARCHAR(20) DEFAULT 'OPEN',
       assigned_to INTEGER REFERENCES employees(id),
-      asset_id INTEGER REFERENCES assets(id),
-      resolution_notes TEXT,
-      sla_due_date TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -1608,9 +868,9 @@ export async function initializeSchema() {
     CREATE TABLE IF NOT EXISTS ticket_comments (
       id SERIAL PRIMARY KEY,
       ticket_id INTEGER NOT NULL REFERENCES helpdesk_tickets(id) ON DELETE CASCADE,
-      author_id INTEGER NOT NULL REFERENCES employees(id),
-      comment_text TEXT NOT NULL,
-      is_internal_note BOOLEAN DEFAULT false,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      comment TEXT NOT NULL,
+      is_internal BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1618,7 +878,8 @@ export async function initializeSchema() {
       id SERIAL PRIMARY KEY,
       category VARCHAR(50) NOT NULL,
       priority VARCHAR(20) NOT NULL,
-      resolution_hours INTEGER DEFAULT 24,
+      response_time_hours INTEGER NOT NULL,
+      resolution_time_hours INTEGER NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1638,29 +899,6 @@ export async function initializeSchema() {
       category VARCHAR(50) DEFAULT 'GENERAL',
       is_pinned BOOLEAN DEFAULT false,
       posted_by INTEGER REFERENCES employees(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS performance_reviews (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      reviewer_id INTEGER NOT NULL REFERENCES employees(id),
-      review_period VARCHAR(50) NOT NULL,
-      rating NUMERIC(3, 1) NOT NULL,
-      feedback TEXT NOT NULL,
-      goals TEXT,
-      status VARCHAR(20) DEFAULT 'COMPLETED',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS weekly_planners (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      week_start_date DATE NOT NULL,
-      title VARCHAR(255) NOT NULL,
-      description TEXT,
-      priority VARCHAR(20) DEFAULT 'MEDIUM',
-      status VARCHAR(20) DEFAULT 'PENDING',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1690,129 +928,6 @@ export async function initializeSchema() {
       icon VARCHAR(50) NOT NULL,
       path VARCHAR(100) NOT NULL,
       role_permissions TEXT DEFAULT 'ALL',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Shift Management Tables
-    CREATE TABLE IF NOT EXISTS shifts (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(100) NOT NULL,
-      code VARCHAR(30) NOT NULL UNIQUE,
-      start_time VARCHAR(5) NOT NULL DEFAULT '09:00',
-      end_time VARCHAR(5) NOT NULL DEFAULT '18:00',
-      grace_mins INTEGER NOT NULL DEFAULT 15,
-      late_threshold_mins INTEGER NOT NULL DEFAULT 30,
-      half_day_threshold_hours NUMERIC(4,2) NOT NULL DEFAULT 4.0,
-      early_exit_threshold_mins INTEGER NOT NULL DEFAULT 60,
-      break_duration_mins INTEGER NOT NULL DEFAULT 60,
-      max_work_hours NUMERIC(4,2) NOT NULL DEFAULT 12.0,
-      min_work_hours NUMERIC(4,2) NOT NULL DEFAULT 4.0,
-      overtime_eligible BOOLEAN NOT NULL DEFAULT true,
-      is_night_shift BOOLEAN NOT NULL DEFAULT false,
-      is_wfh BOOLEAN NOT NULL DEFAULT false,
-      auto_clockout_after_hours NUMERIC(4,2) NOT NULL DEFAULT 14.0,
-      shift_type VARCHAR(30) NOT NULL DEFAULT 'GENERAL',
-      color VARCHAR(20) NOT NULL DEFAULT '#3B82F6',
-      is_deleted BOOLEAN NOT NULL DEFAULT false,
-      deleted_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS employee_shift_assignments (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      shift_id INTEGER NOT NULL REFERENCES shifts(id),
-      effective_date DATE NOT NULL,
-      expiry_date DATE,
-      is_active BOOLEAN NOT NULL DEFAULT true,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS shift_swap_requests (
-      id SERIAL PRIMARY KEY,
-      requester_id INTEGER NOT NULL REFERENCES employees(id),
-      target_employee_id INTEGER NOT NULL REFERENCES employees(id),
-      requester_shift_id INTEGER REFERENCES shifts(id),
-      target_shift_id INTEGER REFERENCES shifts(id),
-      shift_date DATE NOT NULL,
-      reason TEXT NOT NULL,
-      status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-      approved_by INTEGER REFERENCES employees(id),
-      approved_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS overtime_requests (
-      id SERIAL PRIMARY KEY,
-      employee_id INTEGER NOT NULL REFERENCES employees(id),
-      date DATE NOT NULL,
-      expected_overtime_hours NUMERIC(4,2) NOT NULL DEFAULT 1.0,
-      approved_hours NUMERIC(4,2),
-      reason TEXT NOT NULL,
-      status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-      approved_by INTEGER REFERENCES employees(id),
-      approved_at TIMESTAMP,
-      created_by INTEGER,
-      updated_by INTEGER,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Shift indexes
-    CREATE INDEX IF NOT EXISTS idx_shifts_code ON shifts(code);
-    CREATE INDEX IF NOT EXISTS idx_shift_assign_emp ON employee_shift_assignments(employee_id);
-    CREATE INDEX IF NOT EXISTS idx_shift_assign_active ON employee_shift_assignments(is_active);
-    CREATE INDEX IF NOT EXISTS idx_swap_req_status ON shift_swap_requests(status);
-    CREATE INDEX IF NOT EXISTS idx_overtime_req_emp ON overtime_requests(employee_id);
-    CREATE INDEX IF NOT EXISTS idx_overtime_req_status ON overtime_requests(status);
-
-    -- Create View for backward compatibility with 'leaves'
-    CREATE OR REPLACE VIEW leaves AS SELECT * FROM leave_applications;
-
-    -- Create Indexes for performance
-    CREATE INDEX IF NOT EXISTS idx_emp_code ON employees(employee_code);
-    CREATE INDEX IF NOT EXISTS idx_emp_email ON employees(email);
-    CREATE INDEX IF NOT EXISTS idx_emp_dept ON employees(department_id);
-    CREATE INDEX IF NOT EXISTS idx_emp_branch ON employees(branch_id);
-    CREATE INDEX IF NOT EXISTS idx_att_emp_date ON attendance(employee_id, date);
-    CREATE INDEX IF NOT EXISTS idx_leave_emp ON leave_applications(employee_id);
-    CREATE INDEX IF NOT EXISTS idx_leave_status ON leave_applications(status);
-    CREATE INDEX IF NOT EXISTS idx_payroll_emp_year_month ON payrolls(employee_id, year, month);
-    CREATE INDEX IF NOT EXISTS idx_tasks_proj ON tasks(project_id);
-    CREATE INDEX IF NOT EXISTS idx_notif_emp ON notifications(employee_id);
-    -- ═══════════════════════════════════════════════════════════════════════
-    -- ENTERPRISE HELPDESK & TICKET MANAGEMENT EXTENSION TABLES
-    -- ═══════════════════════════════════════════════════════════════════════
-
-    CREATE TABLE IF NOT EXISTS helpdesk_categories (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(100) NOT NULL UNIQUE,
-      code VARCHAR(50) NOT NULL UNIQUE,
-      description TEXT,
-      department_id INTEGER REFERENCES departments(id),
-      default_assignee_id INTEGER REFERENCES employees(id),
-      default_priority VARCHAR(20) DEFAULT 'MEDIUM',
-      is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS ticket_escalation_rules (
-      id SERIAL PRIMARY KEY,
-      category_id INTEGER REFERENCES helpdesk_categories(id),
-      priority VARCHAR(20) NOT NULL,
-      escalation_after_hours INTEGER NOT NULL DEFAULT 4,
-      escalate_to_role VARCHAR(50) NOT NULL DEFAULT 'HR_MANAGER',
-      escalate_to_employee_id INTEGER REFERENCES employees(id),
-      notify_manager BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -1889,15 +1004,65 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Helpdesk indexes
+    CREATE TABLE IF NOT EXISTS user_refresh_tokens (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      is_revoked BOOLEAN DEFAULT false,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      token VARCHAR(255) UNIQUE NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS education (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      institution VARCHAR(255) NOT NULL,
+      degree VARCHAR(100) NOT NULL,
+      field_of_study VARCHAR(100),
+      start_date DATE,
+      end_date DATE,
+      grade VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS experience (
+      id SERIAL PRIMARY KEY,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      company_name VARCHAR(255) NOT NULL,
+      designation VARCHAR(150) NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Create View for backward compatibility with 'leaves'
+    CREATE OR REPLACE VIEW leaves AS SELECT * FROM leave_applications;
+
+    -- Performance optimization indexes
+    CREATE INDEX IF NOT EXISTS idx_emp_code ON employees(employee_code);
+    CREATE INDEX IF NOT EXISTS idx_emp_email ON employees(email);
+    CREATE INDEX IF NOT EXISTS idx_emp_dept ON employees(department_id);
+    CREATE INDEX IF NOT EXISTS idx_emp_branch ON employees(branch_id);
+    CREATE INDEX IF NOT EXISTS idx_att_emp_date ON attendance(employee_id, date);
+    CREATE INDEX IF NOT EXISTS idx_leave_emp ON leave_applications(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_leave_status ON leave_applications(status);
+    CREATE INDEX IF NOT EXISTS idx_payroll_emp_year_month ON payrolls(employee_id, year, month);
+    CREATE INDEX IF NOT EXISTS idx_tasks_proj ON tasks(project_id);
+    CREATE INDEX IF NOT EXISTS idx_notif_emp ON notifications(employee_id);
     CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_emp ON helpdesk_tickets(employee_id);
     CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_status ON helpdesk_tickets(status);
-    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_priority ON helpdesk_tickets(priority);
     CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_assigned ON helpdesk_tickets(assigned_to);
-    CREATE INDEX IF NOT EXISTS idx_helpdesk_tickets_category ON helpdesk_tickets(category);
     CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket ON ticket_comments(ticket_id);
-    CREATE INDEX IF NOT EXISTS idx_ticket_activity_ticket ON ticket_activity_log(ticket_id);
-    CREATE INDEX IF NOT EXISTS idx_ticket_watchers_ticket ON ticket_watchers(ticket_id);
-    CREATE INDEX IF NOT EXISTS idx_ticket_attachments_ticket ON ticket_attachments(ticket_id);
+    CREATE INDEX IF NOT EXISTS idx_daily_standups_date ON daily_standups(standup_date);
+    CREATE INDEX IF NOT EXISTS idx_daily_standups_emp ON daily_standups(employee_id);
   `);
 }

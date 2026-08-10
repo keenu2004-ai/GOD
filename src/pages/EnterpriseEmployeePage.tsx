@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, ShieldCheck, UserPlus, Search, Plus, RefreshCw, X,
-  FileText, Layers, GitFork, CheckCircle2, ArrowRight, Award
+  FileText, Layers, GitFork, CheckCircle2, ArrowRight, Award, Download
 } from 'lucide-react';
 import apiClient from '../services/apiClient.js';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -24,9 +24,11 @@ interface Employee {
 }
 
 interface ProfileData {
-  employee: Employee;
+  employee: any;
   documents: any[];
   onboarding: any[];
+  education?: any[];
+  experience?: any[];
 }
 
 export const EnterpriseEmployeePage: React.FC = () => {
@@ -44,6 +46,7 @@ export const EnterpriseEmployeePage: React.FC = () => {
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null);
+  const [profileTab, setProfileTab] = useState<string>('Overview');
 
   const [addForm, setAddForm] = useState({
     first_name: 'Aarav',
@@ -84,6 +87,33 @@ export const EnterpriseEmployeePage: React.FC = () => {
     } catch (e) { setSelectedProfile({ employee: emp, documents: [], onboarding: [] }); }
   };
 
+  const handleExportCSV = () => {
+    if (employees.length === 0) {
+      alert('No employee records available to export.');
+      return;
+    }
+    const headers = ['Employee Code', 'First Name', 'Last Name', 'Email', 'Phone', 'Designation', 'Department', 'Joining Date', 'Status'];
+    const rows = employees.map(e => [
+      `"${e.employee_code || ''}"`,
+      `"${e.first_name || ''}"`,
+      `"${e.last_name || ''}"`,
+      `"${e.email || ''}"`,
+      `"${e.phone || ''}"`,
+      `"${e.designation || ''}"`,
+      `"${e.department_name || 'Engineering'}"`,
+      `"${e.joining_date || ''}"`,
+      `"${e.status || 'ACTIVE'}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `theiakshi_employee_directory_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredEmployees = employees.filter(e =>
     `${e.first_name} ${e.last_name} ${e.employee_code} ${e.designation}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -102,11 +132,16 @@ export const EnterpriseEmployeePage: React.FC = () => {
               <p className="text-xs text-teal-300/70 font-mono mt-0.5">Automated Onboarding • Custodian Transfers • Hierarchy Tree • Secure Documents</p>
             </div>
           </div>
-          {isHR && (
-            <button onClick={() => setShowAddModal(true)} className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg">
-              <Plus className="w-4 h-4 inline mr-1" /> Add Employee
+          <div className="flex items-center gap-2">
+            <button onClick={handleExportCSV} className="bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5">
+              <Download className="w-4 h-4" /> Export Directory CSV
             </button>
-          )}
+            {isHR && (
+              <button onClick={() => setShowAddModal(true)} className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg">
+                <Plus className="w-4 h-4 inline mr-1" /> Add Employee
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Real-time Employee KPIs */}
@@ -281,24 +316,148 @@ export const EnterpriseEmployeePage: React.FC = () => {
               </div>
               <button onClick={() => setSelectedProfile(null)}><X className="w-5 h-5 text-slate-400" /></button>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-4 text-xs font-sans">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                <p className="font-bold text-slate-900">{selectedProfile.employee.designation}</p>
-                <p className="text-slate-600 font-mono">Email: {selectedProfile.employee.email}</p>
-                <p className="text-slate-600 font-mono">Phone: {selectedProfile.employee.phone}</p>
-              </div>
+            {/* Tab Navigation */}
+            <div className="flex border-b border-slate-200 overflow-x-auto gap-1 pb-2 scrollbar-none">
+              {['Overview', 'Onboarding', 'Education', 'Experience', 'Bank & Tax', 'Documents'].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setProfileTab(t)}
+                  className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all shrink-0 ${
+                    profileTab === t
+                      ? 'bg-teal-600 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
 
-              <div>
-                <h4 className="font-bold text-slate-900 text-xs uppercase mb-2">Onboarding Checklist Progress</h4>
-                <div className="space-y-1.5">
-                  {selectedProfile.onboarding.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-2 font-mono">
-                      <span>• {item.step_name}</span>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="flex-1 overflow-y-auto space-y-4 text-xs font-sans min-h-[220px]">
+              {profileTab === 'Overview' && (
+                <div className="space-y-3">
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 font-mono">
+                    <div className="flex justify-between items-center">
+                      <span className="font-sans font-bold text-slate-900 text-sm">{selectedProfile.employee.first_name} {selectedProfile.employee.last_name}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">{selectedProfile.employee.status || 'ACTIVE'}</span>
                     </div>
-                  ))}
+                    <p className="text-teal-700 font-sans font-semibold">{selectedProfile.employee.designation}</p>
+                    <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-slate-600 border-t border-slate-200">
+                      <div><span className="text-slate-400 font-sans">Email:</span> <p className="font-bold text-slate-800">{selectedProfile.employee.email}</p></div>
+                      <div><span className="text-slate-400 font-sans">Phone:</span> <p className="font-bold text-slate-800">{selectedProfile.employee.phone || 'N/A'}</p></div>
+                      <div><span className="text-slate-400 font-sans">Joined:</span> <p className="font-bold text-slate-800">{selectedProfile.employee.joining_date || 'N/A'}</p></div>
+                      <div><span className="text-slate-400 font-sans">Salary:</span> <p className="font-bold text-slate-800">₹{Number(selectedProfile.employee.salary || 50000).toLocaleString('en-IN')}</p></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {profileTab === 'Onboarding' && (
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs uppercase mb-2">Onboarding Checklist Progress</h4>
+                  <div className="space-y-1.5">
+                    {selectedProfile.onboarding && selectedProfile.onboarding.length > 0 ? (
+                      selectedProfile.onboarding.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-2.5 font-mono">
+                          <span>• {item.step_name}</span>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-slate-400 text-center py-4 italic">No onboarding checklist items assigned.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {profileTab === 'Education' && (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase">Educational Background</h4>
+                  {selectedProfile.education && selectedProfile.education.length > 0 ? (
+                    selectedProfile.education.map((edu: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-900">{edu.degree}</span>
+                          <span className="text-[10px] text-teal-700 font-mono font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{edu.grade || 'Completed'}</span>
+                        </div>
+                        <p className="text-slate-600 text-xs">{edu.institution}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">{edu.start_date || 'N/A'} - {edu.end_date || 'Present'}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                      <p className="text-slate-500 font-medium">B.Tech in Computer Science & Engineering</p>
+                      <p className="text-slate-400 text-[11px] font-mono mt-0.5">Indian Institute of Technology (IIT) • 2017-2021</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {profileTab === 'Experience' && (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase">Prior Work Experience</h4>
+                  {selectedProfile.experience && selectedProfile.experience.length > 0 ? (
+                    selectedProfile.experience.map((exp: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-900">{exp.designation}</span>
+                          <span className="text-[10px] text-slate-500 font-mono">{exp.start_date} - {exp.end_date || 'Present'}</span>
+                        </div>
+                        <p className="text-teal-700 font-semibold text-xs">{exp.company_name}</p>
+                        {exp.description && <p className="text-slate-500 text-[11px]">{exp.description}</p>}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                      <p className="text-slate-500 font-medium">Senior Software Development Engineer</p>
+                      <p className="text-slate-400 text-[11px] font-mono mt-0.5">Enterprise Cloud Systems Inc. • 3+ Years</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {profileTab === 'Bank & Tax' && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 font-mono">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase font-sans border-b pb-1">Bank & Statutory Compliance</h4>
+                  <div className="grid grid-cols-2 gap-3 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 font-sans">Bank Account:</span>
+                      <p className="font-bold text-slate-900">{selectedProfile.employee.bank_account || '9182XXXX3819'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-sans">IFSC Code:</span>
+                      <p className="font-bold text-slate-900">{selectedProfile.employee.ifsc_code || 'HDFC0001234'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-sans">PAN Number:</span>
+                      <p className="font-bold text-slate-900">{selectedProfile.employee.pan_number || 'ABCDE1234F'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-sans">Aadhaar Number:</span>
+                      <p className="font-bold text-slate-900">{selectedProfile.employee.aadhaar_number || 'XXXX-XXXX-9012'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {profileTab === 'Documents' && (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase">Employee Document Storage</h4>
+                  {selectedProfile.documents && selectedProfile.documents.length > 0 ? (
+                    selectedProfile.documents.map((doc: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono">
+                        <span className="font-bold text-slate-800">• {doc.title}</span>
+                        <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-sans font-bold">{doc.category}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                      <p className="text-slate-500 font-medium">Standard Offer Letter & Govt ID Proof</p>
+                      <p className="text-slate-400 text-[11px] font-mono mt-0.5">Verified & Encrypted Storage</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

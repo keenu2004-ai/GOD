@@ -7,7 +7,7 @@ export class EmployeeManagementController {
   async createEmployee(req: Request, res: Response) {
     try {
       const user = (req as any).user;
-      const data = await employeeManagementService.createEmployee(req.body, user?.id || 1);
+      const data = await employeeManagementService.createEmployee(req.body, user?.id || 1, user?.organization_id);
       return res.status(201).json(sendSuccess(data, 'Employee account & onboarding checklist created'));
     } catch (e: any) {
       return res.status(400).json(sendError(e.message));
@@ -17,7 +17,8 @@ export class EmployeeManagementController {
   // GET /employees/all
   async getEmployees(req: Request, res: Response) {
     try {
-      const data = await employeeManagementService.getEmployees();
+      const user = (req as any).user;
+      const data = await employeeManagementService.getEmployees(user?.organization_id);
       return res.json(sendSuccess(data, 'Employee directory retrieved'));
     } catch (e: any) {
       return res.status(500).json(sendError(e.message));
@@ -27,7 +28,8 @@ export class EmployeeManagementController {
   // GET /employees/org-chart
   async getOrgChartTree(req: Request, res: Response) {
     try {
-      const data = await employeeManagementService.getOrgChartTree();
+      const user = (req as any).user;
+      const data = await employeeManagementService.getOrgChartTree(user?.organization_id);
       return res.json(sendSuccess(data, 'Visual organization chart tree retrieved'));
     } catch (e: any) {
       return res.status(500).json(sendError(e.message));
@@ -39,7 +41,7 @@ export class EmployeeManagementController {
     try {
       const user = (req as any).user;
       const empId = parseInt(req.params.id);
-      const data = await employeeManagementService.getEmployeeProfile(empId, user?.id || 1, user?.role || 'EMPLOYEE');
+      const data = await employeeManagementService.getEmployeeProfile(empId, user?.id || 1, user?.role || 'EMPLOYEE', user?.organization_id);
       return res.json(sendSuccess(data, 'Employee profile & onboarding data retrieved'));
     } catch (e: any) {
       return res.status(403).json(sendError(e.message));

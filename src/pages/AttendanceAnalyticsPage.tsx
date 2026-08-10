@@ -36,6 +36,15 @@ interface TrendPoint {
 interface DeptRow { department_name: string; total_employees: number; attendance_rate: number; avg_work_hours: number; late_count: number; }
 interface BranchRow { branch_name: string; total_employees: number; attendance_rate: number; avg_work_hours: number; late_count: number; }
 
+interface LeaveKPI {
+  total_applications: number;
+  pending_requests: number;
+  approved_requests: number;
+  rejected_requests: number;
+  avg_duration: number;
+  balance_utilization: number;
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────
 const fmtDate = (s: string) => s ? new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtTime = (s: string | null) => s ? new Date(s).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
@@ -288,9 +297,13 @@ export const AttendanceAnalyticsPage: React.FC = () => {
   const userId = (user as any)?.id || 0;
   const isManager = ['ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'].includes(userRole);
 
-  const [tab, setTab] = useState<'overview' | 'calendar' | 'reports' | 'payroll'>('overview');
+  const [tab, setTab] = useState<'overview' | 'calendar' | 'reports' | 'payroll' | 'leave_analytics'>('overview');
   const [kpi, setKpi] = useState<KPI | null>(null);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
+  
+  const [leaveKpi, setLeaveKpi] = useState<LeaveKPI | null>(null);
+  const [leaveTrend, setLeaveTrend] = useState<any[]>([]);
+  const [leaveDepts, setLeaveDepts] = useState<any[]>([]);
   const [depts, setDepts] = useState<DeptRow[]>([]);
   const [branches, setBranches] = useState<BranchRow[]>([]);
   const [hourDist, setHourDist] = useState<any[]>([]);
@@ -331,7 +344,26 @@ export const AttendanceAnalyticsPage: React.FC = () => {
     finally { setLoading(false); }
   }, [isManager]);
 
-  useEffect(() => { if (tab === 'overview') fetchOverview(); }, [tab]);
+  const fetchLeaveAnalytics = useCallback(async () => {
+    if (!isManager) return;
+    setLoading(true);
+    try {
+      const [kpiRes, trendRes, deptRes] = await Promise.all([
+        apiClient.get('/analytics/leave/kpis'),
+        apiClient.get('/analytics/leave/trend'),
+        apiClient.get('/analytics/leave/departments'),
+      ]);
+      setLeaveKpi(kpiRes.data?.data || null);
+      setLeaveTrend(trendRes.data?.data || []);
+      setLeaveDepts(deptRes.data?.data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, [isManager]);
+
+  useEffect(() => { 
+    if (tab === 'overview') fetchOverview(); 
+    else if (tab === 'leave_analytics') fetchLeaveAnalytics();
+  }, [tab, fetchOverview, fetchLeaveAnalytics]);
 
   const runReport = async () => {
     setReportLoading(true);
@@ -378,6 +410,7 @@ export const AttendanceAnalyticsPage: React.FC = () => {
   const TABS = [
     { key: 'overview', label: 'Analytics Overview', icon: <BarChart2 className="w-4 h-4" /> },
     { key: 'calendar', label: 'Attendance Calendar', icon: <Calendar className="w-4 h-4" /> },
+    ...(isManager ? [{ key: 'leave_analytics', label: 'Leave Analytics', icon: <Calendar className="w-4 h-4" /> }] : []),
     { key: 'reports', label: 'Reports Center', icon: <FileText className="w-4 h-4" /> },
     ...(isManager ? [{ key: 'payroll', label: 'Payroll Sync', icon: <DollarSign className="w-4 h-4" /> }] : []),
   ];
@@ -820,6 +853,91 @@ export const AttendanceAnalyticsPage: React.FC = () => {
               <p className="font-bold text-slate-500">Click "Sync" to calculate payroll from attendance data</p>
               <p className="text-xs text-slate-400 mt-1">Calculates present days, absent days, late deductions, OT pay, and gross payable for each employee</p>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── LEAVE ANALYTICS TAB ─────────────────────────────────────────── */}
+      {tab === 'leave_analytics' && isManager && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-bold text-slate-800">Leave Analytics</h3>
+            <button onClick={fetchLeaveAnalytics} className="flex items-center gap-2 text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-xl">
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
+            </button>
+          </div>
+          
+          {loading ? (
+            <div className="text-center py-12"><Activity className="w-8 h-8 text-indigo-500 animate-spin mx-auto" /><p className="text-slate-500 mt-2">Loading Analytics...</p></div>
+          ) : (
+            <>
+              {leaveKpi && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-xs text-slate-500 mb-1">Total Applications</p>
+                    <h4 className="text-xl font-bold text-slate-800">{leaveKpi.total_applications}</h4>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-xs text-slate-500 mb-1">Pending Requests</p>
+                    <h4 className="text-xl font-bold text-amber-600">{leaveKpi.pending_requests}</h4>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-xs text-slate-500 mb-1">Approved</p>
+                    <h4 className="text-xl font-bold text-emerald-600">{leaveKpi.approved_requests}</h4>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-xs text-slate-500 mb-1">Rejected</p>
+                    <h4 className="text-xl font-bold text-red-600">{leaveKpi.rejected_requests}</h4>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-xs text-slate-500 mb-1">Avg Duration</p>
+                    <h4 className="text-xl font-bold text-indigo-600">{Number(leaveKpi.avg_duration || 0).toFixed(1)}d</h4>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-xs text-slate-500 mb-1">Balance Utilized</p>
+                    <h4 className="text-xl font-bold text-slate-800">{Number(leaveKpi.balance_utilization || 0).toFixed(1)}%</h4>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <h3 className="font-bold text-slate-800 mb-4">Leave Application Trend</h3>
+                  <div className="h-64 flex items-end gap-2 px-2">
+                    {leaveTrend.map((t, i) => (
+                      <div key={i} className="flex-1 flex flex-col justify-end group relative h-full">
+                        <div className="w-full bg-indigo-500 rounded-t-sm" style={{ height: `${Math.max(5, (t.count / Math.max(...leaveTrend.map(x => x.count), 1)) * 100)}%` }}></div>
+                        <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded pointer-events-none z-10 whitespace-nowrap">
+                          {t.date}: {t.count} requests
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between mt-2 text-[10px] text-slate-400">
+                    <span>{leaveTrend[0]?.date || ''}</span>
+                    <span>{leaveTrend[leaveTrend.length-1]?.date || ''}</span>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <h3 className="font-bold text-slate-800 mb-4">Leave by Department</h3>
+                  <div className="space-y-4">
+                    {leaveDepts.map((d, i) => (
+                      <div key={i} className="flex flex-col gap-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="font-medium text-slate-700">{d.department_name}</span>
+                          <span className="text-slate-500 text-xs">{d.request_count} requests ({d.total_duration} days)</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-400" style={{ width: `${Math.min(100, (d.request_count / Math.max(...leaveDepts.map(x => x.request_count), 1)) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                    ))}
+                    {leaveDepts.length === 0 && <p className="text-sm text-slate-500 text-center py-6">No data available</p>}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}

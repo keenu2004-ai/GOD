@@ -4,51 +4,24 @@ import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { MainLayout } from './components/layout/MainLayout.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
-import { EmployeesPage } from './pages/EmployeesPage.js';
 import { EnterpriseEmployeePage } from './pages/EnterpriseEmployeePage.js';
-import { AttendancePage } from './pages/AttendancePage.js';
 import { EnterpriseAttendancePage } from './pages/EnterpriseAttendancePage.js';
-import { LeavePage } from './pages/LeavePage.js';
 import { EnterpriseLeavePage } from './pages/EnterpriseLeavePage.js';
-import { PayrollPage } from './pages/PayrollPage.js';
 import { EnterprisePayrollPage } from './pages/EnterprisePayrollPage.js';
-import { ExpensesPage } from './pages/ExpensesPage.js';
 import { EnterpriseExpensesPage } from './pages/EnterpriseExpensesPage.js';
-import { EnterpriseExpensePolicyPage } from './pages/EnterpriseExpensePolicyPage.js';
 import { EnterpriseOrganizationPage } from './pages/EnterpriseOrganizationPage.js';
-import { ProjectsPage } from './pages/ProjectsPage.js';
 import { EnterpriseProjectTaskPage } from './pages/EnterpriseProjectTaskPage.js';
-import { AssetsPage } from './pages/RecruitmentPage.js';
 import { EnterpriseAssetPage } from './pages/EnterpriseAssetPage.js';
-import { HelpdeskPage, AnnouncementsPage } from './pages/HelpdeskPage.js';
 import { EnterpriseHelpdeskPage } from './pages/EnterpriseHelpdeskPage.js';
 import { EnterpriseNotificationPage } from './pages/EnterpriseNotificationPage.js';
-import { OrgChartPage, PerformancePage } from './pages/OrgChartPage.js';
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
-import { ShiftManagementPage } from './pages/ShiftManagementPage.js';
 import { AttendanceRegularizationPage } from './pages/AttendanceRegularizationPage.js';
 import { AttendanceAnalyticsPage } from './pages/AttendanceAnalyticsPage.js';
 import { EnterpriseHolidayPage } from './pages/EnterpriseHolidayPage.js';
-import { LeaveAnalyticsPage } from './pages/LeaveAnalyticsPage.js';
 import { PayrollFoundationPage } from './pages/PayrollFoundationPage.js';
-import { SalaryComponentEnginePage } from './pages/SalaryComponentEnginePage.js';
-import { PayrollProcessingPage } from './pages/PayrollProcessingPage.js';
 import { EmployeePayrollPortalPage } from './pages/EmployeePayrollPortalPage.js';
-import { CompensationManagementPage } from './pages/CompensationManagementPage.js';
-import { PayrollAnalyticsPage } from './pages/PayrollAnalyticsPage.js';
-import { ExitManagementPage } from './pages/ExitManagementPage.js';
-import { EnterpriseProjectWorkspacePage } from './pages/EnterpriseProjectWorkspacePage.js';
 import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
-import { TaskCollaborationFeedPage } from './pages/TaskCollaborationFeedPage.js';
-import { EnterpriseTimeTrackingPage } from './pages/EnterpriseTimeTrackingPage.js';
-import { ProjectAnalyticsPage } from './pages/ProjectAnalyticsPage.js';
-import { ClientPortalPage } from './pages/ClientPortalPage.js';
-import { ProjectAutomationManagementPage } from './pages/ProjectAutomationManagementPage.js';
-import { EnterpriseAssetsPage } from './pages/EnterpriseAssetsPage.js';
-import { EnterpriseAssetProcurementPage } from './pages/EnterpriseAssetProcurementPage.js';
-import { EnterpriseAssetMaintenancePage } from './pages/EnterpriseAssetMaintenancePage.js';
-import { EnterpriseAssetAnalyticsPage } from './pages/EnterpriseAssetAnalyticsPage.js';
 import { EngagementPage } from './pages/EngagementPage.js';
 import { RoostPage } from './pages/RoostPage.js';
 import { MyFolderPage } from './pages/MyFolderPage.js';
@@ -83,50 +56,20 @@ const AppContent: React.FC = () => {
             return <EnterpriseLeavePage onNavigate={setActiveTab} />;
           case 'holidays':
             return <EnterpriseHolidayPage />;
-          case 'leave-analytics':
-            return <LeaveAnalyticsPage />;
           case 'payroll':
             return <EnterprisePayrollPage />;
           case 'payroll-foundation':
             return <PayrollFoundationPage />;
-          case 'salary-components':
-            return <SalaryComponentEnginePage />;
-          case 'payroll-processing':
-            return <PayrollProcessingPage />;
           case 'payslip-portal':
             return <EmployeePayrollPortalPage />;
-          case 'compensation':
-            return <CompensationManagementPage />;
-          case 'payroll-analytics':
-            return <PayrollAnalyticsPage />;
-          case 'exit-management':
-            return <ExitManagementPage />;
           case 'expenses':
             return <EnterpriseExpensesPage onNavigate={setActiveTab} />;
-          case 'expense-policy':
-            return <EnterpriseExpensePolicyPage />;
           case 'projects':
             return <EnterpriseProjectTaskPage />;
-          case 'project-analytics':
-            return <ProjectAnalyticsPage />;
-          case 'client-portal':
-            return <ClientPortalPage />;
-          case 'project-automation':
-            return <ProjectAutomationManagementPage />;
           case 'tasks-kanban':
             return <EnterpriseTaskBoardPage />;
-          case 'task-collaboration':
-            return <TaskCollaborationFeedPage />;
-          case 'time-tracking':
-            return <EnterpriseTimeTrackingPage onNavigate={setActiveTab} />;
           case 'assets':
             return <EnterpriseAssetPage />;
-          case 'asset-procurement':
-            return <EnterpriseAssetProcurementPage />;
-          case 'asset-maintenance':
-            return <EnterpriseAssetMaintenancePage />;
-          case 'asset-analytics':
-            return <EnterpriseAssetAnalyticsPage />;
           case 'helpdesk':
             return <EnterpriseHelpdeskPage onNavigate={setActiveTab} />;
           case 'engagement':
@@ -137,20 +80,14 @@ const AppContent: React.FC = () => {
             return <MyFolderPage onNavigate={setActiveTab} />;
           case 'notifications':
             return <EnterpriseNotificationPage />;
-          case 'announcements':
-            return <AnnouncementsPage />;
           case 'orgchart':
             return <EnterpriseOrganizationPage />;
-          case 'performance':
-            return <PerformancePage />;
           case 'planner':
             return <WeeklyPlannerPage />;
           case 'regularization':
             return <AttendanceRegularizationPage />;
           case 'attendance-analytics':
             return <AttendanceAnalyticsPage />;
-          case 'shifts':
-            return <ShiftManagementPage />;
           case 'settings':
             return <SettingsPage />;
           default:
@@ -172,4 +109,3 @@ export function App() {
 }
 
 export default App;
-

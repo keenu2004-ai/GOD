@@ -13,42 +13,26 @@ import { expenseController } from '../controllers/expenseController.js';
 import { projectController } from '../controllers/projectController.js';
 import { dashboardController } from '../controllers/dashboardController.js';
 import { miscController } from '../controllers/miscController.js';
-import { shiftController } from '../controllers/shiftController.js';
 import { analyticsController } from '../controllers/analyticsController.js';
 import { attendanceFinalizationController } from '../controllers/attendanceFinalizationController.js';
 import { leavePolicyController } from '../controllers/leavePolicyController.js';
 import { leaveWorkflowController } from '../controllers/leaveWorkflowController.js';
 import { leaveBalanceEngineController } from '../controllers/leaveBalanceEngineController.js';
 import { holidayEngineController } from '../controllers/holidayEngineController.js';
-import { leaveAnalyticsController } from '../controllers/leaveAnalyticsController.js';
 import { leaveFinalizationController } from '../controllers/leaveFinalizationController.js';
+import { complianceController } from '../controllers/complianceController.js';
 import { payrollFoundationController } from '../controllers/payrollFoundationController.js';
-import { salaryComponentEngineController } from '../controllers/salaryComponentEngineController.js';
-import { payrollProcessingController } from '../controllers/payrollProcessingController.js';
 import { payslipPortalController } from '../controllers/payslipPortalController.js';
-import { compensationManagementController } from '../controllers/compensationManagementController.js';
-import { payrollAnalyticsController } from '../controllers/payrollAnalyticsController.js';
-import { exitManagementController } from '../controllers/exitManagementController.js';
 import { payrollAutomationController } from '../controllers/payrollAutomationController.js';
 import { enterpriseProjectController } from '../controllers/enterpriseProjectController.js';
-import { enterpriseTaskController } from '../controllers/enterpriseTaskController.js';
-import { taskCollaborationController } from '../controllers/taskCollaborationController.js';
 import { weeklyPlannerController } from '../controllers/weeklyPlannerController.js';
-import { timeTrackingController } from '../controllers/timeTrackingController.js';
 import { projectTaskController } from '../controllers/projectTaskController.js';
-import { projectAnalyticsController } from '../controllers/projectAnalyticsController.js';
-import { clientPortalController } from '../controllers/clientPortalController.js';
 import { notificationEngineController } from '../controllers/notificationEngineController.js';
-import { projectAutomationController } from '../controllers/projectAutomationController.js';
 import { assetManagementController } from '../controllers/assetManagementController.js';
-import { assetProcurementController } from '../controllers/assetProcurementController.js';
-import { assetMaintenanceController } from '../controllers/assetMaintenanceController.js';
-import { assetAnalyticsController } from '../controllers/assetAnalyticsController.js';
 import { helpdeskTicketController } from '../controllers/helpdeskTicketController.js';
 import { helpdeskController } from '../controllers/helpdeskController.js';
 import { helpdeskEnterpriseController } from '../controllers/helpdeskEnterpriseController.js';
 import { expenseManagementController } from '../controllers/expenseManagementController.js';
-import { expensePolicyController } from '../controllers/expensePolicyController.js';
 import { organizationController } from '../controllers/organizationController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
@@ -56,7 +40,10 @@ const router = Router();
 
 // 1. Auth Routes
 router.post('/auth/login', (req, res) => authController.login(req, res));
+router.post('/auth/logout', authenticateToken, (req, res) => authController.logout(req, res));
 router.post('/auth/refresh', (req, res) => authController.refreshToken(req, res));
+router.post('/auth/forgot-password', (req, res) => authController.forgotPassword(req, res));
+router.post('/auth/reset-password-token', (req, res) => authController.resetPasswordByToken(req, res));
 router.get('/auth/me', authenticateToken, (req, res) => authController.getProfile(req, res));
 router.post('/auth/change-password', authenticateToken, (req, res) => authController.changePassword(req, res));
 router.post('/auth/reset-password', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => authController.resetPassword(req, res));
@@ -102,6 +89,8 @@ router.delete('/employees/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_M
 router.post('/employees/:id/restore', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.restore(req, res));
 router.put('/employees/:id/role', authenticateToken, authorizeRoles('ADMIN'), (req, res) => employeeController.updateRole(req, res));
 router.delete('/employees/:id/permanent', authenticateToken, authorizeRoles('ADMIN'), (req, res) => employeeController.permanentDelete(req, res));
+router.post('/employees/:id/education', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.addEducation(req, res));
+router.post('/employees/:id/experience', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => employeeController.addExperience(req, res));
 
 // 4. Attendance Module Routes
 router.get('/attendance', authenticateToken, (req, res) => attendanceController.getHistory(req, res));
@@ -137,26 +126,6 @@ router.delete('/attendance/regularizations/:id', authenticateToken, (req, res) =
 router.put('/attendance/regularizations/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD'), (req, res) => regularizationController.approve(req, res));
 
 // 4b. Shift Management Routes
-router.get('/shifts', authenticateToken, (req, res) => shiftController.getAllShifts(req, res));
-router.post('/shifts', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.createShift(req, res));
-router.post('/shifts/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => shiftController.seedDefaultShifts(req, res));
-router.get('/shifts/my-shift', authenticateToken, (req, res) => shiftController.getMyShift(req, res));
-router.get('/shifts/assignments', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => shiftController.getAllAssignments(req, res));
-router.post('/shifts/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.assignShift(req, res));
-router.post('/shifts/bulk-assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.bulkAssignShift(req, res));
-router.get('/shifts/history', authenticateToken, (req, res) => shiftController.getShiftHistory(req, res));
-router.get('/shifts/swap-requests', authenticateToken, (req, res) => shiftController.getSwapRequests(req, res));
-router.post('/shifts/swap-requests', authenticateToken, (req, res) => shiftController.requestSwap(req, res));
-router.put('/shifts/swap-requests/:id/process', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => shiftController.processSwap(req, res));
-router.get('/shifts/overtime-requests', authenticateToken, (req, res) => shiftController.getOvertimeRequests(req, res));
-router.post('/shifts/overtime-requests', authenticateToken, (req, res) => shiftController.requestOvertime(req, res));
-router.put('/shifts/overtime-requests/:id/process', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => shiftController.processOvertime(req, res));
-router.get('/shifts/reports/utilization', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.getShiftUtilizationReport(req, res));
-router.get('/shifts/reports/overtime', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.getOvertimeSummaryReport(req, res));
-router.get('/shifts/employees/:employeeId', authenticateToken, (req, res) => shiftController.getEmployeeShift(req, res));
-router.get('/shifts/:id', authenticateToken, (req, res) => shiftController.getShiftById(req, res));
-router.put('/shifts/:id', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => shiftController.updateShift(req, res));
-router.delete('/shifts/:id', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => shiftController.deleteShift(req, res));
 
 // 5. Leave Module & Policy Engine Routes
 router.post('/leave/seed-defaults', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => leavePolicyController.seedDefaults(req, res));
@@ -214,13 +183,13 @@ router.post('/company-events', authenticateToken, authorizeRoles('ADMIN', 'HR_MA
 router.get('/calendar/unified-feed', authenticateToken, (req, res) => holidayEngineController.getUnifiedCalendarFeed(req, res));
 
 // 5e. Leave Analytics & Business Intelligence Routes
-router.get('/analytics/leave/kpis', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getKPIs(req, res));
-router.get('/analytics/leave/trend', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getTrend(req, res));
-router.get('/analytics/leave/departments', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getDepartments(req, res));
-router.get('/analytics/leave/branches', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getBranches(req, res));
-router.get('/analytics/leave/heatmap', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getHeatmap(req, res));
-router.get('/analytics/leave/forecast', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => leaveAnalyticsController.getForecast(req, res));
-router.post('/analytics/leave/log-export', authenticateToken, (req, res) => leaveAnalyticsController.logExport(req, res));
+router.get('/analytics/leave/kpis', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => analyticsController.getLeaveKPIs(req, res));
+router.get('/analytics/leave/trend', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => analyticsController.getLeaveTrend(req, res));
+router.get('/analytics/leave/departments', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => analyticsController.getLeaveDepartments(req, res));
+router.get('/analytics/leave/branches', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => analyticsController.getLeaveBranches(req, res));
+router.get('/analytics/leave/heatmap', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => analyticsController.getLeaveHeatmap(req, res));
+router.get('/analytics/leave/forecast', authenticateToken, authorizeRoles(...leaveMgrRoles), (req, res) => analyticsController.getLeaveForecast(req, res));
+router.post('/analytics/leave/log-export', authenticateToken, (req, res) => analyticsController.logLeaveExport(req, res));
 
 // 5f. Enterprise Leave Finalization & Bulk Operations Routes
 router.post('/leave/bulk/assign-policy', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => leaveFinalizationController.bulkAssignPolicy(req, res));
@@ -260,27 +229,8 @@ router.post('/payroll/settings', authenticateToken, authorizeRoles('ADMIN', 'SUP
 router.get('/payroll/dashboard/kpis', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollFoundationController.getDashboardKPIs(req, res));
 
 // 6b. Enterprise Salary Component Engine, Loans, Advances, Bank & Benefits Routes
-router.post('/payroll/components/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => salaryComponentEngineController.seedComponents(req, res));
-router.get('/payroll/components', authenticateToken, (req, res) => salaryComponentEngineController.getComponents(req, res));
-router.post('/payroll/components', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => salaryComponentEngineController.createComponent(req, res));
-router.post('/payroll/loans/request', authenticateToken, (req, res) => salaryComponentEngineController.requestLoan(req, res));
-router.patch('/payroll/loans/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.approveLoan(req, res));
-router.get('/payroll/loans', authenticateToken, (req, res) => salaryComponentEngineController.getLoans(req, res));
-router.post('/payroll/advances/request', authenticateToken, (req, res) => salaryComponentEngineController.requestAdvance(req, res));
-router.patch('/payroll/advances/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.approveAdvance(req, res));
-router.get('/payroll/advances', authenticateToken, (req, res) => salaryComponentEngineController.getAdvances(req, res));
-router.post('/payroll/bank-details', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => salaryComponentEngineController.saveBankDetails(req, res));
-router.get('/payroll/bank-details/all', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.getAllBankDetails(req, res));
-router.get('/payroll/bank-details/:employeeId', authenticateToken, (req, res) => salaryComponentEngineController.getBankDetails(req, res));
-router.post('/payroll/benefits', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => salaryComponentEngineController.assignBenefit(req, res));
-router.get('/payroll/benefits', authenticateToken, (req, res) => salaryComponentEngineController.getBenefits(req, res));
 
 // 6c. Enterprise Payroll Processing Wizard & Lock/Unlock Routes
-router.post('/payroll/process', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.processPayroll(req, res));
-router.get('/payroll/preview', authenticateToken, (req, res) => payrollProcessingController.getPreview(req, res));
-router.post('/payroll/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.approvePayroll(req, res));
-router.patch('/payroll/unlock', authenticateToken, authorizeRoles('SUPER_ADMIN'), (req, res) => payrollProcessingController.unlockPayroll(req, res));
-router.post('/payroll/adjustment', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollProcessingController.addAdjustment(req, res));
 
 // 6d. Enterprise Employee Self-Service Payslip & Digital Documents Routes
 router.get('/payroll/payslip/view', authenticateToken, (req, res) => payslipPortalController.viewPayslip(req, res));
@@ -290,36 +240,10 @@ router.get('/payroll/certificates', authenticateToken, (req, res) => payslipPort
 router.get('/payroll/self-service/feed', authenticateToken, (req, res) => payslipPortalController.getSelfServiceFeed(req, res));
 
 // 6e. Enterprise Compensation & Benefits Management Routes
-router.post('/compensation/bonus/seed', authenticateToken, authorizeRoles('ADMIN', 'SUPER_ADMIN'), (req, res) => compensationManagementController.seedBonus(req, res));
-router.get('/compensation/bonus/types', authenticateToken, (req, res) => compensationManagementController.getBonusMaster(req, res));
-router.post('/bonus', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.assignBonus(req, res));
-router.patch('/bonus/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.approveBonus(req, res));
-router.get('/bonus', authenticateToken, (req, res) => compensationManagementController.getBonuses(req, res));
-router.post('/incentive', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.awardIncentive(req, res));
-router.get('/incentives', authenticateToken, (req, res) => compensationManagementController.getIncentives(req, res));
-router.post('/reimbursement', authenticateToken, (req, res) => compensationManagementController.submitClaim(req, res));
-router.patch('/reimbursement/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => compensationManagementController.approveClaim(req, res));
-router.get('/reimbursements', authenticateToken, (req, res) => compensationManagementController.getClaims(req, res));
-router.get('/compensation/analytics', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => compensationManagementController.getAnalytics(req, res));
 
 // 6f. Enterprise Payroll Analytics, BI, Forecasting & Budget Routes
-router.get('/payroll/analytics/kpis', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getExecutiveKPIs(req, res));
-router.get('/payroll/analytics/departments', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getDepartmentBreakup(req, res));
-router.get('/payroll/analytics/branches', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getBranchBreakup(req, res));
-router.get('/payroll/analytics/trend', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getTrend(req, res));
-router.get('/payroll/analytics/forecast', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getForecast(req, res));
-router.post('/payroll/analytics/budget', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => payrollAnalyticsController.setBudget(req, res));
-router.get('/payroll/analytics/budget', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAnalyticsController.getBudgets(req, res));
 
 // 6g. Enterprise Exit Management & Full & Final (FnF) Settlement Routes
-router.post('/exit/resignation', authenticateToken, (req, res) => exitManagementController.submitResignation(req, res));
-router.patch('/exit/resignation/:id/approve', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => exitManagementController.approveResignation(req, res));
-router.get('/exit/resignations', authenticateToken, (req, res) => exitManagementController.getResignations(req, res));
-router.post('/exit/clearance', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'FINANCE_MANAGER', 'IT_MANAGER', 'SUPER_ADMIN'), (req, res) => exitManagementController.clearDepartment(req, res));
-router.get('/exit/clearances/:resignationId', authenticateToken, (req, res) => exitManagementController.getClearances(req, res));
-router.post('/exit/fnf/calculate', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => exitManagementController.calculateFnF(req, res));
-router.patch('/exit/fnf/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => exitManagementController.approveFnF(req, res));
-router.get('/exit/fnf/:resignationId', authenticateToken, (req, res) => exitManagementController.getFnF(req, res));
 
 // 6h. Enterprise Payroll Automation, Pre-flight Auto-Validation & NEFT Bank Transfer Routes
 router.get('/payroll/validate', authenticateToken, authorizeRoles(...payrollRoles), (req, res) => payrollAutomationController.validatePayroll(req, res));
@@ -350,14 +274,6 @@ router.get('/expenses/advances', authenticateToken, (req, res) => expenseManagem
 router.patch('/expenses/advances/:id/settle', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expenseManagementController.settleAdvance(req, res));
 
 // 7b. Expense Policy Controls, Budgeting, Risk Radar & Period Lock Routes
-router.get('/expenses/risk-flags', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.getRiskFlags(req, res));
-router.patch('/expenses/risk-flags/:id/clear', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.clearRiskFlag(req, res));
-router.post('/expenses/budgets', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.createBudget(req, res));
-router.get('/expenses/budgets', authenticateToken, (req, res) => expensePolicyController.getBudgets(req, res));
-router.post('/expenses/reconciliations', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.reconcilePayment(req, res));
-router.get('/expenses/reconciliations', authenticateToken, (req, res) => expensePolicyController.getReconciliations(req, res));
-router.post('/expenses/periods/lock', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => expensePolicyController.lockPeriod(req, res));
-router.get('/expenses/periods', authenticateToken, (req, res) => expensePolicyController.getPeriodLocks(req, res));
 
 // 8. Projects & Tasks Routes
 router.post('/projects/create', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => projectTaskController.createProject(req, res));
@@ -367,6 +283,10 @@ router.get('/projects/tasks/all', authenticateToken, (req, res) => projectTaskCo
 router.patch('/projects/tasks/:id/status', authenticateToken, (req, res) => projectTaskController.updateTaskStatus(req, res));
 router.post('/projects/tasks/:id/work-update', authenticateToken, (req, res) => projectTaskController.submitWorkUpdate(req, res));
 router.get('/projects/tasks/:id/work-updates', authenticateToken, (req, res) => projectTaskController.getWorkUpdates(req, res));
+
+// Standups
+router.post('/tasks/daily-standups', authenticateToken, (req, res) => projectTaskController.submitDailyStandup(req, res));
+router.get('/tasks/daily-standups', authenticateToken, (req, res) => projectTaskController.getDailyStandups(req, res));
 router.post('/projects/members', authenticateToken, (req, res) => enterpriseProjectController.addMember(req, res));
 router.delete('/projects/:id/members/:employeeId', authenticateToken, (req, res) => enterpriseProjectController.removeMember(req, res));
 router.post('/projects/documents', authenticateToken, (req, res) => enterpriseProjectController.addDocument(req, res));
@@ -374,21 +294,8 @@ router.post('/projects/notes', authenticateToken, (req, res) => enterpriseProjec
 router.get('/projects/analytics/kpis', authenticateToken, (req, res) => enterpriseProjectController.getKPIs(req, res));
 
 // 8b. Enterprise Sprint & Interactive Kanban Task Routes
-router.post('/tasks/sprints', authenticateToken, (req, res) => enterpriseTaskController.createSprint(req, res));
-router.get('/tasks/sprints', authenticateToken, (req, res) => enterpriseTaskController.getSprints(req, res));
-router.post('/tasks', authenticateToken, (req, res) => enterpriseTaskController.createTask(req, res));
-router.patch('/tasks/:id/status', authenticateToken, (req, res) => enterpriseTaskController.updateTaskStatus(req, res));
-router.get('/tasks', authenticateToken, (req, res) => enterpriseTaskController.getTasks(req, res));
-router.post('/tasks/:id/checklist', authenticateToken, (req, res) => enterpriseTaskController.addChecklistItem(req, res));
-router.patch('/tasks/checklist/:itemId/toggle', authenticateToken, (req, res) => enterpriseTaskController.toggleChecklistItem(req, res));
 
 // 8c. Enterprise Task Collaboration, Comments & Daily Standup Work Reporting Routes
-router.post('/tasks/daily-reports', authenticateToken, (req, res) => taskCollaborationController.submitReport(req, res));
-router.patch('/tasks/daily-reports/:id/review', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => taskCollaborationController.reviewReport(req, res));
-router.get('/tasks/daily-reports', authenticateToken, (req, res) => taskCollaborationController.getReports(req, res));
-router.post('/tasks/:id/comments', authenticateToken, (req, res) => taskCollaborationController.addComment(req, res));
-router.get('/tasks/:id/comments', authenticateToken, (req, res) => taskCollaborationController.getComments(req, res));
-router.get('/tasks/:id/activity', authenticateToken, (req, res) => taskCollaborationController.getActivity(req, res));
 
 // 8d. Enterprise Weekly Planner, Capacity & Workload Management Routes
 router.post('/planner/items', authenticateToken, (req, res) => weeklyPlannerController.addTaskItem(req, res));
@@ -398,47 +305,17 @@ router.get('/planner/capacity', authenticateToken, (req, res) => weeklyPlannerCo
 router.get('/planner/export/csv', authenticateToken, (req, res) => weeklyPlannerController.exportCSV(req, res));
 
 // 8e. Enterprise Time Tracking, Live Work Session Timer & Timesheets Routes
-router.post('/timetracking/timer/start', authenticateToken, (req, res) => timeTrackingController.startTimer(req, res));
-router.post('/timetracking/timer/stop', authenticateToken, (req, res) => timeTrackingController.stopTimer(req, res));
-router.get('/timetracking/timer/active', authenticateToken, (req, res) => timeTrackingController.getActiveTimer(req, res));
-router.post('/timetracking/entry', authenticateToken, (req, res) => timeTrackingController.logTimeEntry(req, res));
-router.get('/timetracking/timesheet', authenticateToken, (req, res) => timeTrackingController.getTimesheet(req, res));
-router.post('/timetracking/timesheet/submit', authenticateToken, (req, res) => timeTrackingController.submitTimesheet(req, res));
-router.patch('/timetracking/timesheet/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => timeTrackingController.approveTimesheet(req, res));
-router.get('/timetracking/timesheets/pending', authenticateToken, (req, res) => timeTrackingController.getPendingTimesheets(req, res));
-router.get('/timetracking/analytics/kpis', authenticateToken, (req, res) => timeTrackingController.getKPIs(req, res));
 
 // 8f. Enterprise Project Analytics, Portfolio BI, Milestones & Risk Register Routes
-router.get('/projects/portfolio/kpis', authenticateToken, (req, res) => projectAnalyticsController.getKPIs(req, res));
-router.post('/projects/milestones', authenticateToken, (req, res) => projectAnalyticsController.createMilestone(req, res));
-router.get('/projects/milestones', authenticateToken, (req, res) => projectAnalyticsController.getMilestones(req, res));
-router.post('/projects/risks', authenticateToken, (req, res) => projectAnalyticsController.createRisk(req, res));
-router.get('/projects/risks', authenticateToken, (req, res) => projectAnalyticsController.getRisks(req, res));
-router.get('/projects/analytics/workload', authenticateToken, (req, res) => projectAnalyticsController.getWorkload(req, res));
-router.get('/projects/analytics/budget-variance', authenticateToken, (req, res) => projectAnalyticsController.getBudgetVariance(req, res));
-router.get('/projects/analytics/export/portfolio-csv', authenticateToken, (req, res) => projectAnalyticsController.exportCSV(req, res));
 
 // 8g. Enterprise Client Portal, Deliverables Approval & Change Request Routes
-router.post('/client/organizations', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'SUPER_ADMIN'), (req, res) => clientPortalController.createOrganization(req, res));
-router.post('/client/access/grant', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'SUPER_ADMIN'), (req, res) => clientPortalController.grantAccess(req, res));
-router.get('/client/projects', authenticateToken, (req, res) => clientPortalController.getClientProjects(req, res));
-router.post('/client/deliverables', authenticateToken, (req, res) => clientPortalController.createDeliverable(req, res));
-router.get('/client/deliverables', authenticateToken, (req, res) => clientPortalController.getDeliverables(req, res));
-router.patch('/client/deliverables/:id/review', authenticateToken, (req, res) => clientPortalController.reviewDeliverable(req, res));
-router.post('/client/change-requests', authenticateToken, (req, res) => clientPortalController.createChangeRequest(req, res));
-router.get('/client/change-requests', authenticateToken, (req, res) => clientPortalController.getChangeRequests(req, res));
 
 // 8h. Enterprise Project Automation, Health Recalculations, Bulk Actions & Global Search Routes
-router.post('/projects/automation/check-deadlines', authenticateToken, (req, res) => projectAutomationController.checkDeadlines(req, res));
-router.post('/projects/:id/recalculate-health', authenticateToken, (req, res) => projectAutomationController.recalculateHealth(req, res));
-router.post('/tasks/bulk-update', authenticateToken, authorizeRoles('ADMIN', 'PROJECT_MANAGER', 'DEPT_HEAD', 'SUPER_ADMIN'), (req, res) => projectAutomationController.bulkUpdate(req, res));
-router.get('/projects/search', authenticateToken, (req, res) => projectAutomationController.globalSearch(req, res));
 router.get('/projects/:id', authenticateToken, (req, res) => projectController.getDetails(req, res));
 router.post('/projects/tasks', authenticateToken, (req, res) => projectController.createTask(req, res));
 router.put('/projects/tasks/:taskId/status', authenticateToken, (req, res) => projectController.updateTaskStatus(req, res));
 
 // 9. Enterprise IT Asset Management & Lifecycle Routes
-router.get('/assets/kpis', authenticateToken, (req, res) => assetAnalyticsController.getFinancialAnalytics(req, res));
 router.post('/assets/create', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'ASSET_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.createAsset(req, res));
 router.get('/assets/all', authenticateToken, (req, res) => assetManagementController.getAssets(req, res));
 router.post('/assets/assign', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'ASSET_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.assignAsset(req, res));
@@ -446,33 +323,18 @@ router.post('/assets/transfer', authenticateToken, authorizeRoles('ADMIN', 'HR_M
 router.get('/assets/my-assets', authenticateToken, (req, res) => assetManagementController.getMyAssets(req, res));
 
 // 9b. Enterprise Asset Requests, Procurement, POs & Receiving Routes
-router.post('/assets/requests', authenticateToken, (req, res) => assetProcurementController.createRequest(req, res));
-router.get('/assets/requests', authenticateToken, (req, res) => assetProcurementController.getRequests(req, res));
-router.patch('/assets/requests/:id/review', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => assetProcurementController.reviewRequest(req, res));
-router.post('/assets/requests/:id/quotations', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.addQuotation(req, res));
-router.get('/assets/requests/:id/quotations', authenticateToken, (req, res) => assetProcurementController.getQuotations(req, res));
-router.post('/assets/purchase-orders', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.createPO(req, res));
-router.get('/assets/purchase-orders', authenticateToken, (req, res) => assetProcurementController.getPOs(req, res));
-router.post('/assets/purchase-orders/:id/receive', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetProcurementController.receivePO(req, res));
+router.post('/assets/requests', authenticateToken, (req, res) => assetManagementController.createRequest(req, res));
+router.get('/assets/requests', authenticateToken, (req, res) => assetManagementController.getRequests(req, res));
+router.patch('/assets/requests/:id/review', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => assetManagementController.reviewRequest(req, res));
+router.post('/assets/requests/:id/quotations', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.addQuotation(req, res));
+router.get('/assets/requests/:id/quotations', authenticateToken, (req, res) => assetManagementController.getQuotations(req, res));
+router.post('/assets/purchase-orders', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.createPO(req, res));
+router.get('/assets/purchase-orders', authenticateToken, (req, res) => assetManagementController.getPOs(req, res));
+router.post('/assets/purchase-orders/:id/receive', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetManagementController.receivePO(req, res));
 
 // 9c. Enterprise Asset Warranty Claims, Damage Investigations & Payroll Recovery Routes
-router.post('/assets/warranty-claims', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.createWarrantyClaim(req, res));
-router.get('/assets/warranty-claims', authenticateToken, (req, res) => assetMaintenanceController.getWarrantyClaims(req, res));
-router.post('/assets/damage-investigations', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN', 'DEPT_HEAD'), (req, res) => assetMaintenanceController.createDamageInvestigation(req, res));
-router.get('/assets/damage-investigations', authenticateToken, (req, res) => assetMaintenanceController.getDamageInvestigations(req, res));
-router.post('/assets/payroll-recoveries', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.createPayrollRecovery(req, res));
-router.get('/assets/payroll-recoveries', authenticateToken, (req, res) => assetMaintenanceController.getPayrollRecoveries(req, res));
-router.patch('/assets/payroll-recoveries/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => assetMaintenanceController.approvePayrollRecovery(req, res));
 
 // 9d. Enterprise Asset Financial Valuation, Depreciation & Physical Audit Routes
-router.get('/assets/analytics/financial', authenticateToken, (req, res) => assetAnalyticsController.getFinancialAnalytics(req, res));
-router.post('/assets/depreciation/calculate', authenticateToken, authorizeRoles('ADMIN', 'FINANCE_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.calculateDepreciation(req, res));
-router.get('/assets/depreciation/schedules', authenticateToken, (req, res) => assetAnalyticsController.getDepreciationSchedules(req, res));
-router.post('/assets/audits', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.createAudit(req, res));
-router.get('/assets/audits', authenticateToken, (req, res) => assetAnalyticsController.getAudits(req, res));
-router.post('/assets/audits/:id/findings', authenticateToken, (req, res) => assetAnalyticsController.recordFinding(req, res));
-router.get('/assets/audit-findings', authenticateToken, (req, res) => assetAnalyticsController.getFindings(req, res));
-router.patch('/assets/audit-findings/:id/reconcile', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER', 'SUPER_ADMIN'), (req, res) => assetAnalyticsController.reconcileFinding(req, res));
 
 // 11. Notifications Routes
 router.post('/notifications/dispatch', authenticateToken, (req, res) => notificationEngineController.dispatchNotification(req, res));
@@ -535,14 +397,6 @@ router.get('/org/hierarchy', authenticateToken, (req, res) => organizationContro
 router.get('/documents', authenticateToken, (req, res) => miscController.getDocuments(req, res));
 router.post('/documents', authenticateToken, (req, res) => miscController.createDocument(req, res));
 
-// 16. Timesheets Route
-router.get('/timesheets', authenticateToken, (req, res) => miscController.getTimesheets(req, res));
-router.post('/timesheets', authenticateToken, (req, res) => miscController.logTimesheet(req, res));
-
-// 17. Performance Reviews
-router.get('/performance', authenticateToken, (req, res) => miscController.getPerformanceReviews(req, res));
-router.post('/performance', authenticateToken, (req, res) => miscController.createPerformanceReview(req, res));
-
 // 18. Weekly Planner
 router.get('/planner', authenticateToken, (req, res) => miscController.getWeeklyPlanner(req, res));
 router.post('/planner', authenticateToken, (req, res) => miscController.createWeeklyPlannerTask(req, res));
@@ -588,5 +442,10 @@ router.get('/attendance/integrations/weekly-planner', authenticateToken, (req, r
 router.get('/attendance/integrations/org-chart', authenticateToken, (req, res) => attendanceFinalizationController.getOrgChart(req, res));
 router.get('/attendance/integrations/dashboard-feed', authenticateToken, (req, res) => attendanceFinalizationController.getDashboardFeed(req, res));
 router.post('/attendance/log-event', authenticateToken, (req, res) => attendanceFinalizationController.logEvent(req, res));
+
+// 24. Compliance Module Routes
+router.get('/compliance/pf-ecr', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => complianceController.getPFECR(req, res));
+router.get('/compliance/esic-return', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => complianceController.getESICReturn(req, res));
+router.get('/compliance/form16/:employeeId', authenticateToken, (req, res) => complianceController.getForm16(req, res));
 
 export default router;

@@ -158,18 +158,6 @@ export class MiscService {
   async getDocuments(empId: number) { return await documentRepository.getByEmployee(empId); }
   async createDocument(data: any) { return await documentRepository.create(data.employee_id, data.title, data.category, data.file_url); }
 
-  // Timesheets
-  async getTimesheets(empId: number) { return await timesheetRepository.getByEmployee(empId); }
-  async logTimesheet(data: any) {
-    return await timesheetRepository.create(data.employee_id, data.project_id, data.task_id, data.date, data.hours_spent, data.description);
-  }
-
-  // Performance Reviews
-  async getPerformanceReviews() { return await performanceRepository.getAll(); }
-  async createPerformanceReview(data: any) {
-    return await performanceRepository.create(data.employee_id, data.reviewer_id, data.review_period, data.rating, data.feedback, data.goals);
-  }
-
   // Weekly Planner
   async getWeeklyPlanner(empId: number) { return await plannerRepository.getByEmployee(empId); }
   async createWeeklyPlannerTask(data: any) {

@@ -5,7 +5,7 @@ import {
   LifeBuoy, BarChart2, List, PlusCircle, Inbox, BookOpen,
   Settings, Layers, AlertTriangle, CheckCircle, Clock,
   Search, Filter, Users, ShieldAlert, Star, MessageSquare,
-  Activity, X, ChevronRight, FileText, Send, ArrowLeft
+  Activity, X, ChevronRight, FileText, Send, ArrowLeft, Megaphone
 } from 'lucide-react';
 
 // --- Types ---
@@ -88,6 +88,16 @@ interface EscalationRule {
   active: boolean;
 }
 
+interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  priority: string;
+  created_at: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
   const { user } = useAuth();
   const userRole = (user as any)?.role || 'EMPLOYEE';
@@ -112,6 +122,7 @@ export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => vo
   const [articles, setArticles] = useState<Article[]>([]);
   const [slaRules, setSlaRules] = useState<SLARule[]>([]);
   const [escalationRules, setEscalationRules] = useState<EscalationRule[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   
   // Modal states
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -125,6 +136,7 @@ export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => vo
   const [newArticle, setNewArticle] = useState({ title: '', content: '' });
   const [newSlaRule, setNewSlaRule] = useState({ priority: 'LOW', resolutionTimeHours: 24 });
   const [newEscalationRule, setNewEscalationRule] = useState({ condition: '', action: '' });
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', priority: 'NORMAL' });
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -195,6 +207,32 @@ export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => vo
     }
   }, []);
 
+  const fetchAnnouncements = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get('/announcements');
+      setAnnouncements(res.data || []);
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await apiClient.post('/announcements', newAnnouncement);
+      setNewAnnouncement({ title: '', content: '', priority: 'NORMAL' });
+      fetchAnnouncements();
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'DASHBOARD') fetchMetrics();
     else if (activeTab === 'ALL_TICKETS') fetchTickets('/helpdesk/all');
@@ -204,7 +242,8 @@ export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => vo
     else if (activeTab === 'KNOWLEDGE_BASE') fetchArticles();
     else if (activeTab === 'SLA_RULES') { fetchSlaRules(); fetchEscalationRules(); }
     else if (activeTab === 'CATEGORIES') fetchCategories();
-  }, [activeTab, fetchMetrics, fetchTickets, fetchCategories, fetchArticles, fetchSlaRules, fetchEscalationRules]);
+    else if (activeTab === 'ANNOUNCEMENTS') fetchAnnouncements();
+  }, [activeTab, fetchMetrics, fetchTickets, fetchCategories, fetchArticles, fetchSlaRules, fetchEscalationRules, fetchAnnouncements]);
 
   // Actions
   const handleRaiseTicket = async (e: React.FormEvent) => {
@@ -408,6 +447,10 @@ export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => vo
           
           <button onClick={() => setActiveTab('KNOWLEDGE_BASE')} className={`px-4 py-2 rounded-t-lg font-medium flex items-center gap-2 transition-colors ${activeTab === 'KNOWLEDGE_BASE' ? 'bg-white text-indigo-600 border-t border-x border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
             <BookOpen className="w-4 h-4" /> Knowledge Base
+          </button>
+
+          <button onClick={() => setActiveTab('ANNOUNCEMENTS')} className={`px-4 py-2 rounded-t-lg font-medium flex items-center gap-2 transition-colors ${activeTab === 'ANNOUNCEMENTS' ? 'bg-white text-indigo-600 border-t border-x border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
+            <Megaphone className="w-4 h-4" /> Announcements
           </button>
 
           {isAdmin && (
@@ -662,6 +705,55 @@ export const EnterpriseHelpdeskPage: React.FC<{ onNavigate?: (tab: string) => vo
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'ANNOUNCEMENTS' && (
+          <div className="space-y-6">
+            {isAdmin && (
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
+                <h3 className="text-lg font-bold mb-4">Post New Announcement</h3>
+                <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input required type="text" placeholder="Title" value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} className="w-full border rounded-lg px-4 py-2" />
+                    <select value={newAnnouncement.priority} onChange={e => setNewAnnouncement({...newAnnouncement, priority: e.target.value})} className="w-full border rounded-lg px-4 py-2 bg-white">
+                      <option value="NORMAL">Normal Priority</option>
+                      <option value="HIGH">High Priority</option>
+                      <option value="URGENT">Urgent Priority</option>
+                    </select>
+                  </div>
+                  <textarea required placeholder="Announcement Content..." value={newAnnouncement.content} onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})} className="w-full border rounded-lg px-4 py-2 h-32"></textarea>
+                  <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2">
+                    <Megaphone className="w-4 h-4" /> Post Announcement
+                  </button>
+                </form>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              {announcements.map((a: Announcement) => (
+                <div key={a.id} className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${a.priority === 'URGENT' ? 'border-l-red-500' : a.priority === 'HIGH' ? 'border-l-amber-500' : 'border-l-indigo-500'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-bold text-slate-800">{a.title}</h3>
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${a.priority === 'URGENT' ? 'bg-red-100 text-red-700' : a.priority === 'HIGH' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
+                      {a.priority}
+                    </span>
+                  </div>
+                  <p className="text-slate-600 whitespace-pre-wrap mb-4">{a.content}</p>
+                  <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <span className="flex items-center gap-1"><Users className="w-4 h-4"/> {a.first_name || 'HR'} {a.last_name || 'Admin'}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-4 h-4"/> {new Date(a.created_at).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+              {announcements.length === 0 && (
+                <div className="text-center py-10 bg-white rounded-xl border border-slate-100">
+                  <Megaphone className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-slate-900">No Announcements</h3>
+                  <p className="text-slate-500">There are no company announcements at this time.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

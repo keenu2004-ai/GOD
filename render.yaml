@@ -1,37 +1,25 @@
+# Render Blueprint Configuration for THEIAKSHI ENTERPRISE
+# Documentation: https://render.com/docs/blueprint-spec
+
 services:
-  # 1. Express Backend Web Service
   - type: web
-    name: theiakshi-hrms-backend
-    env: node
-    region: singapore
+    name: theiakshi-enterprise
+    runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    region: oregon
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
-        generateValue: true
-      - key: REFRESH_SECRET
-        generateValue: true
-      - key: FRONTEND_URL
-        value: https://theiakshi-hrms-frontend.onrender.com
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
       - key: CORS_ORIGIN
-        value: https://theiakshi-hrms-frontend.onrender.com
-
-  # 2. Vite Frontend Static Site (Served via Render Global CDN)
-  - type: web
-    name: theiakshi-hrms-frontend
-    env: static
-    buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        value: https://theiakshi-hrms-backend.onrender.com/api/v1
+        sync: false

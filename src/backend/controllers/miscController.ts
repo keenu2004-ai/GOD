@@ -141,39 +141,6 @@ export class MiscController {
     } catch (e: any) { return res.status(400).json(sendError(e.message)); }
   }
 
-  // Timesheets
-  async getTimesheets(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user?.id || parseInt(req.params.employeeId, 10) || 1;
-      const data = await miscService.getTimesheets(userId);
-      return res.json(sendSuccess(data, 'Timesheet entries retrieved'));
-    } catch (e: any) { return res.status(500).json(sendError(e.message)); }
-  }
-
-  async logTimesheet(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user?.id || req.body.employee_id || 1;
-      const data = await miscService.logTimesheet({ ...req.body, employee_id: userId });
-      return res.status(201).json(sendSuccess(data, 'Timesheet hours logged'));
-    } catch (e: any) { return res.status(400).json(sendError(e.message)); }
-  }
-
-  // Performance Reviews
-  async getPerformanceReviews(req: Request, res: Response) {
-    try {
-      const data = await miscService.getPerformanceReviews();
-      return res.json(sendSuccess(data, 'Performance reviews retrieved'));
-    } catch (e: any) { return res.status(500).json(sendError(e.message)); }
-  }
-
-  async createPerformanceReview(req: Request, res: Response) {
-    try {
-      const reviewerId = (req as any).user?.id || req.body.reviewer_id || 1;
-      const data = await miscService.createPerformanceReview({ ...req.body, reviewer_id: reviewerId });
-      return res.status(201).json(sendSuccess(data, 'Performance review submitted'));
-    } catch (e: any) { return res.status(400).json(sendError(e.message)); }
-  }
-
   // Weekly Planner
   async getWeeklyPlanner(req: Request, res: Response) {
     try {

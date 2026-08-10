@@ -72,53 +72,6 @@ export class DocumentRepository {
   }
 }
 
-export class TimesheetRepository {
-  async getByEmployee(employeeId: number) {
-    const sql = `
-      SELECT t.*, p.name as project_name, p.code as project_code, tk.title as task_title
-      FROM timesheets t
-      JOIN projects p ON t.project_id = p.id
-      LEFT JOIN tasks tk ON t.task_id = tk.id
-      WHERE t.employee_id = $1 ORDER BY t.date DESC
-    `;
-    const res = await dbService.query(sql, [employeeId]);
-    return res.rows;
-  }
-
-  async create(employeeId: number, projectId: number, taskId: number | null, date: string, hoursSpent: number, description: string) {
-    const res = await dbService.query(
-      `INSERT INTO timesheets (employee_id, project_id, task_id, date, hours_spent, description, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'APPROVED') RETURNING *`,
-      [employeeId, projectId, taskId || null, date, hoursSpent, description]
-    );
-    return res.rows[0];
-  }
-}
-
-export class PerformanceRepository {
-  async getAll() {
-    const sql = `
-      SELECT pr.*, e.first_name, e.last_name, e.employee_code, e.avatar_url, e.designation, d.name as department_name,
-             r.first_name as reviewer_first_name, r.last_name as reviewer_last_name
-      FROM performance_reviews pr
-      JOIN employees e ON pr.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      JOIN employees r ON pr.reviewer_id = r.id
-      ORDER BY pr.id DESC
-    `;
-    const res = await dbService.query(sql);
-    return res.rows;
-  }
-
-  async create(employeeId: number, reviewerId: number, period: string, rating: number, feedback: string, goals: string) {
-    const res = await dbService.query(
-      `INSERT INTO performance_reviews (employee_id, reviewer_id, review_period, rating, feedback, goals)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [employeeId, reviewerId, period, rating, feedback, goals]
-    );
-    return res.rows[0];
-  }
-}
 
 export class PlannerRepository {
   async getByEmployee(employeeId: number) {
@@ -297,8 +250,6 @@ export const assetRepository = new AssetRepository();
 export const helpdeskRepository = new HelpdeskRepository();
 export const branchRepository = new BranchRepository();
 export const documentRepository = new DocumentRepository();
-export const timesheetRepository = new TimesheetRepository();
-export const performanceRepository = new PerformanceRepository();
 export const plannerRepository = new PlannerRepository();
 export const systemConfigRepository = new SystemConfigRepository();
 export const auditLogRepository = new AuditLogRepository();

@@ -12,6 +12,7 @@ export interface EmployeeQueryOptions {
   includeDeleted?: boolean;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  organizationId?: number;
 }
 
 export class EmployeeRepository {
@@ -26,6 +27,12 @@ export class EmployeeRepository {
 
     if (!options.includeDeleted) {
       conditions.push(`e.is_deleted = false`);
+    }
+
+    if (options.organizationId) {
+      conditions.push(`e.organization_id = $${paramIndex}`);
+      params.push(options.organizationId);
+      paramIndex++;
     }
 
     if (options.search) {
@@ -103,17 +110,21 @@ export class EmployeeRepository {
     };
   }
 
-  async findById(id: number): Promise<Employee | null> {
-    const res = await dbService.query<Employee>(
-      `SELECT e.*, d.name as department_name, b.name as branch_name,
+  async findById(id: number, organizationId?: number): Promise<Employee | null> {
+    let sql = `SELECT e.*, d.name as department_name, b.name as branch_name,
               m.first_name as manager_first_name, m.last_name as manager_last_name
        FROM employees e
        LEFT JOIN departments d ON e.department_id = d.id
        LEFT JOIN branches b ON e.branch_id = b.id
        LEFT JOIN employees m ON e.reporting_manager_id = m.id
-       WHERE e.id = $1 LIMIT 1`,
-      [id]
-    );
+       WHERE e.id = $1`;
+    const params: any[] = [id];
+    if (organizationId) {
+      sql += ` AND e.organization_id = $2`;
+      params.push(organizationId);
+    }
+    sql += ` LIMIT 1`;
+    const res = await dbService.query<Employee>(sql, params);
     return res.rows[0] || null;
   }
 
@@ -159,8 +170,8 @@ export class EmployeeRepository {
         employee_code, first_name, last_name, email, phone, password_hash, role,
         department_id, branch_id, designation, joining_date, salary,
         bank_account, ifsc_code, pan_number, aadhaar_number,
-        emergency_contact_name, emergency_contact_phone, reporting_manager_id, avatar_url, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+        emergency_contact_name, emergency_contact_phone, reporting_manager_id, avatar_url, status, organization_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
       RETURNING *`,
       [
         data.employee_code,
@@ -184,6 +195,7 @@ export class EmployeeRepository {
         data.reporting_manager_id || null,
         data.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
         data.status || 'ACTIVE',
+        (data as any).organization_id || 1,
       ]
     );
     return res.rows[0];
@@ -268,6 +280,24 @@ export class EmployeeRepository {
   async updateRole(id: number, role: string): Promise<boolean> {
     await dbService.query('UPDATE employees SET role = $1 WHERE id = $2', [role, id]);
     return true;
+  }
+
+  async addEducation(employeeId: number, data: any) {
+    const res = await dbService.query(
+      `INSERT INTO education (employee_id, institution, degree, field_of_study, start_date, end_date, grade)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [employeeId, data.institution, data.degree, data.field_of_study, data.start_date, data.end_date, data.grade]
+    );
+    return res.rows[0];
+  }
+
+  async addExperience(employeeId: number, data: any) {
+    const res = await dbService.query(
+      `INSERT INTO experience (employee_id, company_name, designation, start_date, end_date, description)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [employeeId, data.company_name, data.designation, data.start_date, data.end_date, data.description]
+    );
+    return res.rows[0];
   }
 }
 

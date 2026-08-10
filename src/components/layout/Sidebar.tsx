@@ -47,42 +47,28 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpenMobile, onCloseMobile }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
-    { id: 'employees', label: 'Employees Directory', icon: Users },
-    { id: 'attendance', label: 'Attendance & GPS', icon: Clock },
+    { id: 'employees', label: 'Employees Directory', icon: Users, roles: ['ADMIN', 'HR_MANAGER'] },
+    { id: 'attendance', label: 'Attendance', icon: Clock },
     { id: 'regularization', label: 'Attendance Regularization', icon: FileEdit },
-    { id: 'attendance-analytics', label: 'Attendance Analytics', icon: BarChart2 },
+    { id: 'attendance-analytics', label: 'Attendance & Leave Analysis', icon: BarChart2, roles: ['ADMIN', 'HR_MANAGER', 'DEPT_HEAD'] },
     { id: 'leave', label: 'Leave Management', icon: CalendarCheck2 },
     { id: 'holidays', label: 'Holidays & Calendar', icon: Calendar },
-    { id: 'leave-analytics', label: 'Leave Analytics', icon: BarChart2 },
-    { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign },
-    { id: 'payroll-foundation', label: 'Payroll Foundation & CTC', icon: DollarSign },
-    { id: 'salary-components', label: 'Salary Components & Loans', icon: Settings },
-    { id: 'payroll-processing', label: 'Payroll Processing Wizard', icon: AlarmClock },
+    { id: 'payroll', label: 'Payroll & Payslips', icon: DollarSign, roles: ['ADMIN', 'HR_MANAGER'] },
+    { id: 'payroll-foundation', label: 'Payroll Foundation & CTC', icon: DollarSign, roles: ['ADMIN', 'HR_MANAGER'] },
     { id: 'payslip-portal', label: 'Employee Payroll Portal', icon: FileText },
-    { id: 'compensation', label: 'Compensation & Benefits', icon: Gift },
-    { id: 'payroll-analytics', label: 'Payroll Analytics & BI', icon: BarChart2 },
-    { id: 'exit-management', label: 'Exit & FnF Settlement', icon: LogOut },
     { id: 'expenses', label: 'Expense Claims', icon: Receipt },
-    { id: 'expense-policy', label: 'Expense Policy & Risk Controls', icon: ShieldAlert },
     { id: 'projects', label: 'Projects & Workspaces', icon: FolderGit2 },
-    { id: 'project-analytics', label: 'Project Analytics & Portfolio', icon: BarChart2 },
-    { id: 'client-portal', label: 'Client Portal & Approvals', icon: Building2 },
-    { id: 'project-automation', label: 'Project Automation & Bulk Workspace', icon: Zap },
-    { id: 'tasks-kanban', label: 'Sprint Kanban & Tasks', icon: CheckSquare },
-    { id: 'task-collaboration', label: 'Task Collaboration & Standups', icon: MessageSquare },
-    { id: 'time-tracking', label: 'Time Tracking & Timesheets', icon: Clock },
-    { id: 'assets', label: 'Asset Management', icon: Laptop },
-    { id: 'asset-procurement', label: 'Asset Requests & Procurement', icon: ShoppingBag },
-    { id: 'asset-maintenance', label: 'Asset Maintenance & Recovery', icon: Wrench },
-    { id: 'asset-analytics', label: 'Asset Analytics & Physical Audits', icon: BarChart2 },
-    { id: 'helpdesk', label: 'IT & HR Helpdesk', icon: HelpCircle },
-    { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    { id: 'tasks-kanban', label: 'Task & Work Report', icon: CheckSquare },
+    { id: 'assets', label: 'Asset Management', icon: Laptop, roles: ['ADMIN', 'HR_MANAGER'] },
+    { id: 'helpdesk', label: 'Helpdesk & Announcement', icon: HelpCircle },
     { id: 'orgchart', label: 'Organization Chart', icon: Network },
-    { id: 'performance', label: 'Performance Reviews', icon: Award },
     { id: 'planner', label: 'Weekly Planner & Workload', icon: Calendar },
-    { id: 'shifts', label: 'Shift Management', icon: AlarmClock },
-    { id: 'settings', label: 'Company Settings & Audits', icon: Settings },
+    { id: 'settings', label: 'Company Settings & Audits', icon: Settings, roles: ['ADMIN', 'HR_MANAGER'] },
   ];
+
+  const { user, logout } = useAuth();
+  const userRole = user?.role || 'EMPLOYEE';
+  const filteredMenuItems = menuItems.filter(item => !item.roles || item.roles.includes(userRole));
 
   const handleItemClick = (id: string) => {
     setActiveTab(id);
@@ -91,7 +77,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     }
   };
 
-  const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
   React.useEffect(() => {
@@ -181,17 +166,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <span className="truncate">My Profile</span>
               </button>
 
-              <button
-                onClick={() => handleItemClick('settings')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'settings'
-                    ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                <span className="truncate">Settings</span>
-              </button>
+              {(userRole === 'ADMIN' || userRole === 'HR_MANAGER') && (
+                <button
+                  onClick={() => handleItemClick('settings')}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'settings'
+                      ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 font-semibold'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="truncate">Settings</span>
+                </button>
+              )}
 
               <button
                 onClick={() => handleItemClick('notifications')}
@@ -252,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           </>
         ) : (
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (

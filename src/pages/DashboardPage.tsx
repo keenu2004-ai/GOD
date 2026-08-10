@@ -64,7 +64,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [celebrations, setCelebrations] = useState<any[]>([]);
   const [leaveBalances, setLeaveBalances] = useState<any[]>([]);
-  const [myTasks, setMyTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -94,7 +93,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
         cRes,
         attRes,
         lbRes,
-        planRes,
       ] = await Promise.all([
         apiClient.get('/dashboard/metrics'),
         apiClient.get('/dashboard/activity'),
@@ -104,7 +102,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
         apiClient.get('/dashboard/celebrations'),
         attendanceService.getMyStatus(),
         apiClient.get('/leaves/balances').catch(() => ({ data: { data: [] } })),
-        apiClient.get('/planner').catch(() => ({ data: { data: [] } })),
       ]);
 
       if (mRes.data?.success) setMetrics(mRes.data.data);
@@ -115,7 +112,6 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
       if (cRes.data?.success) setCelebrations(cRes.data.data);
       if (attRes?.success) setAttendanceStatus(attRes.data);
       if (lbRes.data?.success) setLeaveBalances(lbRes.data.data || []);
-      if (planRes.data?.success) setMyTasks(planRes.data.data || []);
     } catch (err) {
       console.error('Failed to load database dashboard data:', err);
     } finally {

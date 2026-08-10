@@ -104,6 +104,35 @@ export class AttendanceAnalyticsService {
   async logExport(actorId: number, reportType: string, format: string, filters: object) {
     return analyticsRepository.logExport(actorId, reportType, format, JSON.stringify(filters));
   }
+
+  // ─── Leave Analytics Merged Service Methods ────────────────────────────────
+  async getExecutiveKPIs() {
+    return analyticsRepository.getExecutiveKPIs();
+  }
+
+  async getMonthlyLeaveTrend(year?: number) {
+    return analyticsRepository.getMonthlyLeaveTrend(year);
+  }
+
+  async getDepartmentLeaveAnalytics() {
+    return analyticsRepository.getDepartmentLeaveAnalytics();
+  }
+
+  async getBranchLeaveAnalytics() {
+    return analyticsRepository.getBranchLeaveAnalytics();
+  }
+
+  async getLeaveHeatmap(year?: number, month?: number) {
+    return analyticsRepository.getLeaveHeatmap(year, month);
+  }
+
+  async getLeaveForecast() {
+    return analyticsRepository.getLeaveForecast();
+  }
+
+  async logReportExport(actorId: number, reportType: string, filename: string) {
+    return analyticsRepository.logLeaveReportExport(actorId, reportType, filename);
+  }
 }
 
 export const analyticsService = new AttendanceAnalyticsService();

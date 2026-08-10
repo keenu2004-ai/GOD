@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -58,33 +59,44 @@ async function startServer() {
     console.error('[THEIAKSHI Backend Error] Database initialization failed:', err);
   }
 
+  // Health check endpoint (for Render healthProbe)
+  app.get('/api/health', async (req, res) => {
+    let dbStatus = 'disconnected';
+    let isConnected = false;
+    try {
+      await dbService.query('SELECT 1');
+      dbStatus = 'connected';
+      isConnected = true;
+    } catch (e) {
+      dbStatus = 'disconnected';
+    }
+
+    if (!isConnected) {
+      return res.status(503).json({
+        success: false,
+        service: 'THEIAKSHI ENTERPRISE',
+        status: 'unhealthy',
+        database: dbStatus,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      service: 'THEIAKSHI ENTERPRISE',
+      status: 'healthy',
+      database: dbStatus,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // API Router Mount point
   app.use('/api/v1', apiRouter);
 
   // Global Error Handler Middleware
   app.use(errorHandlerMiddleware);
 
-  // Health check endpoint
-  app.get('/api/health', async (req, res) => {
-    let dbStatus = 'disconnected';
-    try {
-      await dbService.query('SELECT 1');
-      dbStatus = 'connected';
-    } catch (e) {
-      dbStatus = 'error';
-    }
-
-    res.json({
-      status: 'ok',
-      database: dbStatus,
-      system: 'THEIAKSHI ONE Enterprise HRMS',
-      company: 'THEIAKSHI ENTERPRISES',
-      environment: process.env.NODE_ENV || 'development',
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  // Vite middleware for development
+  // Vite middleware for development vs Production Static & SPA Fallback
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -95,6 +107,9 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ success: false, message: `API route '${req.path}' not found` });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

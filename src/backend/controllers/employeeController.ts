@@ -15,9 +15,11 @@ export class EmployeeController {
       const includeDeleted = req.query.includeDeleted === 'true';
       const sortBy = req.query.sortBy as string;
       const sortOrder = req.query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+      const user = (req as any).user;
 
       const data = await employeeService.getAllEmployees({
-        page, limit, search, departmentId, branchId, role, status, includeDeleted, sortBy, sortOrder
+        page, limit, search, departmentId, branchId, role, status, includeDeleted, sortBy, sortOrder,
+        organizationId: user?.organization_id
       });
 
       return res.json(sendSuccess(data, 'Employees retrieved successfully'));
@@ -32,7 +34,8 @@ export class EmployeeController {
       if (isNaN(id)) {
         return res.status(400).json(sendError('Invalid employee ID parameter'));
       }
-      const data = await employeeService.getEmployeeById(id);
+      const user = (req as any).user;
+      const data = await employeeService.getEmployeeById(id, user?.organization_id);
       return res.json(sendSuccess(data, 'Employee details retrieved'));
     } catch (error: any) {
       return res.status(404).json(sendError(error.message));
@@ -41,7 +44,8 @@ export class EmployeeController {
 
   async create(req: Request, res: Response) {
     try {
-      const data = await employeeService.createEmployee(req.body);
+      const user = (req as any).user;
+      const data = await employeeService.createEmployee(req.body, user?.organization_id);
       return res.status(201).json(sendSuccess(data, 'Employee created successfully'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
@@ -54,7 +58,8 @@ export class EmployeeController {
       if (isNaN(id)) {
         return res.status(400).json(sendError('Invalid employee ID parameter'));
       }
-      const data = await employeeService.updateEmployee(id, req.body);
+      const user = (req as any).user;
+      const data = await employeeService.updateEmployee(id, req.body, user?.organization_id);
       return res.json(sendSuccess(data, 'Employee updated successfully'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
@@ -67,7 +72,8 @@ export class EmployeeController {
       if (isNaN(id)) {
         return res.status(400).json(sendError('Invalid employee ID parameter'));
       }
-      await employeeService.softDeleteEmployee(id);
+      const user = (req as any).user;
+      await employeeService.softDeleteEmployee(id, user?.organization_id);
       return res.json(sendSuccess(null, 'Employee deactivated / soft deleted'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
@@ -80,7 +86,8 @@ export class EmployeeController {
       if (isNaN(id)) {
         return res.status(400).json(sendError('Invalid employee ID parameter'));
       }
-      await employeeService.restoreEmployee(id);
+      const user = (req as any).user;
+      await employeeService.restoreEmployee(id, user?.organization_id);
       return res.json(sendSuccess(null, 'Employee restored successfully'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
@@ -92,7 +99,8 @@ export class EmployeeController {
       const id = parseInt(req.params.id, 10);
       const { role } = req.body;
       if (!role) return res.status(400).json(sendError('Role is required'));
-      await employeeService.updateRole(id, role);
+      const user = (req as any).user;
+      await employeeService.updateRole(id, role, user?.organization_id);
       return res.json(sendSuccess(null, `Employee role updated to ${role}`));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
@@ -102,8 +110,29 @@ export class EmployeeController {
   async permanentDelete(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
-      await employeeService.permanentDeleteEmployee(id);
+      const user = (req as any).user;
+      await employeeService.permanentDeleteEmployee(id, user?.organization_id);
       return res.json(sendSuccess(null, 'Employee permanently deleted from database'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async addEducation(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const data = await employeeService.addEducation(id, req.body);
+      return res.status(201).json(sendSuccess(data, 'Education record added successfully'));
+    } catch (error: any) {
+      return res.status(400).json(sendError(error.message));
+    }
+  }
+
+  async addExperience(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const data = await employeeService.addExperience(id, req.body);
+      return res.status(201).json(sendSuccess(data, 'Experience record added successfully'));
     } catch (error: any) {
       return res.status(400).json(sendError(error.message));
     }

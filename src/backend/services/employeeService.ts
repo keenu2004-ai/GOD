@@ -6,14 +6,14 @@ export class EmployeeService {
     return await employeeRepository.findAll(options);
   }
 
-  async getEmployeeById(id: number) {
-    const employee = await employeeRepository.findById(id);
+  async getEmployeeById(id: number, organizationId?: number) {
+    const employee = await employeeRepository.findById(id, organizationId);
     if (!employee) throw new Error('Employee not found');
     const { password_hash, ...profile } = employee;
     return profile;
   }
 
-  async createEmployee(data: any) {
+  async createEmployee(data: any, organizationId?: number) {
     // 1. Email validation & duplicate check
     if (!data.email) {
       throw new Error('Email is required');
@@ -49,15 +49,16 @@ export class EmployeeService {
       ...data,
       employee_code: employeeCode,
       password_hash,
-    });
+      organization_id: organizationId || 1
+    } as any);
 
     const { password_hash: _, ...created } = newEmp;
     return created;
   }
 
-  async updateEmployee(id: number, data: any) {
+  async updateEmployee(id: number, data: any, organizationId?: number) {
     // 1. Verify existence
-    const existing = await employeeRepository.findById(id);
+    const existing = await employeeRepository.findById(id, organizationId);
     if (!existing) {
       throw new Error('Employee not found');
     }
@@ -86,32 +87,40 @@ export class EmployeeService {
     return profile;
   }
 
-  async softDeleteEmployee(id: number) {
-    const existing = await employeeRepository.findById(id);
+  async softDeleteEmployee(id: number, organizationId?: number) {
+    const existing = await employeeRepository.findById(id, organizationId);
     if (!existing) {
       throw new Error('Employee not found');
     }
     return await employeeRepository.softDelete(id);
   }
 
-  async restoreEmployee(id: number) {
-    const existing = await employeeRepository.findById(id);
+  async restoreEmployee(id: number, organizationId?: number) {
+    const existing = await employeeRepository.findById(id, organizationId);
     if (!existing) {
       throw new Error('Employee not found');
     }
     return await employeeRepository.restore(id);
   }
 
-  async updateRole(id: number, role: string) {
-    const existing = await employeeRepository.findById(id);
+  async updateRole(id: number, role: string, organizationId?: number) {
+    const existing = await employeeRepository.findById(id, organizationId);
     if (!existing) throw new Error('Employee not found');
     return await employeeRepository.updateRole(id, role);
   }
 
-  async permanentDeleteEmployee(id: number) {
-    const existing = await employeeRepository.findById(id);
+  async permanentDeleteEmployee(id: number, organizationId?: number) {
+    const existing = await employeeRepository.findById(id, organizationId);
     if (!existing) throw new Error('Employee not found');
     return await employeeRepository.permanentDelete(id);
+  }
+
+  async addEducation(employeeId: number, data: any) {
+    return await employeeRepository.addEducation(employeeId, data);
+  }
+
+  async addExperience(employeeId: number, data: any) {
+    return await employeeRepository.addExperience(employeeId, data);
   }
 }
 

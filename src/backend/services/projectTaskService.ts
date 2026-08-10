@@ -30,6 +30,14 @@ export class ProjectTaskService {
   async getWorkUpdates(taskId: number) {
     return projectTaskRepository.getWorkUpdates(taskId);
   }
+
+  async submitDailyStandup(employeeId: number, standupDate: string, yesterdayWork: string, todayPlan: string, blockers: string | null, notes: string | null) {
+    return projectTaskRepository.submitDailyStandup(employeeId, standupDate, yesterdayWork, todayPlan, blockers, notes);
+  }
+
+  async getDailyStandups(employeeId?: number, date?: string) {
+    return projectTaskRepository.getDailyStandups(employeeId, date);
+  }
 }
 
 export const projectTaskService = new ProjectTaskService();

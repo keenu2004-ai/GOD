@@ -3,20 +3,20 @@ import {
 } from '../repositories/employeeManagementRepository.js';
 
 export class EmployeeManagementService {
-  async createEmployee(dto: CreateEmployeeDTO, creatorId: number) {
-    return employeeManagementRepository.createEmployee(dto, creatorId);
+  async createEmployee(dto: CreateEmployeeDTO, creatorId: number, organizationId?: number) {
+    return employeeManagementRepository.createEmployee({ ...dto, organization_id: organizationId }, creatorId);
   }
 
-  async getEmployees() {
-    return employeeManagementRepository.getEmployees();
+  async getEmployees(organizationId?: number) {
+    return employeeManagementRepository.getEmployees(organizationId);
   }
 
-  async getOrgChartTree() {
-    return employeeManagementRepository.getOrgChartTree();
+  async getOrgChartTree(organizationId?: number) {
+    return employeeManagementRepository.getOrgChartTree(organizationId);
   }
 
-  async getEmployeeProfile(employeeId: number, requesterId: number, requesterRole: string) {
-    return employeeManagementRepository.getEmployeeProfile(employeeId, requesterId, requesterRole);
+  async getEmployeeProfile(employeeId: number, requesterId: number, requesterRole: string, requesterOrgId?: number) {
+    return employeeManagementRepository.getEmployeeProfile(employeeId, requesterId, requesterRole, requesterOrgId);
   }
 }
 

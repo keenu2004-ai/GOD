@@ -1,5 +1,5 @@
 import {
-  assetManagementRepository, CreateAssetDTO
+  assetManagementRepository, CreateAssetDTO, CreateAssetRequestDTO
 } from '../repositories/assetManagementRepository.js';
 
 export class AssetManagementService {
@@ -21,6 +21,38 @@ export class AssetManagementService {
 
   async getMyAssignedAssets(employeeId: number) {
     return assetManagementRepository.getMyAssignedAssets(employeeId);
+  }
+
+  async createAssetRequest(dto: CreateAssetRequestDTO, employeeId: number) {
+    return assetManagementRepository.createAssetRequest(dto, employeeId);
+  }
+
+  async getAssetRequests(employeeId?: number, isManager = false) {
+    return assetManagementRepository.getAssetRequests(employeeId, isManager);
+  }
+
+  async reviewAssetRequest(requestId: number, status: 'APPROVED' | 'REJECTED' | 'IN_PROCUREMENT', reviewerId: number) {
+    return assetManagementRepository.reviewAssetRequest(requestId, status, reviewerId);
+  }
+
+  async addVendorQuotation(requestId: number, vendorName: string, amount: number, deliveryDays?: number) {
+    return assetManagementRepository.addVendorQuotation(requestId, vendorName, amount, deliveryDays);
+  }
+
+  async getVendorQuotations(requestId: number) {
+    return assetManagementRepository.getVendorQuotations(requestId);
+  }
+
+  async createPurchaseOrder(requestId: number, vendorName: string, totalAmount: number, expectedDelivery: string, creatorId: number) {
+    return assetManagementRepository.createPurchaseOrder(requestId, vendorName, totalAmount, expectedDelivery, creatorId);
+  }
+
+  async getPurchaseOrders() {
+    return assetManagementRepository.getPurchaseOrders();
+  }
+
+  async receivePurchaseOrder(poId: number, creatorId: number) {
+    return assetManagementRepository.receivePurchaseOrder(poId, creatorId);
   }
 }
 
