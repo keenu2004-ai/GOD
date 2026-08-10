@@ -19,39 +19,41 @@ export class EmployeeManagementRepository {
 
   // ─── Employee Creation & Onboarding Engine ─────────────────────────────────
   async createEmployee(dto: CreateEmployeeDTO, creatorId: number) {
-    const num = Math.floor(100000 + Math.random() * 900000);
-    const empCode = `EMP-2026-${num}`;
-    const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
+    return await dbService.transaction(async (client) => {
+      const num = Math.floor(100000 + Math.random() * 900000);
+      const empCode = `EMP-2026-${num}`;
+      const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
 
-    const empRes = await dbService.query(
-      `INSERT INTO employees (employee_code, first_name, last_name, email, phone, password_hash, role, designation, joining_date, department_id, branch_id, reporting_manager_id, status, organization_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'ACTIVE', $13) RETURNING *`,
-      [
-        empCode, dto.first_name, dto.last_name, dto.email, dto.phone, defaultPasswordHash,
-        dto.role || 'EMPLOYEE', dto.designation, dto.joining_date,
-        dto.department_id || null, dto.branch_id || null, dto.reporting_manager_id || null,
-        dto.organization_id || 1
-      ]
-    );
-
-    const emp = empRes.rows[0];
-
-    // Seed Onboarding Checklist
-    const steps = ['Personal Information Review', 'Bank Account & Statutory Declarations', 'IT Asset Allocation & Credentials', 'Company Policy & HR Handbook Acknowledgment'];
-    for (const step of steps) {
-      await dbService.query(
-        `INSERT INTO employee_onboarding_checklists (employee_id, step_name, is_completed) VALUES ($1, $2, false)`,
-        [emp.id, step]
+      const empRes = await client.query(
+        `INSERT INTO employees (employee_code, first_name, last_name, email, phone, password_hash, role, designation, joining_date, department_id, branch_id, reporting_manager_id, status, organization_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'ACTIVE', $13) RETURNING *`,
+        [
+          empCode, dto.first_name, dto.last_name, dto.email, dto.phone, defaultPasswordHash,
+          dto.role || 'EMPLOYEE', dto.designation, dto.joining_date,
+          dto.department_id || null, dto.branch_id || null, dto.reporting_manager_id || null,
+          dto.organization_id || 1
+        ]
       );
-    }
 
-    await dbService.query(
-      `INSERT INTO audit_logs (employee_id, action, module, details)
-       VALUES ($1, 'EMPLOYEE_CREATED', 'EMPLOYEE_MANAGEMENT', $2)`,
-      [creatorId, `Created Employee ${dto.first_name} ${dto.last_name} (${empCode})`]
-    );
+      const emp = empRes.rows[0];
 
-    return emp;
+      // Seed Onboarding Checklist
+      const steps = ['Personal Information Review', 'Bank Account & Statutory Declarations', 'IT Asset Allocation & Credentials', 'Company Policy & HR Handbook Acknowledgment'];
+      for (const step of steps) {
+        await client.query(
+          `INSERT INTO employee_onboarding_checklists (employee_id, step_name, is_completed) VALUES ($1, $2, false)`,
+          [emp.id, step]
+        );
+      }
+
+      await client.query(
+        `INSERT INTO audit_logs (employee_id, action, module, details)
+         VALUES ($1, 'EMPLOYEE_CREATED', 'EMPLOYEE_MANAGEMENT', $2)`,
+        [creatorId, `Created Employee ${dto.first_name} ${dto.last_name} (${empCode})`]
+      );
+
+      return emp;
+    });
   }
 
   async getEmployees(organizationId?: number) {

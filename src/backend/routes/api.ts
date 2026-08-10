@@ -34,6 +34,7 @@ import { helpdeskController } from '../controllers/helpdeskController.js';
 import { helpdeskEnterpriseController } from '../controllers/helpdeskEnterpriseController.js';
 import { expenseManagementController } from '../controllers/expenseManagementController.js';
 import { organizationController } from '../controllers/organizationController.js';
+import { calendarController } from '../controllers/calendarController.js';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -392,9 +393,12 @@ router.get('/attendance/integrations/org-chart', authenticateToken, (req, res) =
 router.get('/attendance/integrations/dashboard-feed', authenticateToken, (req, res) => attendanceFinalizationController.getDashboardFeed(req, res));
 router.post('/attendance/log-event', authenticateToken, (req, res) => attendanceFinalizationController.logEvent(req, res));
 
-// 24. Compliance Module Routes
-router.get('/compliance/pf-ecr', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => complianceController.getPFECR(req, res));
-router.get('/compliance/esic-return', authenticateToken, authorizeRoles('ADMIN', 'HR_MANAGER'), (req, res) => complianceController.getESICReturn(req, res));
-router.get('/compliance/form16/:employeeId', authenticateToken, (req, res) => complianceController.getForm16(req, res));
+// 25. Unified Calendar & Calendar Task Routes
+router.get('/calendar/events', authenticateToken, (req, res) => calendarController.getEvents(req, res));
+router.get('/calendar/tasks', authenticateToken, (req, res) => calendarController.getTasks(req, res));
+router.get('/calendar/tasks/:id', authenticateToken, (req, res) => calendarController.getTaskById(req, res));
+router.post('/calendar/tasks', authenticateToken, (req, res) => calendarController.createTask(req, res));
+router.patch('/calendar/tasks/:id', authenticateToken, (req, res) => calendarController.updateTask(req, res));
+router.delete('/calendar/tasks/:id', authenticateToken, (req, res) => calendarController.deleteTask(req, res));
 
 export default router;

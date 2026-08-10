@@ -17,7 +17,6 @@ interface AttendanceRecord {
   is_late: boolean;
   is_overtime: boolean;
   status: string;
-  status: string;
 }
 
 export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -45,10 +44,11 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
     setLoading(true);
     try {
       const [todayRes, histRes] = await Promise.all([
-        apiClient.get('/attendance/today').catch(() => ({ data: { data: null } })),
+        apiClient.get('/attendance/today').catch(() => ({ data: { data: { record: null } } })),
         apiClient.get('/attendance/my-history').catch(() => ({ data: { data: [] } })),
       ]);
-      setTodayRecord(todayRes.data?.data || null);
+      // Extract the nested 'record' from the wrapper payload
+      setTodayRecord(todayRes.data?.data?.record || null);
       setHistory(histRes.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -208,6 +208,7 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
             <thead className="bg-slate-50 border-b text-[10px] font-black text-slate-500 uppercase">
               <tr>
                 <th className="p-3">Date</th>
+                <th className="p-3">Status</th>
                 <th className="p-3">Clock In</th>
                 <th className="p-3">Clock Out</th>
                 <th className="p-3">Total Hours</th>
@@ -220,12 +221,20 @@ export const EnterpriseAttendancePage: React.FC<{ onNavigate?: (tab: string) => 
               {history.map(rec => (
                 <tr key={rec.id} className="hover:bg-slate-50">
                   <td className="p-3 font-bold text-slate-900">{rec.date}</td>
+                  <td className="p-3 font-sans">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      rec.status === 'PRESENT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                      rec.status === 'HALF_DAY' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                      rec.status === 'LATE' ? 'bg-rose-50 text-rose-700 border-rose-200' : 
+                      'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>{rec.status || 'UNKNOWN'}</span>
+                  </td>
                   <td className="p-3 text-teal-700 font-bold">{rec.punch_in ? new Date(rec.punch_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</td>
                   <td className="p-3 text-rose-700 font-bold">{rec.punch_out ? new Date(rec.punch_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</td>
                   <td className="p-3 font-bold text-slate-900">{rec.work_hours} hrs</td>
                   <td className="p-3 font-sans">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                      rec.is_late ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      rec.is_late ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     }`}>{rec.is_late ? 'LATE' : 'ON_TIME'}</span>
                   </td>
                   <td className="p-3 font-sans">

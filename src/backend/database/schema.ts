@@ -1044,6 +1044,23 @@ export async function initializeSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS calendar_tasks (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      task_date DATE NOT NULL,
+      start_time VARCHAR(20),
+      end_time VARCHAR(20),
+      priority VARCHAR(20) DEFAULT 'MEDIUM',
+      status VARCHAR(20) DEFAULT 'PENDING',
+      assigned_to INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+      created_by INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+      location VARCHAR(255),
+      reminder_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Create View for backward compatibility with 'leaves'
     CREATE OR REPLACE VIEW leaves AS SELECT * FROM leave_applications;
 

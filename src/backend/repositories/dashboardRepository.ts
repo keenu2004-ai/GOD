@@ -14,35 +14,41 @@ export class DashboardRepository {
         }
       };
 
-      const totalEmployees = await safeCount(`SELECT COUNT(*) as count FROM employees WHERE is_deleted = false OR is_deleted IS NULL`);
+      const totalEmployees = await safeCount(`SELECT COUNT(*) as count FROM employees WHERE (is_deleted = false OR is_deleted IS NULL) AND status = 'ACTIVE'`);
       const totalDepartments = await safeCount(`SELECT COUNT(*) as count FROM departments`);
       const totalBranches = await safeCount(`SELECT COUNT(*) as count FROM branches`);
-      const presentToday = await safeCount(`SELECT COUNT(*) as count FROM attendance WHERE date = $1::date OR date = CURRENT_DATE`, [today]);
-      const lateToday = await safeCount(`SELECT COUNT(*) as count FROM attendance WHERE (date = $1::date OR date = CURRENT_DATE) AND is_late = true`, [today]);
+      const presentToday = await safeCount(`SELECT COUNT(*) as count FROM attendance WHERE date = $1::date`, [today]);
+      const lateToday = await safeCount(`SELECT COUNT(*) as count FROM attendance WHERE date = $1::date AND is_late = true`, [today]);
       const pendingLeaves = await safeCount(`SELECT COUNT(*) as count FROM leaves WHERE status IN ('MANAGER_PENDING', 'HR_PENDING', 'PENDING')`);
       const pendingExpenses = await safeCount(`SELECT COUNT(*) as count FROM expenses WHERE status = 'PENDING'`);
-      const activeProjects = await safeCount(`SELECT COUNT(*) as count FROM projects WHERE status IN ('IN_PROGRESS', 'ACTIVE')`);
+      const openHelpdesk = await safeCount(`SELECT COUNT(*) as count FROM helpdesk_tickets WHERE status IN ('OPEN', 'IN_PROGRESS')`);
+      const activeAssets = await safeCount(`SELECT COUNT(*) as count FROM assets WHERE status = 'ALLOCATED'`);
+      const todayStandups = await safeCount(`SELECT COUNT(*) as count FROM daily_standups WHERE standup_date = $1::date`, [today]);
 
       return {
-        totalEmployees: totalEmployees || 5,
-        totalDepartments: totalDepartments || 7,
-        totalBranches: totalBranches || 3,
-        presentToday: presentToday || 1,
-        lateToday: lateToday || 0,
+        totalEmployees,
+        totalDepartments,
+        totalBranches,
+        presentToday,
+        lateToday,
         pendingLeaves,
         pendingExpenses,
-        activeProjects: activeProjects || 2,
+        openHelpdesk,
+        activeAssets,
+        todayStandups
       };
     } catch (err) {
       return {
-        totalEmployees: 5,
-        totalDepartments: 7,
-        totalBranches: 3,
-        presentToday: 1,
+        totalEmployees: 0,
+        totalDepartments: 0,
+        totalBranches: 0,
+        presentToday: 0,
         lateToday: 0,
         pendingLeaves: 0,
         pendingExpenses: 0,
-        activeProjects: 2,
+        openHelpdesk: 0,
+        activeAssets: 0,
+        todayStandups: 0
       };
     }
   }

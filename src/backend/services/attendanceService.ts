@@ -1,4 +1,5 @@
 import { attendanceRepository } from '../repositories/attendanceRepository.js';
+import { getAppBusinessDate } from '../utils/dateUtils.js';
 
 export interface ShiftInfo {
   code: string;
@@ -74,7 +75,7 @@ export class AttendanceService {
   }
 
   async punchIn(employeeId: number, lat?: number, lng?: number, shiftCode = 'GENERAL') {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getAppBusinessDate();
     const existing = await attendanceRepository.findTodayRecord(employeeId, todayStr);
 
     if (existing && existing.punch_in) {
@@ -119,7 +120,7 @@ export class AttendanceService {
   }
 
   async punchOut(employeeId: number, lat?: number, lng?: number) {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getAppBusinessDate();
     const record = await attendanceRepository.findTodayRecord(employeeId, todayStr);
 
     if (!record || !record.punch_in) {
@@ -172,7 +173,7 @@ export class AttendanceService {
   }
 
   async updateBreak(employeeId: number, additionalBreakMins: number) {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getAppBusinessDate();
     const record = await attendanceRepository.findTodayRecord(employeeId, todayStr);
 
     if (!record || !record.punch_in) {
@@ -194,7 +195,7 @@ export class AttendanceService {
   }
 
   async getMyStatus(employeeId: number) {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getAppBusinessDate();
     const record = await attendanceRepository.findTodayRecord(employeeId, todayStr);
 
     let currentWorkSeconds = 0;
@@ -231,13 +232,13 @@ export class AttendanceService {
   }
 
   async getLiveManagerDashboard() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getAppBusinessDate();
     return await attendanceRepository.getLiveManagerStats(todayStr);
   }
 
   async getAnalytics(startDate?: string, endDate?: string) {
-    const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const end = endDate || new Date().toISOString().split('T')[0];
+    const start = startDate || getAppBusinessDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+    const end = endDate || getAppBusinessDate();
     return await attendanceRepository.getAnalytics(start, end);
   }
   async applyRegularization(data: {

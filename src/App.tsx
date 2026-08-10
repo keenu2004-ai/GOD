@@ -17,6 +17,7 @@ import { EnterpriseNotificationPage } from './pages/EnterpriseNotificationPage.j
 import { WeeklyPlannerPage } from './pages/WeeklyPlannerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { EnterpriseHolidayPage } from './pages/EnterpriseHolidayPage.js';
+import { EnterpriseCalendarPage } from './pages/EnterpriseCalendarPage.js';
 import { PayrollFoundationPage } from './pages/PayrollFoundationPage.js';
 import { EmployeePayrollPortalPage } from './pages/EmployeePayrollPortalPage.js';
 import { EnterpriseTaskBoardPage } from './pages/EnterpriseTaskBoardPage.js';
@@ -53,7 +54,8 @@ const AppContent: React.FC = () => {
           case 'leave':
             return <EnterpriseLeavePage onNavigate={setActiveTab} />;
           case 'holidays':
-            return <EnterpriseHolidayPage />;
+          case 'calendar':
+            return <EnterpriseCalendarPage onNavigate={setActiveTab} />;
           case 'payroll':
             return <EnterprisePayrollPage />;
           case 'payroll-foundation':
