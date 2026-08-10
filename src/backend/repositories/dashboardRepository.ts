@@ -1,9 +1,10 @@
 import dbService from '../database/db.js';
+import { getAppBusinessDate } from '../utils/dateUtils.js';
 
 export class DashboardRepository {
   async getMetrics() {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getAppBusinessDate();
 
       const safeCount = async (sql: string, params: any[] = []): Promise<number> => {
         try {
