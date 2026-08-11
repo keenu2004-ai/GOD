@@ -139,11 +139,20 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
     return () => { if (interval) clearInterval(interval); };
   }, [isCheckedIn, attendanceStatus]);
 
+  useEffect(() => {
+    const handleSync = () => fetchDashboardData();
+    window.addEventListener('attendance-updated', handleSync);
+    return () => window.removeEventListener('attendance-updated', handleSync);
+  }, []);
+
   const handlePunchIn = async () => {
     try {
       setPunching(true);
       const res = await attendanceService.punchIn(12.9716, 77.5946);
-      if (res?.success) fetchDashboardData();
+      if (res?.success) {
+        fetchDashboardData();
+        window.dispatchEvent(new Event('attendance-updated'));
+      }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Punch in failed');
     } finally {
@@ -155,7 +164,10 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
     try {
       setPunching(true);
       const res = await attendanceService.punchOut(12.9716, 77.5946);
-      if (res?.success) fetchDashboardData();
+      if (res?.success) {
+        fetchDashboardData();
+        window.dispatchEvent(new Event('attendance-updated'));
+      }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Punch out failed');
     } finally {

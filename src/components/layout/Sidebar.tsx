@@ -83,6 +83,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const [isCollapsed, setIsCollapsed] = React.useState<boolean>(false);
+
   return (
     <>
       {/* Mobile Overlay Backdrop */}
@@ -93,20 +95,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
         />
       )}
 
-      <aside className={`w-64 bg-[#0F172A] border-r border-slate-200/20 flex flex-col h-screen fixed md:sticky top-0 left-0 z-50 shrink-0 text-slate-300 transition-transform duration-300 md:translate-x-0 ${
+      <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#0F172A] border-r border-slate-200/20 flex flex-col h-screen fixed md:sticky top-0 left-0 z-50 shrink-0 text-slate-300 transition-all duration-300 ease-in-out md:translate-x-0 ${
         isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
       }`}>
-        {/* Company Branding & Mobile Close Button */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm text-sm">
+        {/* Company Branding & Panel Collapse Toggle */}
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-extrabold text-white shadow-md text-sm shrink-0">
               T1
             </div>
-            <div className="leading-none">
-              <h1 className="text-white font-bold text-sm tracking-tight font-sans">THEIAKSHI ONE</h1>
-              <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">Enterprise HRMS</p>
-            </div>
+            {!isCollapsed && (
+              <div className="leading-none whitespace-nowrap transition-opacity duration-300">
+                <h1 className="text-white font-extrabold text-sm tracking-tight font-sans">THEIAKSHI ONE</h1>
+                <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-1 font-mono font-semibold">Enterprise HRMS</p>
+              </div>
+            )}
           </div>
+
+          {/* Desktop Panel Collapse / Expand Button */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden md:flex p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            title={isCollapsed ? 'Expand Navigation Panel' : 'Collapse Navigation Panel'}
+          >
+            <ChevronLeft className={`w-5 h-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+          </button>
 
           {/* Close Button on Mobile */}
           <button
@@ -236,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             </nav>
           </>
         ) : (
-          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -244,14 +257,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <button
                   key={item.id}
                   onClick={() => handleItemClick(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  title={item.label}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    isCollapsed ? 'justify-center' : ''
+                  } ${
                     isActive
-                      ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 font-semibold'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
-                  <span className="truncate">{item.label}</span>
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
+                  {!isCollapsed && <span className="truncate text-xs font-semibold">{item.label}</span>}
                 </button>
               );
             })}
@@ -259,14 +275,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
         )}
 
         {/* Footer Info */}
-        <div className="p-4 border-t border-slate-800 bg-[#0B132B] text-[11px] text-slate-400 flex items-center justify-between font-mono">
+        <div className={`p-4 border-t border-slate-800 bg-[#0B132B] text-[11px] text-slate-400 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} font-mono`}>
           <div className="flex items-center gap-1.5">
-            <Building className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-sans font-semibold text-slate-300">THEIAKSHI</span>
+            <Building className="w-4 h-4 text-blue-400 shrink-0" />
+            {!isCollapsed && <span className="font-sans font-bold text-slate-200">THEIAKSHI</span>}
           </div>
-          <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-            v2.4 Active
-          </span>
+          {!isCollapsed && (
+            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              v2.4 Active
+            </span>
+          )}
         </div>
       </aside>
     </>

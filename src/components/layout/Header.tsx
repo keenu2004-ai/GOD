@@ -136,22 +136,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onNavigate }
     }
   };
 
-  const handleBreak = async () => {
-    try {
-      setPunching(true);
-      const res = await attendanceService.recordBreak(15);
-      if (res?.success) {
-        alert('15-minute break recorded successfully!');
-        fetchAttendanceStatus();
-        window.dispatchEvent(new Event('attendance-updated'));
-      }
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to record break');
-    } finally {
-      setPunching(false);
-    }
-  };
-
   const formatTimer = (sec: number) => {
     const hrs = Math.floor(sec / 3600);
     const mins = Math.floor((sec % 3600) / 60);
@@ -161,48 +145,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onNavigate }
 
   const isCheckedIn = !!attendanceStatus?.record?.punch_in && !attendanceStatus?.record?.punch_out;
   const isCheckedOut = !!attendanceStatus?.record?.punch_out;
-
-  // Search State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [showSearchModal, setShowSearchModal] = useState(false);
-
-  const handleSearch = async (q: string) => {
-    setSearchQuery(q);
-    if (!q.trim()) {
-      setSearchResults([]);
-      setShowSearchModal(false);
-      return;
-    }
-    setShowSearchModal(true);
-    setSearching(true);
-    try {
-      const [empRes, ticketRes] = await Promise.all([
-        apiClient.get(`/employees?search=${encodeURIComponent(q)}`).catch(() => ({ data: { data: [] } })),
-        apiClient.get(`/helpdesk/tickets`).catch(() => ({ data: { data: [] } })),
-      ]);
-      const emps = (empRes.data?.data || []).map((e: any) => ({
-        id: `emp-${e.id}`,
-        title: `${e.first_name} ${e.last_name}`,
-        subtitle: `${e.designation || 'Employee'} • ${e.employee_code}`,
-        type: 'EMPLOYEE',
-      }));
-      const tickets = (ticketRes.data?.data || [])
-        .filter((t: any) => t.subject?.toLowerCase().includes(q.toLowerCase()) || t.ticket_number?.toLowerCase().includes(q.toLowerCase()))
-        .map((t: any) => ({
-          id: `ticket-${t.id}`,
-          title: t.subject,
-          subtitle: `Ticket #${t.ticket_number || t.id} • ${t.status}`,
-          type: 'HELPDESK',
-        }));
-      setSearchResults([...emps, ...tickets]);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setSearching(false);
-    }
-  };
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm text-slate-800">
@@ -237,72 +179,53 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onNavigate }
           <Clock className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
           <span>{time || '09:00:00 AM'} IST</span>
         </div>
-
-        {/* Global Search Input */}
-        <div className="relative hidden lg:block">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-64 text-xs">
-            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search employees, tickets..."
-              className="bg-transparent border-none outline-none w-full text-slate-800 placeholder-slate-400 font-medium"
-            />
-            <kbd className="bg-slate-200 text-slate-600 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold">⌘K</kbd>
-          </div>
-
-          {/* Search Results Dropdown */}
-          {showSearchModal && searchQuery.trim() !== '' && (
-            <div className="absolute left-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl p-2 z-50 text-xs text-slate-800">
-              <div className="p-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b">
-                {searching ? 'Searching Data...' : `Results (${searchResults.length})`}
-              </div>
-              <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
-                {searchResults.length === 0 && !searching ? (
-                  <p className="p-3 text-slate-400 text-center">No matching records found</p>
-                ) : (
-                  searchResults.map((res) => (
-                    <div
-                      key={res.id}
-                      onClick={() => {
-                        if (res.type === 'EMPLOYEE') onNavigate?.('employees');
-                        else if (res.type === 'HELPDESK') onNavigate?.('helpdesk');
-                        setShowSearchModal(false);
-                      }}
-                      className="p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">{res.title}</span>
-                        <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{res.type}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500">{res.subtitle}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Right: Attendance Status Badge & Profile Dropdown */}
       <div className="flex items-center gap-3">
-        {/* Header Attendance Status Badge (No Competing Punch Action Buttons) */}
-        <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium">
+        {/* Header Attendance Status Badge (Interactive & Synced with Dashboard Punch Action) */}
+        <button
+          onClick={() => {
+            if (punching) return;
+            if (!isCheckedIn && !isCheckedOut) {
+              handlePunchIn();
+            } else if (isCheckedIn) {
+              if (window.confirm('Do you want to Clock Out now?')) {
+                handlePunchOut();
+              }
+            } else {
+              onNavigate?.('attendance');
+            }
+          }}
+          disabled={punching}
+          title={!isCheckedIn && !isCheckedOut ? 'Click to Clock In Now' : isCheckedIn ? 'Click to Clock Out' : 'View Attendance Details'}
+          className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl text-xs font-medium transition-all shadow-sm active:scale-95 ${
+            isCheckedIn
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100 cursor-pointer'
+              : isCheckedOut
+              ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 cursor-pointer'
+              : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 cursor-pointer animate-pulse'
+          }`}
+        >
           <div className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
-            <span className="font-bold text-slate-800 uppercase text-[11px]">
-              {isCheckedIn ? 'Checked In' : isCheckedOut ? 'Shift Completed' : 'Not Checked In'}
+            <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
+            <span className="font-extrabold uppercase text-[11px] tracking-tight">
+              {punching ? 'Processing...' : isCheckedIn ? 'Checked In' : isCheckedOut ? 'Shift Completed' : 'NOT CHECKED IN'}
             </span>
           </div>
 
           {isCheckedIn && (
-            <span className="font-mono text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[11px] border border-emerald-200">
+            <span className="font-mono text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[11px] border border-emerald-200 shadow-inner">
               {formatTimer(seconds)}
             </span>
           )}
-        </div>
+
+          {!isCheckedIn && !isCheckedOut && (
+            <span className="bg-amber-200 text-amber-900 font-black text-[10px] px-1.5 py-0.5 rounded uppercase">
+              CLICK TO PUNCH
+            </span>
+          )}
+        </button>
 
         {/* Notifications Bell */}
         <div className="relative">
