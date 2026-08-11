@@ -181,52 +181,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onNavigate }
         </div>
       </div>
 
-      {/* Right: Attendance Status Badge & Profile Dropdown */}
+      {/* Right: Notifications Bell & Profile Dropdown */}
       <div className="flex items-center gap-3">
-        {/* Header Attendance Status Badge (Interactive & Synced with Dashboard Punch Action) */}
-        <button
-          onClick={() => {
-            if (punching) return;
-            if (!isCheckedIn && !isCheckedOut) {
-              handlePunchIn();
-            } else if (isCheckedIn) {
-              if (window.confirm('Do you want to Clock Out now?')) {
-                handlePunchOut();
-              }
-            } else {
-              onNavigate?.('attendance');
-            }
-          }}
-          disabled={punching}
-          title={!isCheckedIn && !isCheckedOut ? 'Click to Clock In Now' : isCheckedIn ? 'Click to Clock Out' : 'View Attendance Details'}
-          className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl text-xs font-medium transition-all shadow-sm active:scale-95 ${
-            isCheckedIn
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100 cursor-pointer'
-              : isCheckedOut
-              ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 cursor-pointer'
-              : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 cursor-pointer animate-pulse'
-          }`}
-        >
-          <div className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
-            <span className="font-extrabold uppercase text-[11px] tracking-tight">
-              {punching ? 'Processing...' : isCheckedIn ? 'Checked In' : isCheckedOut ? 'Shift Completed' : 'NOT CHECKED IN'}
-            </span>
-          </div>
-
-          {isCheckedIn && (
-            <span className="font-mono text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[11px] border border-emerald-200 shadow-inner">
-              {formatTimer(seconds)}
-            </span>
-          )}
-
-          {!isCheckedIn && !isCheckedOut && (
-            <span className="bg-amber-200 text-amber-900 font-black text-[10px] px-1.5 py-0.5 rounded uppercase">
-              CLICK TO PUNCH
-            </span>
-          )}
-        </button>
-
         {/* Notifications Bell */}
         <div className="relative">
           <button

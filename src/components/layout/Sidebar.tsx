@@ -83,7 +83,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [isCollapsed, setIsCollapsed] = React.useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = React.useState<boolean>(() => {
+    return localStorage.getItem('theiakshi_sidebar_collapsed') === 'true';
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('theiakshi_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   return (
     <>
@@ -114,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
 
           {/* Desktop Panel Collapse / Expand Button */}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={toggleCollapse}
             className="hidden md:flex p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
             title={isCollapsed ? 'Expand Navigation Panel' : 'Collapse Navigation Panel'}
           >

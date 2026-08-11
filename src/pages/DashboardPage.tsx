@@ -464,27 +464,31 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
       </div>
 
       {/* Attendance Geofenced Punch Widget Row (Visible for all employees & admins) */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className={`p-3.5 rounded-2xl ${isCheckedIn ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 transition-all">
+        <div className="flex items-start gap-4">
+          <div className={`p-3.5 rounded-2xl shrink-0 mt-0.5 ${isCheckedIn ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
             <Clock className="w-7 h-7" />
           </div>
           <div>
+            <span className="text-[10px] font-extrabold text-slate-400 font-mono uppercase tracking-widest block mb-1">
+              CLOCK / ATTENDANCE
+            </span>
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? 'bg-emerald-500 animate-ping' : isCheckedOut ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
-              <h3 className="font-extrabold text-base text-slate-900">
+              <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
                 {isCheckedIn ? 'ACTIVE WORK SESSION' : isCheckedOut ? 'SHIFT COMPLETED FOR TODAY' : 'NOT CHECKED IN YET'}
               </h3>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Office Branch: <strong>{user?.branch_name || 'THEIAKSHI HQ - Bengaluru'}</strong> • Shift: <strong>09:00 AM - 06:00 PM</strong> (GPS HQ Geofence)
-            </p>
+            <div className="text-xs text-slate-600 mt-1.5 space-y-0.5 font-medium">
+              <p>Office Branch: <strong className="text-slate-900 font-semibold">{user?.branch_name || 'THEIAKSHI HQ - Bengaluru'}</strong></p>
+              <p>Shift: <strong className="text-slate-900 font-semibold">09:00 AM - 06:00 PM</strong> • <span className="text-emerald-700 font-mono text-[11px] font-bold">GPS HQ Geofence</span></p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 w-full lg:w-auto justify-end">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
           {isCheckedIn && (
-            <div className="text-right font-mono bg-slate-900 text-emerald-400 px-4 py-2 rounded-xl text-base font-extrabold shadow-inner border border-slate-800">
+            <div className="text-right font-mono bg-slate-900 text-emerald-400 px-4 py-2.5 rounded-xl text-base font-extrabold shadow-inner border border-slate-800">
               {formatTimer(seconds)}
             </div>
           )}
@@ -493,10 +497,10 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
             <button
               onClick={handlePunchIn}
               disabled={punching}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer"
             >
               <Play className="w-4 h-4 fill-white" />
-              <span>{punching ? 'Punching In...' : 'CLOCK IN NOW'}</span>
+              <span>{punching ? 'PUNCHING IN...' : 'CLOCK IN NOW'}</span>
             </button>
           )}
 
@@ -504,10 +508,10 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: string) => void }> = ({
             <button
               onClick={handlePunchOut}
               disabled={punching}
-              className="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 cursor-pointer"
             >
               <Square className="w-4 h-4 fill-white" />
-              <span>{punching ? 'Punching Out...' : 'CLOCK OUT NOW'}</span>
+              <span>{punching ? 'PUNCHING OUT...' : 'CLOCK OUT NOW'}</span>
             </button>
           )}
 
