@@ -7,6 +7,7 @@
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
+    "preview": "vite preview",
     "db:migrate": "node -e \"import('./src/backend/database/schema.js').then(m => m.initializeSchema())\"",
     "db:seed": "node -e \"import('./src/backend/database/seed.js').then(m => m.seedDatabase())\"",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
