@@ -14,6 +14,33 @@ export class WeeklyPlannerRepository {
 
   // ─── Weekly Plan Lifecycle ────────────────────────────────────────────────
   async getOrCreateWeeklyPlan(employeeId: number, weekNumber: number, year: number, assignerId?: number) {
+    await dbService.query(`
+      CREATE TABLE IF NOT EXISTS weekly_plans (
+        id SERIAL PRIMARY KEY,
+        employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        week_number INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        assigned_by INTEGER REFERENCES employees(id),
+        status VARCHAR(30) DEFAULT 'ACTIVE',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(employee_id, week_number, year)
+      );
+
+      CREATE TABLE IF NOT EXISTS weekly_plan_items (
+        id SERIAL PRIMARY KEY,
+        plan_id INTEGER NOT NULL REFERENCES weekly_plans(id) ON DELETE CASCADE,
+        day_of_week VARCHAR(20) NOT NULL,
+        task_name TEXT NOT NULL,
+        planned_hours NUMERIC(4, 2) DEFAULT 8.0,
+        actual_hours NUMERIC(4, 2) DEFAULT 0.0,
+        status VARCHAR(30) DEFAULT 'PLANNED',
+        project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     const res = await dbService.query(
       `INSERT INTO weekly_plans (employee_id, week_number, year, assigned_by)
        VALUES ($1, $2, $3, $4)
